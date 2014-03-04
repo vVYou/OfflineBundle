@@ -1,0 +1,12 @@
+{
+    "name": "claroline/offline-bundle",
+    "description": "Sync bundle for Claroline 2.0",
+    "license": "GPL-3.0+",
+    "require": {
+        "claroline/core-bundle": "~2.9"
+    },
+    "autoload": {
+        "psr-0": { "Claroline\\OfflineBundle": "" }
+    },
+    "target-dir": "Claroline/OfflineBundle"
+}

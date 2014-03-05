@@ -21,6 +21,6 @@ class OfflineController extends Controller
      */
     public function helloAction()
     {
-        return $this->render('ClarolineOfflineBundle:Offline:main.html.twig');
+        return $this->render('ClarolineOfflineBundle:Offline:content.html.twig');
     }
 }

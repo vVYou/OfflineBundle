@@ -5,6 +5,7 @@ namespace Claroline\OfflineBundle\Entity;
 
 use Symfony\Bridge\Doctrine\Validator\Constraints as DoctrineAssert;
 use Symfony\Component\Validator\Constraints as Assert;
+use \Serializable;
 use Doctrine\ORM\Mapping as ORM;
 //use Doctrine\Common\Collections\ArrayCollection;
 use Claroline\CoreBundle\Entity\AbstractRoleSubject;

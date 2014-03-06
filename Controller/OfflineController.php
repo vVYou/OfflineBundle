@@ -3,24 +3,37 @@
 namespace Claroline\OfflineBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
+use JMS\DiExtraBundle\Annotation as DI;
+use JMS\SecurityExtraBundle\Annotation as SEC;
+use Claroline\CoreBundle\Entity\User;
 
+/**
+ * @DI\Tag("security.secure_service")
+ * @SEC\PreAuthorize("hasRole('ROLE_USER')")
+ */
 class OfflineController extends Controller
 {
-
  /**
      * Get content by id
      *
-     * @Route(
+     * @EXT\Route(
      *     "/sync",
      *     name="claro_sync"
      * )
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     *
+     * @param User $user
+     *
+     * @return Response
      */
-    public function helloAction()
+    public function helloAction(User $user)
     {
-        return $this->render('ClarolineOfflineBundle:Offline:content.html.twig');
+        $username = $user->getFirstName() . ' ' . $user->getLastName();
+        return $this->render('ClarolineOfflineBundle:Offline:content.html.twig',  array('user' => $username));
     }
 }

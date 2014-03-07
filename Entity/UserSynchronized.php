@@ -31,7 +31,7 @@ class UserSynchronized extends AbstractRoleSubject
         targetEntity="Claroline\CoreBundle\Entity\User",
         cascade={"persist"}
        )
-     * @ORM\JoinColumn(name="user_id")
+     * @ORM\JoinColumn(nullable=false, name="user_id")
      */
     protected $userId;
 

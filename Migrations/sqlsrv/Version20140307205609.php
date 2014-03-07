@@ -8,16 +8,16 @@ use Doctrine\DBAL\Schema\Schema;
 /**
  * Auto-generated migration based on mapping information: modify it with caution
  *
- * Generation date: 2014/03/07 04:28:11
+ * Generation date: 2014/03/07 08:56:20
  */
-class Version20140307162800 extends AbstractMigration
+class Version20140307205609 extends AbstractMigration
 {
     public function up(Schema $schema)
     {
         $this->addSql("
             CREATE TABLE claro_user_sync (
                 id INT IDENTITY NOT NULL, 
-                user_id INT, 
+                user_id INT NOT NULL, 
                 last_synchronization DATETIME2(6) NOT NULL, 
                 PRIMARY KEY (id)
             )

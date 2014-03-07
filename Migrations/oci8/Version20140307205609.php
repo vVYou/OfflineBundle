@@ -1,6 +1,6 @@
 <?php
 
-namespace Claroline\OfflineBundle\Migrations\pdo_oci;
+namespace Claroline\OfflineBundle\Migrations\oci8;
 
 use Doctrine\DBAL\Migrations\AbstractMigration;
 use Doctrine\DBAL\Schema\Schema;
@@ -8,16 +8,16 @@ use Doctrine\DBAL\Schema\Schema;
 /**
  * Auto-generated migration based on mapping information: modify it with caution
  *
- * Generation date: 2014/03/07 04:28:10
+ * Generation date: 2014/03/07 08:56:19
  */
-class Version20140307162800 extends AbstractMigration
+class Version20140307205609 extends AbstractMigration
 {
     public function up(Schema $schema)
     {
         $this->addSql("
             CREATE TABLE claro_user_sync (
                 id NUMBER(10) NOT NULL, 
-                user_id NUMBER(10) DEFAULT NULL, 
+                user_id NUMBER(10) NOT NULL, 
                 last_synchronization TIMESTAMP(0) NOT NULL, 
                 PRIMARY KEY(id)
             )

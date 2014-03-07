@@ -9,8 +9,9 @@
 
 {% block section_content %}
 
-<h1>Ceci est un titre</h1>
+<h1>Ceci est un titre  </h1>
 <p>Et un paragraphe, C'est donc {{user}}</p>
-
+<p>Magnifique translation : {{'sync_confirmation'|trans({}, 'offline')}}<br/>
+{{ 'please_wait'|trans({}, 'platform') }}</p>
 
 {% endblock %}

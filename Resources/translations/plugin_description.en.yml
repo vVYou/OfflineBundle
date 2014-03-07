@@ -1,1 +1,1 @@
-clarolineSync : Synchronisation
+clarolineoffline : The bundle allow a user to synchronize claroline for an disconnected usage. This bundle provide one module to download the plateform and a tool to ensure the synchronisation of the local workspace once they are installed on the personnal computer.

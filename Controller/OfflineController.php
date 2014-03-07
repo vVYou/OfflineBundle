@@ -26,7 +26,8 @@ class OfflineController extends Controller
      *     name="claro_sync"
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-     *
+     * @EXT\Template("ClarolineOfflineBundle:Offline:content.html.twig")
+     * 
      * @param User $user
      *
      * @return Response
@@ -34,7 +35,8 @@ class OfflineController extends Controller
     public function helloAction(User $user)
     {
         $username = $user->getFirstName() . ' ' . $user->getLastName();
-        return $this->render('ClarolineOfflineBundle:Offline:content.html.twig',  array('user' => $username));
-        //Il faudra donc ajouter ci-dessus la date de derniere synchronisation recupere grace a l'entity qui sera faites
+        return array(
+            'user' => $username
+        );
     }
 }

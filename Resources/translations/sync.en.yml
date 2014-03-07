@@ -1,1 +1,3 @@
+sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?
+last_sync: The last time you synchronize was : {{date}}
 sync_confirmation: Do you want to synchronize ?

@@ -35,5 +35,6 @@ class OfflineController extends Controller
     {
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         return $this->render('ClarolineOfflineBundle:Offline:content.html.twig',  array('user' => $username));
+        //Il faudra donc ajouter ci-dessus la date de derniere synchronisation recupere grace a l'entity qui sera faites
     }
 }

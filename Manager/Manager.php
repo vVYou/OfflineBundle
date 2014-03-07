@@ -20,8 +20,56 @@ use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 
-
+/**
+ * @DI\Service("claroline.manager.synchronize_manager")
+ */
 class Manager
 {
-   
+    private $om;
+    private $pagerFactory;
+    private $translator;
+    private $userSynchronizedRepository;
+
+    /**
+     * Constructor.
+     *
+     * @DI\InjectParams({
+     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
+     *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
+     *     "translator"     = @DI\Inject("translator")
+     * })
+     */
+    public function __construct(
+        ObjectManager $om,
+        PagerFactory $pagerFactory,
+        TranslatorInterface $translator
+    )
+    {
+        $this->om = $om;
+        $this->pagerFactory = $pagerFactory;
+        $this->userSynchronizedRepository = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
+        $this->translator = $translator;
+    }
+    
+    /**
+     * Create a userSynchronized.
+     * Its ID and the date of creation.
+     *
+     * @param \Claroline\CoreBundle\Entity\User $user
+     *
+     * @return \Claroline\OfflineBundle\Entity\UserSynchronized
+     */
+    public function createUserSynchronized(User $user)
+    {
+        $this->om->startFlushSuite();
+        
+        $userSynchronized = new userSynchronized();
+        $userSynchronized->setUser($user);
+        
+        $this->om->persist($userSynchronized);
+        $this->om->endFlushSuite();
+
+        return $userSynchronized;
+    }
+
 }

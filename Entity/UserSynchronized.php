@@ -31,9 +31,9 @@ class UserSynchronized extends AbstractRoleSubject
         targetEntity="Claroline\CoreBundle\Entity\User",
         cascade={"persist"}
        )
-     * @ORM\JoinColumn(nullable=false, name="user_id")
+     * @ORM\JoinColumn(nullable=false)
      */
-    protected $userId;
+    protected $user;
 
     /**
      * @var \DateTime
@@ -59,9 +59,17 @@ class UserSynchronized extends AbstractRoleSubject
     /**
      * @return User
      */
-    public function getUserId()
+    public function getUser()
     {
-        return $this->userId;
+        return $this->user;
+    }
+    
+     /**
+     * @param User $user
+     */
+    public function setUser(User $user)
+    {
+        $this->userId = $user;
     }
     
     /**

@@ -14,7 +14,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 /**
  * @ORM\Entity(repositoryClass="Claroline\OfflineBundle\Repository\UserSynchronizedRepository")
  * @ORM\Table(name="claro_user_sync")
- * @DoctrineAssert\UniqueEntity("userId")
+ * @DoctrineAssert\UniqueEntity("user")
  */
 class UserSynchronized extends AbstractRoleSubject
 {
@@ -62,14 +62,6 @@ class UserSynchronized extends AbstractRoleSubject
     public function getUser()
     {
         return $this->user;
-    }
-    
-     /**
-     * @param User $user
-     */
-    public function setUser(User $user)
-    {
-        $this->userId = $user;
     }
     
     /**

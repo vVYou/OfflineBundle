@@ -39,4 +39,32 @@ class OfflineController extends Controller
             'user' => $username
         );
     }
+    
+    /**
+    *   Create userSyncrhonized entity
+    *   
+    *   @EXT\Route(
+    *       "/sync/magique",
+    *       name="claro_sync_user"
+    *   )
+    *
+    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:sync.html.twig")
+    *
+    * @param User $user
+    * @return Reponse
+    */
+    public function synchronizeAction(User $user)
+    {
+        // $userSynchro = $this->get('claroline.manager.synchronize_manager')->createUserSynchronized($user);
+         
+         $em = $this->getDoctrine()->getManager();
+         $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+         
+         $username = $user->getFirstName() . ' ' . $user->getLastName();
+        return array(
+            'user' => $username,
+            'user_sync_date' => $userSynchroDate
+         );
+    }
 }

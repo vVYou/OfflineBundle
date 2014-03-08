@@ -1,6 +1,6 @@
 <?php
 
-namespace Claroline\OfflineBundle\Migrations\pdo_mysql;
+namespace Claroline\OfflineBundle\Migrations\sqlsrv;
 
 use Doctrine\DBAL\Migrations\AbstractMigration;
 use Doctrine\DBAL\Schema\Schema;
@@ -8,20 +8,23 @@ use Doctrine\DBAL\Schema\Schema;
 /**
  * Auto-generated migration based on mapping information: modify it with caution
  *
- * Generation date: 2014/03/07 09:32:53
+ * Generation date: 2014/03/08 11:05:31
  */
-class Version20140307213243 extends AbstractMigration
+class Version20140308110520 extends AbstractMigration
 {
     public function up(Schema $schema)
     {
         $this->addSql("
             CREATE TABLE claro_user_sync (
-                id INT AUTO_INCREMENT NOT NULL, 
+                id INT IDENTITY NOT NULL, 
                 user_id INT NOT NULL, 
-                last_synchronization DATETIME NOT NULL, 
-                UNIQUE INDEX UNIQ_23C3CEFA76ED395 (user_id), 
-                PRIMARY KEY(id)
-            ) DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE = InnoDB
+                last_synchronization DATETIME2(6) NOT NULL, 
+                PRIMARY KEY (id)
+            )
+        ");
+        $this->addSql("
+            CREATE UNIQUE INDEX UNIQ_23C3CEFA76ED395 ON claro_user_sync (user_id) 
+            WHERE user_id IS NOT NULL
         ");
         $this->addSql("
             ALTER TABLE claro_user_sync 

@@ -1,0 +1,11 @@
+{% from _self import renderPager %}
+
+{% set layout = "ClarolineOfflineBundle:Offline:content.html.twig" %}
+
+{% extends layout%}
+
+{%block sync%}
+<p>Je devrais avoir cree une entity<br/>
+Ma belle date de synchro {{user_sync_date}}
+</p>
+{%endblock%}

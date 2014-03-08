@@ -14,6 +14,7 @@ namespace Claroline\OfflineBundle\Manager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
+use Claroline\OfflineBundle\Entity\UserSynchronized;
 //use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\Routing\RouterInterface;
@@ -28,7 +29,7 @@ class Manager
     private $om;
     private $pagerFactory;
     private $translator;
-    private $userSynchronizedRepository;
+    private $userSynchronizedRepo;
 
     /**
      * Constructor.
@@ -47,7 +48,7 @@ class Manager
     {
         $this->om = $om;
         $this->pagerFactory = $pagerFactory;
-        $this->userSynchronizedRepository = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
+        $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->translator = $translator;
     }
     

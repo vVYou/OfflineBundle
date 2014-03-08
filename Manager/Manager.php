@@ -20,6 +20,7 @@ use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
+use \ZipArchive;
 
 /**
  * @DI\Service("claroline.manager.synchronize_manager")
@@ -72,4 +73,43 @@ class Manager
         return $userSynchronized;
     }
 
+    /**
+     * Create a userSynchronized.
+     * Its ID and the date of creation.
+     *
+     * @param \Claroline\CoreBundle\Entity\User $user
+     *
+     */
+    public function createSyncZip(User $user){
+        $zip = new ZipArchive(); 
+        if($zip->open('plouf.zip', ZipArchive::CREATE) === true){
+            echo '&quot;Zip.zip&quot; ouvert<br/>';
+            $zip->addFromString('Fichier.txt', 'Je suis le contenu de Fichier.txt !');
+
+
+            // Ajout d’un fichier.
+            //$zip->addFile('Fichier.txt');
+
+            // Ajout direct.
+            //$zip->addFromString('Fichier.txt', 'Je suis le contenu de Fichier.txt !');
+
+            // Et on referme l'archive.
+            $zip->close();
+            echo '&quot;Zip.zip&quot; ferme<br/>';
+        }else{
+            echo 'Impossible d&#039;ouvrir &quot;Zip.zip<br/>';
+            // Traitement des erreurs avec un switch(), par exemple.
+        }
+        
+        
+        if ($zip->open('plouf.zip') === TRUE) {
+            $zip->extractTo('C:\\plouf_zip\\');
+            $zip->close();
+            echo 'ok';
+        } else {
+            echo 'échec';
+        }
+        
+        return $zip;
+    }
 }

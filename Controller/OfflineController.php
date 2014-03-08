@@ -49,7 +49,7 @@ class OfflineController extends Controller
     *   )
     *
     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-    * @EXT\Template("ClarolineOfflineBundle:Offline:sync.html.twig")
+    * @EXT\Template("ClarolineOfflineBundle:Offline:zip.html.twig")
     *
     * @param User $user
     * @return Reponse
@@ -58,13 +58,16 @@ class OfflineController extends Controller
     {
         //$userSynchro = $this->get('claroline.manager.synchronize_manager')->createUserSynchronized($user);
          
-        $em = $this->getDoctrine()->getManager();
-        $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        //$em = $this->getDoctrine()->getManager();
+        //$userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+         
+        $zip = $this->get('claroline.manager.synchronize_manager')->createSyncZip($user);
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         return array(
             'user' => $username,
-            'user_sync_date' => $userSynchro
+        //    'user_sync_date' => $userSynchro
+            'zip' => $zip
          );
     }
 }

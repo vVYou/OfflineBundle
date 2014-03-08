@@ -64,8 +64,7 @@ class Manager
     {
         $this->om->startFlushSuite();
         
-        $userSynchronized = new userSynchronized();
-        $userSynchronized->setUser($user);
+        $userSynchronized = new userSynchronized($user);
         
         $this->om->persist($userSynchronized);
         $this->om->endFlushSuite();

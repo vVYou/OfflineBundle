@@ -56,15 +56,15 @@ class OfflineController extends Controller
     */
     public function synchronizeAction(User $user)
     {
-        // $userSynchro = $this->get('claroline.manager.synchronize_manager')->createUserSynchronized($user);
+        //$userSynchro = $this->get('claroline.manager.synchronize_manager')->createUserSynchronized($user);
          
-         $em = $this->getDoctrine()->getManager();
-         $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $em = $this->getDoctrine()->getManager();
+        $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
          
-         $username = $user->getFirstName() . ' ' . $user->getLastName();
+        $username = $user->getFirstName() . ' ' . $user->getLastName();
         return array(
             'user' => $username,
-            'user_sync_date' => $userSynchroDate
+            'user_sync_date' => $userSynchro
          );
     }
 }

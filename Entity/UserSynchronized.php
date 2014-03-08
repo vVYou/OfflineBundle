@@ -43,8 +43,9 @@ class UserSynchronized extends AbstractRoleSubject
      */
     protected $lastSynchronization;
 
-    public function __construct()
+    public function __construct(User $user)
     {
+        $this-> user = $user;
         parent::__construct();
     }
     

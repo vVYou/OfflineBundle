@@ -64,7 +64,7 @@ class OfflineController extends Controller
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         return array(
             'user' => $username,
-            'user_sync_date' => $userSynchro
+            'user_sync_date' => $userSynchroDate
          );
     }
 }

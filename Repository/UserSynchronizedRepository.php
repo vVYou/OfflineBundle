@@ -31,7 +31,7 @@ class UserSynchronizedRepository extends EntityRepository
     public function findUserSynchronized(User $user, $getQuery = false)
     {
         $dql = "
-            SELECT user_sync.lastSynchronization
+            SELECT user_sync.lastSynchronization as date
             FROM Claroline\OfflineBundle\Entity\UserSynchronized user_sync
             JOIN user_sync.user user_table
             WHERE user_table.id = :userId

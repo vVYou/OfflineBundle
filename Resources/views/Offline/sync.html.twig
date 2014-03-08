@@ -6,6 +6,11 @@
 
 {%block sync%}
 <p>Je devrais avoir cree une entity<br/>
-Ma belle date de synchro {{user_sync_date}}
+Ma belle date de synchro
+{% for date in user_sync_date %}
+    {%for field in date%}
+        {{field | date('d/m/Y') }}
+    {% endfor %}
+{% endfor %}
 </p>
 {%endblock%}

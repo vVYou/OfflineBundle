@@ -21,6 +21,25 @@ class OfflineController extends Controller
      */
     public function helloAction()
     {
+        $sync = $this->get('claroline_offline.synchronizer');
+        if ($sync->isOk())
+        {
+           return $this->render('ClarolineOfflineBundle:Offline:ok.html.twig');
+        }
+        //return $this->render('ClarolineOfflineBundle:Offline:hello.html.twig');
+    }
+    
+ /**
+     * Get content by id
+     *
+     * @Route(
+     *     "/test_2",
+     *     name="claro_test"
+     * )
+     * @return \Symfony\Component\HttpFoundation\Response
+     */    
+    public function testAction()
+    {
         return $this->render('ClarolineOfflineBundle:Offline:hello.html.twig');
     }
 }

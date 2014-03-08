@@ -1,7 +1,8 @@
 parameters:
-#    claroline_claroffline.example.class: Claroline\ClarofflineBundle\Example
+# claroline_claroffline.example.class: Claroline\ClarofflineBundle\Example
 
 services:
-#    claroline_claroffline.example:
-#        class: %claroline_claroffline.example.class%
-#        arguments: [@service_id, "plain_value", %parameter%]
+# claroline_claroffline.example:
+# class: %claroline_claroffline.example.class%
+# arguments: [@service_id, "plain_value", %parameter%]
+

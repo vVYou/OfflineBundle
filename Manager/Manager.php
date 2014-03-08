@@ -74,42 +74,30 @@ class Manager
     }
 
     /**
-     * Create a userSynchronized.
-     * Its ID and the date of creation.
+     * Create a the archive based on the user     
+     * Attention, if the archive file created is empty, it will not write zip file on disk !
      *
      * @param \Claroline\CoreBundle\Entity\User $user
      *
      */
     public function createSyncZip(User $user){
         $zip = new ZipArchive(); 
-        if($zip->open('plouf.zip', ZipArchive::CREATE) === true){
-            echo '&quot;Zip.zip&quot; ouvert<br/>';
+        
+        //TODO CREATE DYNAMIC NAME
+        if($zip->open('zip.zip', ZipArchive::CREATE) === true){
+            //echo '&quot;Zip.zip&quot; ouvert<br/>';
+
             $zip->addFromString('Fichier.txt', 'Je suis le contenu de Fichier.txt !');
-
-
-            // Ajout d’un fichier.
+            // Add a file
             //$zip->addFile('Fichier.txt');
 
-            // Ajout direct.
-            //$zip->addFromString('Fichier.txt', 'Je suis le contenu de Fichier.txt !');
-
-            // Et on referme l'archive.
             $zip->close();
-            echo '&quot;Zip.zip&quot; ferme<br/>';
         }else{
-            echo 'Impossible d&#039;ouvrir &quot;Zip.zip<br/>';
-            // Traitement des erreurs avec un switch(), par exemple.
+            //TODO REPLACE BY EXCEPTION
+            echo 'Impossible to open the zip file';
         }
         
-        
-        if ($zip->open('plouf.zip') === TRUE) {
-            $zip->extractTo('C:\\plouf_zip\\');
-            $zip->close();
-            echo 'ok';
-        } else {
-            echo 'échec';
-        }
-        
+        //CONFIRM WITH POP UP
         return $zip;
     }
 }

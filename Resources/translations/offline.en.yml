@@ -1,3 +1,6 @@
-sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?
+
 last_sync: The last time you synchronize was : {{date}}
+offline_mode: Offline mode
+offline_presentation: You can get Claroline on your computer and use it without internet connexion. Once you download claroline on your computer, you will have to synchronize it periodically to share your work online and to get the new updates.
 sync_confirmation: Do you want to synchronize ?
+sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?

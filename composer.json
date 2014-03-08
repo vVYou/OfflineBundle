@@ -4,6 +4,7 @@
     "license": "GPL-3.0+",
     "require": {
         "claroline/core-bundle": "~2.9"
+        "claroline/migration-bundle": "dev-master"
     },
     "autoload": {
         "psr-0": { "Claroline\\OfflineBundle": "" }

@@ -3,43 +3,68 @@
 namespace Claroline\OfflineBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
+use JMS\DiExtraBundle\Annotation as DI;
+use JMS\SecurityExtraBundle\Annotation as SEC;
+use Claroline\CoreBundle\Entity\User;
 
+/**
+ * @DI\Tag("security.secure_service")
+ * @SEC\PreAuthorize("hasRole('ROLE_USER')")
+ */
 class OfflineController extends Controller
 {
-
  /**
      * Get content by id
      *
-     * @Route(
+     * @EXT\Route(
      *     "/sync",
      *     name="claro_sync"
      * )
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     * @EXT\Template("ClarolineOfflineBundle:Offline:content.html.twig")
+     * 
+     * @param User $user
+     *
+     * @return Response
      */
-    public function helloAction()
+    public function helloAction(User $user)
     {
-        $sync = $this->get('claroline_offline.synchronizer');
-        if ($sync->isOk())
-        {
-           return $this->render('ClarolineOfflineBundle:Offline:ok.html.twig');
-        }
-        //return $this->render('ClarolineOfflineBundle:Offline:hello.html.twig');
+        $username = $user->getFirstName() . ' ' . $user->getLastName();
+        return array(
+            'user' => $username
+        );
     }
     
- /**
-     * Get content by id
-     *
-     * @Route(
-     *     "/test_2",
-     *     name="claro_test"
-     * )
-     * @return \Symfony\Component\HttpFoundation\Response
-     */    
-    public function testAction()
+    /**
+    *   Create userSyncrhonized entity
+    *   
+    *   @EXT\Route(
+    *       "/sync/magique",
+    *       name="claro_sync_user"
+    *   )
+    *
+    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:sync.html.twig")
+    *
+    * @param User $user
+    * @return Reponse
+    */
+    public function synchronizeAction(User $user)
     {
-        return $this->render('ClarolineOfflineBundle:Offline:hello.html.twig');
+        // $userSynchro = $this->get('claroline.manager.synchronize_manager')->createUserSynchronized($user);
+         
+         $em = $this->getDoctrine()->getManager();
+         $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+         
+         $username = $user->getFirstName() . ' ' . $user->getLastName();
+        return array(
+            'user' => $username,
+            'user_sync_date' => $userSynchroDate
+         );
     }
 }

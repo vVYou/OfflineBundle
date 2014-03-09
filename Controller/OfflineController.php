@@ -11,6 +11,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
+use Claroline\CoreBundle\Repository;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -65,6 +66,34 @@ class OfflineController extends Controller
         return array(
             'user' => $username,
             'user_sync_date' => $userSynchroDate
+         );
+    }
+    
+    /**
+    *   Seek and show all the modified courses and ressources
+    *   
+    *   @EXT\Route(
+    *       "/sync/seek",
+    *       name="claro_sync_seek"
+    *   )
+    *
+    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:courses.html.twig")
+    *
+    * @param User $user
+    * @return Reponse
+    */
+    public function seekAction(User $user)
+    {
+        //$userSynchro = $this->get('claroline.manager.synchronize_manager')->createUserSynchronized($user);
+         
+        $em = $this->getDoctrine()->getManager();
+        $userCourses = $em->getRepository('ClarolineCoreBundle:Workspace')->findByUser($user);
+  
+        $username = $user->getFirstName() . ' ' . $user->getLastName();
+        return array(
+            'user' => $username,
+            'user_courses' => $userCourses
          );
     }
 }

@@ -97,5 +97,6 @@ class OfflineController extends Controller
         return array(
             'user' => $username,
             'user_courses' => $userCourses
+        );
     }
 }

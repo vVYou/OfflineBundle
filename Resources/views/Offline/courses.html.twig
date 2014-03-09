@@ -1,0 +1,14 @@
+{% from _self import renderPager %}
+
+{% set layout = "ClarolineOfflineBundle:Offline:content.html.twig" %}
+
+{% extends layout%}
+
+{%block sync%}
+<p>Je devrais avoir une liste de cours<br/>
+Les magnifiques cours de {{user}}!
+{% for id in user_courses %}
+    {{id}}
+{% endfor %}
+</p>
+{%endblock%}

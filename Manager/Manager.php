@@ -21,6 +21,7 @@ use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use \ZipArchive;
+use \DateTime;
 
 /**
  * @DI\Service("claroline.manager.synchronize_manager")
@@ -99,5 +100,13 @@ class Manager
         
         //CONFIRM WITH POP UP
         return $zip;
+    }
+    
+    public function findObsolete(array $userRes, DateTime $date)
+    {
+        //$em = $this->getDoctrine()->getManager();
+        //$userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        echo 'OUIIIIIIIIIIIIII5';
+        return 1;
     }
 }

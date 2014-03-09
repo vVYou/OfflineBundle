@@ -12,6 +12,8 @@ use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Repository;
+use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
+use Claroline\CoreBundle\Manager\ResourceManager;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -88,15 +90,38 @@ class OfflineController extends Controller
     */
     public function seekAction(User $user)
     {
-        //$userSynchro = $this->get('claroline.manager.synchronize_manager')->createUserSynchronized($user);
-         
+        $userRes = array();
+        $obso;
+        //$typeArray = array();
         $em = $this->getDoctrine()->getManager();
-        $userCourses = $em->getRepository('ClarolineCoreBundle:Workspace')->findByUser($user);
-  
-        $username = $user->getFirstName() . ' ' . $user->getLastName();
+        $dateSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        
+        $typeArray = $this->get('claroline.manager.resource_manager')->getResourceTypeByName('file');
+        //$typeArray = $this->get('claroline.manager.resource_manager')->getResourceTypeByName('text');
+         
+        //$em = $this->getDoctrine()->getManager();
+        $userWS = $em->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
+        $username = $user->getFirstName() . ' ' . $user->getLastName();      
+ 
+        foreach($userWS as $element)
+        {
+            echo 'First fort!';
+            //foreach($typeArray as $type)
+            //{
+                echo 'Hello!';
+                //$em_res = $this->getDoctrine()->getManager();
+                $userRes = $em->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $typeArray);
+
+                //$obso = $this->get('claroline.manager.synchronize_manager')->findObsolete($userRes, $dateSync);           
+            //}
+        }             
+        
         return array(
             'user' => $username,
-            'user_courses' => $userCourses
+            'user_courses' => $userWS,
+            'user_res' => $userRes
         );
     }
+ 
+  
 }

@@ -8,7 +8,10 @@
 <p>Je devrais avoir une liste de cours<br/>
 Les magnifiques cours de {{user}}!
 {% for id in user_courses %}
-    {{id}}
+    {{id.id}}
+{% endfor %}
+{% for elem in user_res %}
+    {{elem.name}}
 {% endfor %}
 </p>
 {%endblock%}

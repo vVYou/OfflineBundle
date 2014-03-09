@@ -101,12 +101,4 @@ class Manager
         //CONFIRM WITH POP UP
         return $zip;
     }
-    
-    public function findObsolete(array $userRes, DateTime $date)
-    {
-        //$em = $this->getDoctrine()->getManager();
-        //$userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-        echo 'OUIIIIIIIIIIIIII5';
-        return 1;
-    }
 }

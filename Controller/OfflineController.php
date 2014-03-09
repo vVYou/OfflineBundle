@@ -14,6 +14,7 @@ use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Repository;
 use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Entity\ResourceNode;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -29,6 +30,7 @@ class OfflineController extends Controller
      *     name="claro_sync"
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     * @EXT\Template("ClarolineOfflineBundle:Offline:content.html.twig")
      * 
      * @param User $user
      *
@@ -36,21 +38,10 @@ class OfflineController extends Controller
      */
     public function helloAction(User $user)
     {
-        $em = $this->getDoctrine()->getManager();
-        $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-        
         $username = $user->getFirstName() . ' ' . $user->getLastName();
-        
-        if ($userSynchroDate) {
-            return $this->render('ClarolineOfflineBundle:Offline:sync.html.twig', array(
-                'user' => $username,
-                'user_sync_date' => $userSynchroDate
-            ) );
-        }else{
-            return $this->render('ClarolineOfflineBundle:Offline:first_sync.html.twig', array(
-                'user' => $username
-            ) );
-        }
+        return array(
+            'user' => $username
+        );
     }
     
     /**
@@ -102,12 +93,11 @@ class OfflineController extends Controller
     {
         $userRes = array();
         $obso;
-        //$typeArray = array();
-        $em = $this->getDoctrine()->getManager();
-        $dateSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-        
-        $typeArray = $this->get('claroline.manager.resource_manager')->getResourceTypeByName('file');
-        //$typeArray = $this->get('claroline.manager.resource_manager')->getResourceTypeByName('text');
+        $typeList = array('file', 'text'); // ! PAS OPTIMAL !
+        $typeArray = $this->buildTypeArray($typeList);
+        $em = $this->getDoctrine()->getManager();       
+        // $typeArray = $this->get('claroline.manager.resource_manager')->getResourceTypeByName('file');
+        // $typeArray = $this->get('claroline.manager.resource_manager')->getResourceTypeByName('text');
          
         //$em = $this->getDoctrine()->getManager();
         $userWS = $em->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
@@ -115,15 +105,18 @@ class OfflineController extends Controller
  
         foreach($userWS as $element)
         {
-            echo 'First fort!';
-            //foreach($typeArray as $type)
-            //{
-                echo 'Hello!';
+            //echo 'First for!';
+            //echo count($typeArray);
+            foreach($typeArray as $resType)
+            {
                 //$em_res = $this->getDoctrine()->getManager();
-                $userRes = $em->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $typeArray);
-
-                //$obso = $this->get('claroline.manager.synchronize_manager')->findObsolete($userRes, $dateSync);           
-            //}
+                $userRes = $em->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
+                if(count($userRes) >= 1)
+                {
+                    $obso = $this->checkObsolete($userRes, $user);  
+                    //Ajouter le resultat dans l'archive Zip
+                }
+            }
         }             
         
         return array(
@@ -131,6 +124,32 @@ class OfflineController extends Controller
             'user_courses' => $userWS,
             'user_res' => $userRes
         );
+    }
+    
+    private function buildTypeArray(array $typeList)
+    {
+        $typeArrayTmp = array();
+        foreach($typeList as $element)
+        {
+            $typeArrayTmp[] = $this->get('claroline.manager.resource_manager')->getResourceTypeByName($element);
+        }
+        //echo count($typeArrayTmp);
+        return $typeArrayTmp;
+    }
+    
+        
+    private function checkObsolete(array $userRes, User $user)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $dateSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        
+        foreach($userRes as $resource)
+        {
+            echo $resource->getModificationDate()->format('Y-m-d') . "<br/>";
+            //echo $dateSync[0]->getLastSynchronization()->format('Y-m-d') . "<br/>";
+        }
+        //echo 'OUIIIIIIIIIIIIII5';
+        return 1;
     }
  
   

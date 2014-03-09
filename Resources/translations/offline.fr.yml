@@ -1,3 +1,5 @@
-sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?
 last_sync: The last time you synchronize was : {{date}}
-sync_confirmation: Do you want to synchronize ?
+offline_mode: Mode déconnecté
+offline_presentation: Vous pouvez télécharger Claroline sur votre ordinateur pour y avoir accès sans accès internet. Une fois Claroline installé sur votre machine vous devrez synchroniser votre machine pour partager votre travaille et obtenir les mises à jours de vos espaces d'activités.
+sync_confirmation: Voulez-vous synchroniser ?
+sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?

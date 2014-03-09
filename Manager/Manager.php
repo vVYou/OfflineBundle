@@ -20,6 +20,7 @@ use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
+use \ZipArchive;
 
 /**
  * @DI\Service("claroline.manager.synchronize_manager")
@@ -72,4 +73,31 @@ class Manager
         return $userSynchronized;
     }
 
+    /**
+     * Create a the archive based on the user     
+     * Attention, if the archive file created is empty, it will not write zip file on disk !
+     *
+     * @param \Claroline\CoreBundle\Entity\User $user
+     *
+     */
+    public function createSyncZip(User $user){
+        $zip = new ZipArchive(); 
+        
+        //TODO CREATE DYNAMIC NAME
+        if($zip->open('zip.zip', ZipArchive::CREATE) === true){
+            //echo '&quot;Zip.zip&quot; ouvert<br/>';
+
+            $zip->addFromString('Fichier.txt', 'Je suis le contenu de Fichier.txt !');
+            // Add a file
+            //$zip->addFile('Fichier.txt');
+
+            $zip->close();
+        }else{
+            //TODO REPLACE BY EXCEPTION
+            echo 'Impossible to open the zip file';
+        }
+        
+        //CONFIRM WITH POP UP
+        return $zip;
+    }
 }

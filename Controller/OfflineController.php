@@ -102,98 +102,15 @@ class OfflineController extends Controller
     */
     public function seekAction(User $user)
     {
-        $userRes = array();
-        $obso;
-        $typeList = array('file', 'text'); // ! PAS OPTIMAL !
-        $typeArray = $this->buildTypeArray($typeList);
-        $em = $this->getDoctrine()->getManager();       
-        // $typeArray = $this->get('claroline.manager.resource_manager')->getResourceTypeByName('file');
-        // $typeArray = $this->get('claroline.manager.resource_manager')->getResourceTypeByName('text');
-         
-        //$em = $this->getDoctrine()->getManager();
-        $userWS = $em->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
-        $username = $user->getFirstName() . ' ' . $user->getLastName();      
- 
-        foreach($userWS as $element)
-        {
-            //echo 'First for!';
-            //echo count($typeArray);
-            foreach($typeArray as $resType)
-            {
-                //$em_res = $this->getDoctrine()->getManager();
-                $userRes = $em->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
-                if(count($userRes) >= 1)
-                {
-                    $obso = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
-                    //Ajouter le resultat dans l'archive Zip
-                    //this->download_sync($obso, $archive); ou qqch comme ça.
-                    //echo "<br/>".count($obso)."<br/>";
-                }
-            }
-        }             
-        
+        $test = $this->get('claroline.manager.synchronize_manager')->seek($user);
+        $username = $user->getFirstName() . ' ' . $user->getLastName(); 
+        echo 'Congratulations '.$username.'! '."<br/>".'You are now synchronized!';
+           
         return array(
             'user' => $username,
-            'user_courses' => $userWS,
-            'user_res' => $userRes
+            'user_courses' => $test['user_courses'],
+            'user_res' => $test['user_res']
         );
     }
-    
-    private function buildTypeArray(array $typeList)
-    {
-        $typeArrayTmp = array();
-        foreach($typeList as $element)
-        {
-            $typeArrayTmp[] = $this->get('claroline.manager.resource_manager')->getResourceTypeByName($element);
-        }
-        //echo count($typeArrayTmp);
-        return $typeArrayTmp;
-    }
-    
-        
-    private function checkObsolete(array $userRes, User $user)
-    {
-        $em = $this->getDoctrine()->getManager();
-        $dateSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-        $user_tmp = $dateSync[0]->getLastSynchronization();
-        $date_user = $user_tmp->getTimestamp();
-        $new_res = array();
-        
-        foreach($userRes as $resource)
-        {
-            echo 'La date de mon cours :';
-            echo $resource->getModificationDate()->format('Y-m-d') . "<br/>";
-            $res_tmp = $resource->getModificationDate();
-            $date_res = $res_tmp->getTimestamp();
-            $interval = $date_res - $date_user;
-            
-            if($interval > 0)
-            {
-                echo 'Name file : ';
-                echo $resource->getName() . "<br/>";
-                echo 'This file has been modified' . "<br/>";
-                $new_res[] = $resource;
-            }
-            
-            else
-            {
-                echo 'Name file : ';
-                echo $resource->getName() . "<br/>";
-                echo 'File not modified' . "<br/>";
-            }
-            
-        }
-                
-        echo 'Ma date à moi :';
-        echo $dateSync[0]->getLastSynchronization()->format('Y-m-d') . "<br/>";
-        return $resource;
-        
-    }
-    
-    private function download_sync(array $obso, ZipArchive $archive)
-    {
-    
-    }
- 
-  
+
 }

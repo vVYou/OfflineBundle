@@ -70,7 +70,7 @@ class UserSynchronized extends AbstractRoleSubject
      */
     public function getLastSynchronization()
     {
-        $this->lastSynchronization;
+        return $this->lastSynchronization;
     }
     
     /**

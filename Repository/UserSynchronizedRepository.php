@@ -30,6 +30,7 @@ class UserSynchronizedRepository extends EntityRepository
     */
     public function findUserSynchronized(User $user, $getQuery = false)
     {
+        /*
         $dql = "
             SELECT user_sync.lastSynchronization as date
             FROM Claroline\OfflineBundle\Entity\UserSynchronized user_sync
@@ -40,5 +41,16 @@ class UserSynchronizedRepository extends EntityRepository
         $query->setParameter('userId',  $user->getId());
         
         return ($getQuery) ? $query: $query->getResult();
+        */
+        
+        $qb = $this->createQueryBuilder('userSynchronized');
+        $qb->select('userSynchronized')
+            ->where('userSynchronized.user = :user_id');       
+
+        return $results = $qb->getQuery()->execute(
+            array(
+                ':user_id'    => $user->getId()
+            )
+        );
     }
 }

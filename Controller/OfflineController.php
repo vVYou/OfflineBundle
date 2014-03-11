@@ -145,10 +145,14 @@ class OfflineController extends Controller
         
         foreach($userRes as $resource)
         {
+            echo 'La date de mon cours :';
             echo $resource->getModificationDate()->format('Y-m-d') . "<br/>";
-            //echo $dateSync[0]->getLastSynchronization()->format('Y-m-d') . "<br/>";
+            $interval = date_diff($
+            
         }
-        //echo 'OUIIIIIIIIIIIIII5';
+                
+        echo 'Ma date à moi :';
+        echo $dateSync[0]->getLastSynchronization()->format('Y-m-d') . "<br/>";
         return 1;
     }
  

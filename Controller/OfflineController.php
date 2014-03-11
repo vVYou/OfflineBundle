@@ -102,14 +102,14 @@ class OfflineController extends Controller
     */
     public function seekAction(User $user)
     {
-        $test = $this->get('claroline.manager.synchronize_manager')->seek($user);
+        $test = $this->get('claroline.manager.synchronize_manager')->createSyncZip($user);
         $username = $user->getFirstName() . ' ' . $user->getLastName(); 
         echo 'Congratulations '.$username.'! '."<br/>".'You are now synchronized!';
            
         return array(
             'user' => $username,
-            'user_courses' => $test['user_courses'],
-            'user_res' => $test['user_res']
+            //'user_courses' => $test['user_courses'],
+            //'user_res' => $test['user_res']
         );
     }
 

@@ -22,6 +22,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Entity\ResourceType;
 use Claroline\CoreBundle\Entity\ResourceNode;
 use \ZipArchive;
 use \DateTime;
@@ -29,6 +30,9 @@ use \DateTime;
 /**
  * @DI\Service("claroline.manager.synchronize_manager")
  */
+ 
+CONST FILE = 1;
+
 class Manager
 {
     private $om;
@@ -88,62 +92,48 @@ class Manager
      * @param \Claroline\CoreBundle\Entity\User $user
      *
      */
-    public function createSyncZip(User $user){
-        $zip = new ZipArchive(); 
+    
+     public function createSyncZip(User $user)
+    {
+        $archive = new ZipArchive(); 
         
-        //TODO CREATE DYNAMIC NAME
-        if($zip->open('zip.zip', ZipArchive::CREATE) === true){
-            //echo '&quot;Zip.zip&quot; ouvert<br/>';
-
-            $zip->addFromString('Fichier.txt', 'Je suis le contenu de Fichier.txt !');
-            // Add a file
-            //$zip->addFile('Fichier.txt');
-
-            $zip->close();
-        }else{
+        $userRes = array();
+        $typeList = array('file'); // ! PAS OPTIMAL !
+        $typeArray = $this->buildTypeArray($typeList);
+        $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);          
+ 
+        if($archive->open('archive.zip', ZipArchive::CREATE) === true)
+        {
+            foreach($userWS as $element)
+            {
+                foreach($typeArray as $resType)
+                {
+                    $obso = array();
+                    //$em_res = $this->getDoctrine()->getManager();
+                    $userRes = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
+                    if(count($userRes) >= 1)
+                    {
+                        $obso[] = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
+                        //echo get_class($obso);//Ajouter le resultat dans l'archive Zip
+                        $this->download_sync($obso, $archive);
+                        //echo "<br/>".count($obso)."<br/>";
+                    }
+                }
+            }             
+            
+           
+            /*return array(
+                'user_courses' => $userWS,
+                'user_res' => $userRes
+            );*/
+        }
+        else
+        {
             //TODO REPLACE BY EXCEPTION
             echo 'Impossible to open the zip file';
         }
-        
-        //CONFIRM WITH POP UP
-        return $zip;
-    }
-    
-     public function seek(User $user)
-    {
-        $userRes = array();
-        $obso;
-        $typeList = array('file', 'text'); // ! PAS OPTIMAL !
-        $typeArray = $this->buildTypeArray($typeList);
-        //$em = $this->$om->getDoctrine()->getManager();       
-        // $typeArray = $this->get('claroline.manager.resource_manager')->getResourceTypeByName('file');
-        // $typeArray = $this->get('claroline.manager.resource_manager')->getResourceTypeByName('text');
-         
-        //$em = $this->getDoctrine()->getManager();
-        $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);          
- 
-        foreach($userWS as $element)
-        {
-            //echo 'First for!';
-            //echo count($typeArray);
-            foreach($typeArray as $resType)
-            {
-                //$em_res = $this->getDoctrine()->getManager();
-                $userRes = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
-                if(count($userRes) >= 1)
-                {
-                    $obso = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
-                    //Ajouter le resultat dans l'archive Zip
-                    //this->download_sync($obso, $archive); ou qqch comme ça.
-                    //echo "<br/>".count($obso)."<br/>";
-                }
-            }
-        }             
-        
-        return array(
-            'user_courses' => $userWS,
-            'user_res' => $userRes
-        );
+        $archive->close();
+        return $archive;
     }
     
     private function buildTypeArray(array $typeList)
@@ -199,6 +189,15 @@ class Manager
     
     private function download_sync(array $obso, ZipArchive $archive)
     {
-        return 1;
+        foreach($obso as $element)
+        {
+            //if($resType->getId() == FILE)
+            //{
+                $my_res = $this->resourceManager->getResourceFromNode($element);
+                echo get_class($my_res). "<br/>";
+                echo '../files/'.$my_res->getHashName();
+                $archive->addFile('../files/'.$my_res->getHashName());
+            //}
+        }
     }
 }

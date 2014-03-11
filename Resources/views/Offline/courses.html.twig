@@ -6,12 +6,6 @@
 
 {%block sync%}
 <p>Je devrais avoir une liste de cours<br/>
-Les magnifiques cours de {{user}}!
-{% for id in user_courses %}
-    {{id.id}}
-{% endfor %}
-{% for elem in user_res %}
-    {{elem.name}}
-{% endfor %}
+Les magnifiques cours de {{user}} sont maintenant dans un fichier zip!
 </p>
 {%endblock%}

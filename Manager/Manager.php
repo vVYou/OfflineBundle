@@ -22,8 +22,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
-use Claroline\CoreBundle\Entity\ResourceType;
-use Claroline\CoreBundle\Entity\ResourceNode;
+use Claroline\CoreBundle\Entity\Resource\ResourceType;
+use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use \ZipArchive;
 use \DateTime;
 
@@ -32,6 +32,7 @@ use \DateTime;
  */
  
 CONST FILE = 1;
+CONST TEXT = 3;
 
 class Manager
 {
@@ -98,7 +99,7 @@ class Manager
         $archive = new ZipArchive(); 
         
         $userRes = array();
-        $typeList = array('file'); // ! PAS OPTIMAL !
+        $typeList = array('file', 'text'); // ! PAS OPTIMAL !
         $typeArray = $this->buildTypeArray($typeList);
         $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);          
  
@@ -115,7 +116,7 @@ class Manager
                     {
                         $obso[] = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
                         //echo get_class($obso);//Ajouter le resultat dans l'archive Zip
-                        $this->download_sync($obso, $archive);
+                        $this->add_archive($obso, $archive, $resType);
                         //echo "<br/>".count($obso)."<br/>";
                     }
                 }
@@ -158,46 +159,54 @@ class Manager
         
         foreach($userRes as $resource)
         {
-            echo 'La date de mon cours :';
-            echo $resource->getModificationDate()->format('Y-m-d') . "<br/>";
+            //echo 'La date de mon cours :';
+            //echo $resource->getModificationDate()->format('Y-m-d') . "<br/>";
             $res_tmp = $resource->getModificationDate();
             $date_res = $res_tmp->getTimestamp();
             $interval = $date_res - $date_user;
             
             if($interval > 0)
             {
-                echo 'Name file : ';
-                echo $resource->getName() . "<br/>";
-                echo 'This file has been modified' . "<br/>";
+                //echo 'Name file : ';
+                //echo $resource->getName() . "<br/>";
+                //echo 'This file has been modified' . "<br/>";
                 $new_res[] = $resource;
-            }
-            
-            else
-            {
-                echo 'Name file : ';
-                echo $resource->getName() . "<br/>";
-                echo 'File not modified' . "<br/>";
             }
             
         }
                 
-        echo 'Ma date à moi :';
-        echo $dateSync[0]->getLastSynchronization()->format('Y-m-d') . "<br/>";
+        //echo 'Ma date à moi :';
+        //echo $dateSync[0]->getLastSynchronization()->format('Y-m-d') . "<br/>";
         return $resource;
         
     }
     
-    private function download_sync(array $obso, ZipArchive $archive)
+    /**
+     * Create a the archive based on the user     
+     * Attention, if the archive file created is empty, it will not write zip file on disk !
+     *
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceType $resType
+     *
+     */
+     
+    private function add_archive(array $obso, ZipArchive $archive, ResourceType $resType)
     {
         foreach($obso as $element)
         {
-            //if($resType->getId() == FILE)
-            //{
-                $my_res = $this->resourceManager->getResourceFromNode($element);
-                echo get_class($my_res). "<br/>";
-                echo '../files/'.$my_res->getHashName();
-                $archive->addFile('../files/'.$my_res->getHashName());
-            //}
+            switch($resType->getId())
+            {
+                case FILE :
+                    $my_res = $this->resourceManager->getResourceFromNode($element);
+                    
+                    echo 'Le fichier : '. $element->getName() . "<br/>";
+                    echo 'Add to the Archive' . "<br/>";
+                    $archive->addFile('../files/'.$my_res->getHashName());
+                    break;
+                case TEXT :
+                    echo 'Le fichier : '. $element->getName() . "<br/>";
+                    echo 'Work In Progress'. "<br/>";
+                    break;
+            }
         }
     }
 }

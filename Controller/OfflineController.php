@@ -113,4 +113,10 @@ class OfflineController extends Controller
         );
     }
 
+    /**
+    */
+    public function loadAction()
+    {
+        
+    }
 }

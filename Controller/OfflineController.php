@@ -30,7 +30,6 @@ class OfflineController extends Controller
      *     name="claro_sync"
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-     * @EXT\Template("ClarolineOfflineBundle:Offline:content.html.twig")
      * 
      * @param User $user
      *
@@ -38,10 +37,21 @@ class OfflineController extends Controller
      */
     public function helloAction(User $user)
     {
+        $em = $this->getDoctrine()->getManager();
+        $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+         
         $username = $user->getFirstName() . ' ' . $user->getLastName();
-        return array(
-            'user' => $username
-        );
+        
+        if ($userSynchroDate) {
+            return $this->render('ClarolineOfflineBundle:Offline:sync.html.twig', array(
+                'user' => $username,
+                'user_sync_date' => $userSynchroDate
+            ) );
+        }else{
+            return $this->render('ClarolineOfflineBundle:Offline:first_sync.html.twig', array(
+                'user' => $username
+            ) );
+        }
     }
     
     /**

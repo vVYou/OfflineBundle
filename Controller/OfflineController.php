@@ -15,6 +15,7 @@ use Claroline\CoreBundle\Repository;
 use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\ResourceNode;
+use \DateTime;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -123,8 +124,10 @@ class OfflineController extends Controller
                 $userRes = $em->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
                 if(count($userRes) >= 1)
                 {
-                    $obso = $this->checkObsolete($userRes, $user);  
+                    $obso = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
                     //Ajouter le resultat dans l'archive Zip
+                    //this->download_sync($obso, $archive); ou qqch comme ça.
+                    //echo "<br/>".count($obso)."<br/>";
                 }
             }
         }             
@@ -152,18 +155,44 @@ class OfflineController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
         $dateSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $user_tmp = $dateSync[0]->getLastSynchronization();
+        $date_user = $user_tmp->getTimestamp();
+        $new_res = array();
         
         foreach($userRes as $resource)
         {
             echo 'La date de mon cours :';
             echo $resource->getModificationDate()->format('Y-m-d') . "<br/>";
-            $interval = date_diff($
+            $res_tmp = $resource->getModificationDate();
+            $date_res = $res_tmp->getTimestamp();
+            $interval = $date_res - $date_user;
+            
+            if($interval > 0)
+            {
+                echo 'Name file : ';
+                echo $resource->getName() . "<br/>";
+                echo 'This file has been modified' . "<br/>";
+                $new_res[] = $resource;
+            }
+            
+            else
+            {
+                echo 'Name file : ';
+                echo $resource->getName() . "<br/>";
+                echo 'File not modified' . "<br/>";
+            }
             
         }
                 
         echo 'Ma date à moi :';
         echo $dateSync[0]->getLastSynchronization()->format('Y-m-d') . "<br/>";
-        return 1;
+        return $resource;
+        
+    }
+    
+    private function download_sync(array $obso, ZipArchive $archive)
+    {
+    
     }
  
   

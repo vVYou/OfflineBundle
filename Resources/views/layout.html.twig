@@ -2,10 +2,6 @@
 
 {% set layout = "ClarolineCoreBundle::layout.html.twig" %}
 
-{% if isDesktop() %}
-    {% set layout = "ClarolineCoreBundle:Desktop:layout.html.twig" %}
-{% endif %}
-
 {% extends layout %}
 
 {% block title %}{% endblock %}

@@ -5,12 +5,7 @@
 {% extends layout%}
 
 {%block sync%}
-<p>{{ 'last_sync'|trans({}, 'offline') }} 
-{% for date in user_sync_date %}
-    {%for field in date%}
-        {{field | date('d/m/Y') }}
-    {% endfor %}
-{% endfor %}<br/>
+<p>{{ 'last_sync'|trans({}, 'offline') }} {{user_sync_date | date('d/m/Y') }}<br/>
 {{ 'update'|trans({}, 'offline') }}
 </p>
 {%endblock%}

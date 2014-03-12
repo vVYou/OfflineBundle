@@ -150,6 +150,7 @@ class Manager
 </manifest>');
         fclose($manifest);
         $archive->addFile($manifest_name);
+       // unlink($manifest_name);
         
         $archive->close();
         return $archive;

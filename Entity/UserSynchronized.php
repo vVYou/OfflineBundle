@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Claroline\OfflineBundle\Entity;
 
 use Symfony\Bridge\Doctrine\Validator\Constraints as DoctrineAssert;

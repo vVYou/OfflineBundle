@@ -97,19 +97,20 @@ class Manager
      public function createSyncZip(User $user)
     {
         $archive = new ZipArchive(); 
+        $syncTime = time();
         
         $userRes = array();
         $typeList = array('file', 'text'); // ! PAS OPTIMAL !
         $typeArray = $this->buildTypeArray($typeList);
         $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
 
-        $manifest_name = 'manifest_'.time().'.xml';
+        $manifest_name = 'manifest_'.$syncTime.'.xml';
         $manifest = fopen($manifest_name, 'w');
         fputs($manifest,'<manifest>');
-        fputs($manifest, $this->writeManifestDescription($user));
+        fputs($manifest, $this->writeManifestDescription($user, $syncTime));
         //echo get_resource_type($manifest).'<br/>';
  
-        if($archive->open('archive.zip', ZipArchive::CREATE) === true)
+        if($archive->open('archive_'.$syncTime.'.zip', ZipArchive::CREATE) === true)
         {
         fputs($manifest,'
     <plateform>');
@@ -239,19 +240,18 @@ class Manager
         return $workspace_resources;
     }
     
-   
-    private function writeManifestDescription(User $user)
+    private function writeManifestDescription(User $user, $syncTime)
     {
         $dateSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
         $user_tmp = $dateSync[0]->getLastSynchronization(); 
         $sync_timestamp = $user_tmp->getTimestamp();
             
-        $current_time = time();
+        //$current_time = time();
         //$current_timestamp = $current_time->getTimestamp();
         
         $description = '
     <description>
-        <creation_date>'.$current_time.'</creation_date>
+        <creation_date>'.$syncTime.'</creation_date>
         <reference_date>'.$sync_timestamp.'</reference_date>
         <user>'.$user->getUsername().'</user>
         <user_id>'.$user->getId().'</user_id>

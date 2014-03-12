@@ -1,8 +1,8 @@
 first_sync: Votre compte n'est pas encore synchronise. Pour se faire, veuillez cliquer sur le lien ci-dessous et suivre la suite des instructions.
 hello: Bonjour
-last_sync: Vous vous êtes synchronisé la dernière fois le
-update: Si vous souhaitez mettre à jour votre plateforme, veuillez cliquer sur le lien si dessous et suivez les instructions.
-offline_mode: Mode déconnecté
-offline_presentation: Vous pouvez télécharger Claroline sur votre ordinateur pour y avoir accès lorsque vous ne pouvez pas vous connecter à internet. Une fois Claroline installé sur votre machine vous devrez synchroniser votre machine pour partager votre travail et obtenir les mises à jours de vos espaces d'activités.
+last_sync: Vous vous etes synchronisea derniere fois le
+update: Si vous souhaitez mettre a jour votre plateforme, veuillez cliquer sur le lien si dessous et suivez les instructions.
+offline_mode: Mode deconnecte
+offline_presentation: Vous pouvez teleharger Claroline sur votre ordinateur pour y avoir acces lorsque vous ne pouvez pas vous connecter a internet. Une fois Claroline installe sur votre machine vous devrez synchroniser votre machine pour partager votre travail et obtenir les mises a jours de vos espaces d'activites.
 sync_confirmation: Voulez-vous synchroniser ?
 sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?

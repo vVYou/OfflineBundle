@@ -221,7 +221,10 @@ class Manager
                     
                     echo 'Le fichier : '. $element->getName() . "<br/>";
                     echo 'Add to the Archive' . "<br/>";
+                    $workspace = $element->getWorkspace();
+                    $workspace_id = $workspace->getId();
                     $archive->addFile('../files/'.$my_res->getHashName());
+                    $archive->renameName('../files/'.$my_res->getHashName(), 'data/'.$workspace_id.'/files/'.$my_res->getHashName());
                     $workspace_resources = $workspace_resources.'
             <resource type="file" />';
                     break;

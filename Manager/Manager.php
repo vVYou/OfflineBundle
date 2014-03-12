@@ -149,10 +149,11 @@ class Manager
         fputs($manifest,'
 </manifest>');
         fclose($manifest);
-        $archive->addFile($manifest_name);
-       // unlink($manifest_name);
         
+        $archive->addFile($manifest_name);
         $archive->close();
+        
+        unlink($manifest_name);
         return $archive;
     }
     

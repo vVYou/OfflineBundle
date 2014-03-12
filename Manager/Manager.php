@@ -101,27 +101,39 @@ class Manager
         $userRes = array();
         $typeList = array('file', 'text'); // ! PAS OPTIMAL !
         $typeArray = $this->buildTypeArray($typeList);
-        $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);          
+        $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
+
+        $manifest = fopen('manifest_'.time().'.xml', 'w');
+        fputs($manifest,'<manifest>');
+        fputs($manifest, $this->writeManifestDescription($user));
+        //echo get_resource_type($manifest).'<br/>';
  
         if($archive->open('archive.zip', ZipArchive::CREATE) === true)
         {
+        fputs($manifest,'
+    <plateform>');
             foreach($userWS as $element)
             {
+                fputs($manifest, '
+        <workspace id="'.$element->getId().'">');
                 foreach($typeArray as $resType)
                 {
-                    $obso = array();
+                    $ressourcesToSync = array();
                     //$em_res = $this->getDoctrine()->getManager();
                     $userRes = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
                     if(count($userRes) >= 1)
                     {
-                        $obso[] = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
-                        //echo get_class($obso);//Ajouter le resultat dans l'archive Zip
-                        $this->add_archive($obso, $archive, $resType);
-                        //echo "<br/>".count($obso)."<br/>";
+                        $ressourcesToSync[] = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
+                        //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
+                        fputs($manifest, $this->add_archive($ressourcesToSync, $archive, $resType));
+                        //echo "<br/>".count($ressourcesToSync)."<br/>";
                     }
                 }
-            }             
-            
+                fputs($manifest, '
+        </workspace>');
+            }
+        fputs($manifest,'
+    </plateform>');
            
             /*return array(
                 'user_courses' => $userWS,
@@ -133,6 +145,11 @@ class Manager
             //TODO REPLACE BY EXCEPTION
             echo 'Impossible to open the zip file';
         }
+        fputs($manifest,'
+</manifest>');
+        fclose($manifest);
+        //$archive->addFile($manifest);
+        
         $archive->close();
         return $archive;
     }
@@ -191,6 +208,7 @@ class Manager
      
     private function add_archive(array $obso, ZipArchive $archive, ResourceType $resType)
     {
+        $workspace_resources = '';
         foreach($obso as $element)
         {
             switch($resType->getId())
@@ -201,12 +219,38 @@ class Manager
                     echo 'Le fichier : '. $element->getName() . "<br/>";
                     echo 'Add to the Archive' . "<br/>";
                     $archive->addFile('../files/'.$my_res->getHashName());
+                    $workspace_resources = $workspace_resources.'
+            <resource type="file" />';
                     break;
                 case TEXT :
                     echo 'Le fichier : '. $element->getName() . "<br/>";
                     echo 'Work In Progress'. "<br/>";
+                    $workspace_resources = $workspace_resources.'
+            <resource type="text" />';
                     break;
             }
         }
+        return $workspace_resources;
+    }
+    
+   
+    private function writeManifestDescription(User $user)
+    {
+        $dateSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $user_tmp = $dateSync[0]->getLastSynchronization(); 
+        $sync_timestamp = $user_tmp->getTimestamp();
+            
+        $current_time = time();
+        //$current_timestamp = $current_time->getTimestamp();
+        
+        $description = '
+    <description>
+        <creation_date>'.$current_time.'</creation_date>
+        <reference_date>'.$sync_timestamp.'</reference_date>
+        <user>'.$user->getUsername().'</user>
+        <user_id>'.$user->getId().'</user_id>
+    </description>
+        ';
+        return $description;
     }
 }

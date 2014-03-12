@@ -40,13 +40,14 @@ class OfflineController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
         $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        //Pourquoi n'a-t-on plus la date dans la vue ???
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         
         if ($userSynchroDate) {
             return $this->render('ClarolineOfflineBundle:Offline:sync.html.twig', array(
                 'user' => $username,
-                'user_sync_date' => $userSynchroDate
+                'user_sync_date' => $userSynchroDate[0]->getLastSynchronization()
             ) );
         }else{
             return $this->render('ClarolineOfflineBundle:Offline:first_sync.html.twig', array(
@@ -113,4 +114,10 @@ class OfflineController extends Controller
         );
     }
 
+    /**
+    */
+    public function loadAction()
+    {
+        
+    }
 }

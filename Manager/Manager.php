@@ -104,16 +104,18 @@ class Manager
         $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
 
         $manifest = fopen('manifest_'.time().'.xml', 'w');
+        fputs($manifest,'<manifest>');
         fputs($manifest, $this->writeManifestDescription($user));
         //echo get_resource_type($manifest).'<br/>';
-        fputs($manifest,'<manifest>');
  
         if($archive->open('archive.zip', ZipArchive::CREATE) === true)
         {
+        fputs($manifest,'
+    <plateform>');
             foreach($userWS as $element)
             {
                 fputs($manifest, '
-    <workspace id="'.$element->getId().'">');
+        <workspace id="'.$element->getId().'">');
                 foreach($typeArray as $resType)
                 {
                     $ressourcesToSync = array();
@@ -128,8 +130,10 @@ class Manager
                     }
                 }
                 fputs($manifest, '
-    </workspace>');
+        </workspace>');
             }
+        fputs($manifest,'
+    </plateform>');
            
             /*return array(
                 'user_courses' => $userWS,
@@ -216,13 +220,13 @@ class Manager
                     echo 'Add to the Archive' . "<br/>";
                     $archive->addFile('../files/'.$my_res->getHashName());
                     $workspace_resources = $workspace_resources.'
-        <resources type="file" />';
+            <resource type="file" />';
                     break;
                 case TEXT :
                     echo 'Le fichier : '. $element->getName() . "<br/>";
                     echo 'Work In Progress'. "<br/>";
                     $workspace_resources = $workspace_resources.'
-        <resources type="text" />';
+            <resource type="text" />';
                     break;
             }
         }

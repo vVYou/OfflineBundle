@@ -103,7 +103,8 @@ class Manager
         $typeArray = $this->buildTypeArray($typeList);
         $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
 
-        $manifest = fopen('manifest_'.time().'.xml', 'w');
+        $manifest_name = 'manifest_'.time();
+        $manifest = fopen($manifest_name.'.xml', 'w');
         fputs($manifest,'<manifest>');
         fputs($manifest, $this->writeManifestDescription($user));
         //echo get_resource_type($manifest).'<br/>';
@@ -148,7 +149,7 @@ class Manager
         fputs($manifest,'
 </manifest>');
         fclose($manifest);
-        //$archive->addFile($manifest);
+        $archive->addFile($manifest_name);
         
         $archive->close();
         return $archive;

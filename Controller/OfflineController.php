@@ -60,12 +60,12 @@ class OfflineController extends Controller
     *   Create userSyncrhonized entity
     *   
     *   @EXT\Route(
-    *       "/sync/magique",
-    *       name="claro_sync_user"
+    *       "/sync/load",
+    *       name="claro_sync_load"
     *   )
     *
     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-    * @EXT\Template("ClarolineOfflineBundle:Offline:zip.html.twig")
+    * @EXT\Template("ClarolineOfflineBundle:Offline:load.html.twig")
     *
     * @param User $user
     * @return Reponse
@@ -77,17 +77,16 @@ class OfflineController extends Controller
         //$em = $this->getDoctrine()->getManager();
         //$userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
          
-        $zip = $this->get('claroline.manager.synchronize_manager')->createSyncZip($user);
+        $zip = $this->get('claroline.manager.loading_manager')->loadXML('manifest_2.xml');
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         return array(
-            'user' => $username,
-        //    'user_sync_date' => $userSynchro
-            'zip' => $zip
+            'user' => $username
          );
     }
     
-        /**
+
+    /**
     *   Seek and show all the modified courses and ressources
     *   
     *   @EXT\Route(

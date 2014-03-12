@@ -55,14 +55,14 @@ class LoadingManager
     }
     
     /**
-     * Create a the archive based on the user     
-     * Attention, if the archive file created is empty, it will not write zip file on disk !
+     * This method will load and parse the manifest XML file
      *
-     * @param \Claroline\CoreBundle\Entity\User $user
      *
      */
-    public function loadXML(string $xmlFilePath){
-        $xml_document = new DOMDocument($xmlFilePath);
-        return 0;
+    public function loadXML( $xmlFilePath){
+        $xml_document = new DOMDocument();
+        $xml_document->load($xmlFilePath);
+        
+        
     }
 }

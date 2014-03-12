@@ -107,7 +107,7 @@ class Manager
         $manifest_name = 'manifest_'.$syncTime.'.xml';
         $manifest = fopen($manifest_name, 'w');
         fputs($manifest,'<manifest>');
-        fputs($manifest, $this->writeManifestDescription($user, $syncTime));
+        $this->writeManifestDescription($manifest, $user, $syncTime);
         //echo get_resource_type($manifest).'<br/>';
  
         if($archive->open('archive_'.$syncTime.'.zip', ZipArchive::CREATE) === true)
@@ -127,7 +127,7 @@ class Manager
                     {
                         $ressourcesToSync[] = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
                         //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
-                        fputs($manifest, $this->add_archive($ressourcesToSync, $archive, $resType));
+                        $this->addResourcesToArchive($ressourcesToSync, $archive, $manifest);
                         //echo "<br/>".count($ressourcesToSync)."<br/>";
                     }
                 }
@@ -195,52 +195,54 @@ class Manager
             }
             
         }
-                
         //echo 'Ma date à moi :';
         //echo $dateSync[0]->getLastSynchronization()->format('Y-m-d') . "<br/>";
         return $resource;
         
     }
     
+    
     /**
      * Create a the archive based on the user     
      * Attention, if the archive file created is empty, it will not write zip file on disk !
      *
-     * @param \Claroline\CoreBundle\Entity\Resource\ResourceType $resType
-     *
      */
-     
-    private function add_archive(array $obso, ZipArchive $archive, ResourceType $resType)
+    private function addResourcesToArchive(array $resToAdd, ZipArchive $archive, $manifest)
     {
-        $workspace_resources = '';
-        foreach($obso as $element)
+        foreach($resToAdd as $element)
         {
-            switch($resType->getId())
-            {
-                case FILE :
-                    $my_res = $this->resourceManager->getResourceFromNode($element);
-                    
-                    echo 'Le fichier : '. $element->getName() . "<br/>";
-                    echo 'Add to the Archive' . "<br/>";
-                    $workspace = $element->getWorkspace();
-                    $workspace_id = $workspace->getId();
-                    $archive->addFile('../files/'.$my_res->getHashName());
-                    $archive->renameName('../files/'.$my_res->getHashName(), 'data/'.$workspace_id.'/files/'.$my_res->getHashName());
-                    $workspace_resources = $workspace_resources.'
-            <resource type="file" />';
-                    break;
-                case TEXT :
-                    echo 'Le fichier : '. $element->getName() . "<br/>";
-                    echo 'Work In Progress'. "<br/>";
-                    $workspace_resources = $workspace_resources.'
-            <resource type="text" />';
-                    break;
-            }
+            $this->addResourceToManifest($manifest, $element);
+            $this->addResourceToZip($archive, $element);
         }
-        return $workspace_resources;
     }
     
-    private function writeManifestDescription(User $user, $syncTime)
+    private function addResourceToZip(ZipArchive $archive, $resToAdd)
+    {
+        switch($resToAdd->getResourceType()->getId())
+        {
+            case FILE :
+                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
+                echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
+                echo 'Add to the Archive' . "<br/>";
+                $workspace_id = $resToAdd->getWorkspace()->getId();
+                $archive->addFile('../files/'.$my_res->getHashName());
+                $archive->renameName('../files/'.$my_res->getHashName(), 'data/'.$workspace_id.'/files/'.$my_res->getHashName());
+                break;
+            case TEXT :
+                echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
+                echo 'Work In Progress'. "<br/>";
+                break;
+        }
+    }
+    
+    
+    private function addResourceToManifest($manifest, $resToAdd)
+    {
+        fputs($manifest,  '
+            <resource type="'.$resToAdd->getResourceType()->getId().'" />');
+    }    
+    
+    private function writeManifestDescription($manifest, User $user, $syncTime)
     {
         $dateSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
         $user_tmp = $dateSync[0]->getLastSynchronization(); 
@@ -249,14 +251,13 @@ class Manager
         //$current_time = time();
         //$current_timestamp = $current_time->getTimestamp();
         
-        $description = '
+        fputs($manifest ,'
     <description>
         <creation_date>'.$syncTime.'</creation_date>
         <reference_date>'.$sync_timestamp.'</reference_date>
         <user>'.$user->getUsername().'</user>
         <user_id>'.$user->getId().'</user_id>
     </description>
-        ';
-        return $description;
+        ');
     }
 }

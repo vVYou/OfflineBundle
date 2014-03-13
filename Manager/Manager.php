@@ -118,8 +118,7 @@ class Manager
     //TODO EXTRACT this part in another method, decoupe plus propre !
             foreach($userWS as $element)
             {
-                fputs($manifest, '
-        <workspace id="'.$element->getId().'">');
+                $this->addWorkspaceToManifest($manifest, $element);
                 foreach($typeArray as $resType)
                 {
                     $ressourcesToSync = array();
@@ -241,14 +240,28 @@ class Manager
     private function addResourceToManifest($manifest, $resToAdd)
     {
         fputs($manifest,  '
-            <resource type="'.$resToAdd->getResourceType()->getId().'" />');
+            <resource type="'.$resToAdd->getResourceType()->getId().'" />
+        ');
     }    
+    
+    private function addWorkspaceToManifest($manifest, $workspace)
+    {
+        fputs($manifest,  '
+        <workspace type="'.get_class($workspace).'" />
+        <workspace name="'.$workspace->getName().'" />
+        <workspace code="'.$workspace->getCode().'" />
+        <workspace displayable="'.$workspace->isDisplayable().'" />
+        <workspace selfregistration="'.$workspace->getSelfRegistration().'" />
+        <workspace selfunregistration="'.$workspace->getSelfUnregistration().'" />
+        ');
+    }
     
     private function writeManifestDescription($manifest, User $user, $syncTime)
     {
         $dateSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
         $user_tmp = $dateSync[0]->getLastSynchronization(); 
         $sync_timestamp = $user_tmp->getTimestamp();
+        
             
         //$current_time = time();
         //$current_timestamp = $current_time->getTimestamp();

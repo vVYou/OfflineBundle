@@ -114,6 +114,8 @@ class Manager
         {
         fputs($manifest,'
     <plateform>');
+    
+    //TODO EXTRACT this part in another method, decoupe plus propre !
             foreach($userWS as $element)
             {
                 fputs($manifest, '

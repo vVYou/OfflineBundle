@@ -22,6 +22,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use \ZipArchive;
 use \DOMDocument;
+use \DOMElement;
 
 /**
  * @DI\Service("claroline.manager.loading_manager")
@@ -59,10 +60,63 @@ class LoadingManager
      *
      *
      */
-    public function loadXML( $xmlFilePath){
-        $xml_document = new DOMDocument();
-        $xml_document->load($xmlFilePath);
+    public function loadXML($xmlFilePath){
+        $xmlDocument = new DOMDocument();
+        $xmlDocument->load($xmlFilePath);
         
+        /*
+        *   getElementsByTagName renvoit un NodeList
+        *   Sur un NodeList on peut faire ->length et ->item($i) qui retourne un NodeItem
+        *   sur un NodeItem on peut faire 
+                ->nodeName
+                ->nodeValue
+                ->childNodes qui renvoit lui meme un NodeList. la boucle est bouclée
+        */
+        $this->importDescription($xmlDocument->getElementsByTagName('description'));
+        $this->importPlateform($xmlDocument->getElementsByTagName('plateform'));
         
+        /*
+        echo $descriptionNodeList->item(0)->nodeName.'<br/>';
+        
+        for ($i = 0; $i < $descriptionNodeList->length; $i++) {
+            echo 'i='.$i.'  '.$descriptionNodeList->item($i)->nodeValue. "<br/>";
+            echo $descriptionNodeList->item(0)->childNodes->item(0)->nodeValue;
+            
+         $enfants = $descriptionNodeList->childNodes;
+            foreach($enfants as $child){
+            echo $child->item(0)->nodeName.'<br/>';
+        }
+        }*/
+       // $this->importDescription($descriptionNodeListitem(0)->getChildren());
+       // $this->importDescription($descriptionNodeListitem(0)->getChildren());
+        
+    }
+    
+    private function importDescription($documentDescription)
+    {
+        $descriptionChilds = $documentDescription->item(0)->childNodes;
+        for($i = 0; $i<$descriptionChilds->length ; $i++){
+            echo '$i : '.$i.' '.$descriptionChilds->item($i)->nodeName.' '.$descriptionChilds->item($i)->nodeValue.'<br/>' ;
+            /*
+            *   ICI on peut controler / stocker les metadata du manfiest
+            */
+        }
+    }
+    
+    private function importPlateform($plateformDescription)
+    {
+        $plateformChilds = $plateformDescription->item(0)->childNodes;
+        for($i = 0; $i<$plateformChilds->length; $i++)
+        {
+            //CREER des constantes pour les fichier XML, ce sera plus propre que tout hardcode partout
+            if($plateformChilds->item($i)->nodeName == 'workspace'){
+                $this->importWorkspace($plateformChilds->item($i)->childNodes);
+            }
+        }
+    }
+    
+    private function importWorkspace($workspaceChilds)
+    {
+    
     }
 }

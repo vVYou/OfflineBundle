@@ -3,7 +3,7 @@
     "description": "Sync bundle for Claroline 2.0",
     "license": "GPL-3.0+",
     "require": {
-        "claroline/core-bundle": "~2.9"
+        "claroline/core-bundle": "~2.9",
         "claroline/migration-bundle": "dev-master"
     },
     "autoload": {

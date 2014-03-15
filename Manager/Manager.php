@@ -116,25 +116,7 @@ class Manager
     <plateform>');
     
     //TODO EXTRACT this part in another method, decoupe plus propre !
-            foreach($userWS as $element)
-            {
-                $this->addWorkspaceToManifest($manifest, $element);
-                foreach($typeArray as $resType)
-                {
-                    $ressourcesToSync = array();
-                    //$em_res = $this->getDoctrine()->getManager();
-                    $userRes = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
-                    if(count($userRes) >= 1)
-                    {
-                        $ressourcesToSync[] = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
-                        //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
-                        $this->addResourcesToArchive($ressourcesToSync, $archive, $manifest);
-                        //echo "<br/>".count($ressourcesToSync)."<br/>";
-                    }
-                }
-                fputs($manifest, '
-        </workspace>');
-            }
+           $this->fillSyncZip($userWS, $manifest, $typeArray, $user, $archive);
         fputs($manifest,'
     </plateform>');
            
@@ -170,7 +152,34 @@ class Manager
         return $typeArrayTmp;
     }
     
-        
+    private function fillSyncZip($userWS, $manifest, $typeArray, $user, $archive)
+    {
+        foreach($userWS as $element)
+        {
+            $this->addWorkspaceToManifest($manifest, $element);
+            foreach($typeArray as $resType)
+            {
+                $ressourcesToSync = array();
+                //$em_res = $this->getDoctrine()->getManager();
+                $userRes = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
+                if(count($userRes) >= 1)
+                {
+                    $ressourcesToSync[] = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
+                    //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
+                    $this->addResourcesToArchive($ressourcesToSync, $archive, $manifest);
+                    //echo "<br/>".count($ressourcesToSync)."<br/>";
+                }
+            }
+            fputs($manifest, '
+        </workspace>');
+        }
+    }
+    
+    /*
+    *   Filter all the resources based on the user's last synchronization and
+    *   check which one need to be sent.
+    */
+    
     private function checkObsolete(array $userRes, User $user)
     {
         //$em = $this->getDoctrine()->getManager();
@@ -236,6 +245,9 @@ class Manager
         }
     }
     
+    /*
+    *   Here figure all methods used to manipulate the xml file.
+    */
     
     private function addResourceToManifest($manifest, $resToAdd)
     {

@@ -87,8 +87,6 @@ class LoadingManager
             echo $child->item(0)->nodeName.'<br/>';
         }
         }*/
-       // $this->importDescription($descriptionNodeListitem(0)->getChildren());
-       // $this->importDescription($descriptionNodeListitem(0)->getChildren());
         
     }
     
@@ -103,20 +101,29 @@ class LoadingManager
         }
     }
     
-    private function importPlateform($plateformDescription)
+    private function importPlateform($plateform)
     {
-        $plateformChilds = $plateformDescription->item(0)->childNodes;
+        $plateformChilds = $plateform->item(0)->childNodes;
         for($i = 0; $i<$plateformChilds->length; $i++)
         {
-            //CREER des constantes pour les fichier XML, ce sera plus propre que tout hardcode partout
+            //TODO CREER des constantes pour les fichier XML, ce sera plus propre que tout hardcode partout
             if($plateformChilds->item($i)->nodeName == 'workspace'){
+                echo '      '.$plateformChilds->item($i)->nodeName.'<br/>';
                 $this->importWorkspace($plateformChilds->item($i)->childNodes);
             }
         }
     }
     
-    private function importWorkspace($workspaceChilds)
+    /**
+    * Recupere un NodeList contenant les ressources  d'un workspace
+    * Chaque ressource de cette NodeList devra donc être importee dans Claroline
+    */
+    private function importWorkspace($resourceList)
     {
-    
+        for($i=0; $i<$resourceList; $i++)
+        {
+            $res = $resourceList->item($i);
+            echo '          '.$res->nodeName.'<br/>';
+        }
     }
 }

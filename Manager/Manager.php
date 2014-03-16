@@ -117,7 +117,6 @@ class Manager
         fputs($manifest,'
     <plateform>');
     
-    //TODO EXTRACT this part in another method, decoupe plus propre !
            $this->fillSyncZip($userWS, $manifest, $typeArray, $user, $archive);
         fputs($manifest,'
     </plateform>');
@@ -129,7 +128,6 @@ class Manager
         }
         else
         {
-            //TODO REPLACE BY EXCEPTION
             //echo 'Impossible to open the zip file';
             throw new \Exception('Impossible to open the zip file');
         }
@@ -183,7 +181,6 @@ class Manager
     *   Filter all the resources based on the user's last synchronization and
     *   check which one need to be sent.
     */
-    
     private function checkObsolete(array $userRes, User $user)
     {
         //$em = $this->getDoctrine()->getManager();
@@ -205,7 +202,6 @@ class Manager
             
             if($interval > 0)
             {
-                //echo
                 //echo 'Name file : ';
                 //echo $resource->getName() . "<br/>";
                 //echo 'This file has been modified' . "<br/>";
@@ -283,7 +279,6 @@ class Manager
     *  le type, le user, le workspace, les parents, l'icon et les droits.
     *  - si on utilise INSERT de php il nous faut également tout les champs.
     */
-    
         fputs($manifest,  '
             <resource type="'.$resToAdd->getResourceType()->getId().'" />');
     }    

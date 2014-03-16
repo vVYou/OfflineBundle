@@ -279,7 +279,7 @@ class Manager
     *  le type, le user, le workspace, les parents, l'icon et les droits.
     *  - si on utilise INSERT de php il nous faut également tout les champs.
     */
-        fputs($manifest,  '
+        fputs($manifest, '
             <resource type="'.$resToAdd->getResourceType()->getId().'" />');
     }    
     
@@ -292,7 +292,8 @@ class Manager
         code="'.$workspace->getCode().'"
         displayable="'.$workspace->isDisplayable().'"
         selfregistration="'.$workspace->getSelfRegistration().'"
-        selfunregistration="'.$workspace->getSelfUnregistration().'" />
+        selfunregistration="'.$workspace->getSelfUnregistration().'"
+        guid="'.$workspace->getGuid().'">
         ');
     }
     

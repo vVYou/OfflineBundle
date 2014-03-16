@@ -20,6 +20,8 @@ use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
+use Claroline\CoreBundle\Manager\WorkspaceManager;
+use Claroline\CoreBundle\Manager\ResourceManager;
 use \ZipArchive;
 use \DOMDocument;
 use \DOMElement;
@@ -33,6 +35,7 @@ class LoadingManager
     private $pagerFactory;
     private $translator;
     private $userSynchronizedRepo;
+    private $resourceManager;
 
     /**
      * Constructor.
@@ -40,19 +43,25 @@ class LoadingManager
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
-     *     "translator"     = @DI\Inject("translator")
+     *     "translator"     = @DI\Inject("translator"),
+     *     "wsManager"      = @DI\Inject("claroline.manager.workspace_manager"),
+     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager")
      * })
      */
     public function __construct(
         ObjectManager $om,
         PagerFactory $pagerFactory,
-        TranslatorInterface $translator
+        TranslatorInterface $translator,
+        WorkspaceManager $wsManager,
+        ResourceManager $resourceManager
     )
     {
         $this->om = $om;
         $this->pagerFactory = $pagerFactory;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->translator = $translator;
+        $this->wsManager = $wsManager;
+        $this->resourceManager = $resourceManager;
     }
     
     /**
@@ -98,7 +107,12 @@ class LoadingManager
             /*
             *   ICI on peut controler / stocker les metadata du manfiest
             */
+            if($descriptionChilds->item($i)->nodeName == 'user_id')
+            {
+                //$this->user = $descriptionChilds->item($i)->nodeValue;
+            }
         }
+        //echo $this->user;
     }
     
     private function importPlateform($plateform)
@@ -108,10 +122,42 @@ class LoadingManager
         {
             //TODO CREER des constantes pour les fichier XML, ce sera plus propre que tout hardcode partout
             if($plateformChilds->item($i)->nodeName == 'workspace'){
-                echo '      '.$plateformChilds->item($i)->nodeName.'<br/>';
-                $this->importWorkspace($plateformChilds->item($i)->childNodes);
+                $workspace = $plateformChilds->item($i);
+                $work_id = $workspace->getAttribute('id');              
+                echo $work_id.'<br/>';
+                
+                /*
+                *   On recupere les differents arguments necessaire pour construire le workspace 
+                *   si besoin (cad qu'il n'existe aucun workspace avec un code similaire).
+                *
+                *   - if workspace_code do not exist then create the workspace
+                *       
+                *   - proceed to the ressources (no matter if we have to create the workspace previously
+                */
+                
+                
+                $this->importWorkspace($workspace->childNodes);
             }
         }
+    }
+    
+    private function createWorkspace($workspace)
+    {
+        $ds = DIRECTORY_SEPARATOR;
+        $type = $workspace->getAttribute('type') == "Claroline\CoreBundle\Entity\Workspace\SimpleWorkspace" ?
+            Configuration::TYPE_SIMPLE :
+            Configuration::TYPE_AGGREGATOR;
+        $config = Configuration::fromTemplate(
+            $this->templateDir . $ds . $workspace->getAttribute('type')
+        );
+        $config->setWorkspaceType($type);
+        $config->setWorkspaceName($workspace->getAttribute('name'));
+        $config->setWorkspaceCode($workspace->getAttribute('code'));
+        $config->setDisplayable($$workspace->getAttribute('displayable'));
+        $config->setSelfRegistration($workspace->getAttribute('selfregistration'));
+        $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
+        //$user = $this->security->getToken()->getUser();
+        $this->wsManager->create($config, $user);
     }
     
     /**
@@ -120,10 +166,12 @@ class LoadingManager
     */
     private function importWorkspace($resourceList)
     {
-        for($i=0; $i<$resourceList; $i++)
+        for($i=0; $i<$resourceList->length; $i++)
         {
             $res = $resourceList->item($i);
-            echo '          '.$res->nodeName.'<br/>';
+            echo 'Workspace :          '.$res->nodeName.'<br/>';
+            //echo 'Attribute : '.$res->getAttribute('type').'<br/>';
+            
         }
     }
 }

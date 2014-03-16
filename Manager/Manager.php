@@ -32,7 +32,9 @@ use \DateTime;
  */
  
 CONST FILE = 1;
+CONST DIR = 2;
 CONST TEXT = 3;
+CONST FORUM = 9;
 
 class Manager
 {
@@ -128,7 +130,8 @@ class Manager
         else
         {
             //TODO REPLACE BY EXCEPTION
-            echo 'Impossible to open the zip file';
+            //echo 'Impossible to open the zip file';
+            throw new \Exception('Impossible to open the zip file');
         }
         fputs($manifest,'
 </manifest>');
@@ -164,9 +167,10 @@ class Manager
                 $userRes = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
                 if(count($userRes) >= 1)
                 {
-                    $ressourcesToSync[] = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
+                    $path = '';
+                    $ressourcesToSync = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
                     //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
-                    $this->addResourcesToArchive($ressourcesToSync, $archive, $manifest);
+                    $this->addResourcesToArchive($ressourcesToSync, $archive, $manifest, $user, $path.$element->getId());
                     //echo "<br/>".count($ressourcesToSync)."<br/>";
                 }
             }
@@ -195,9 +199,13 @@ class Manager
             $res_tmp = $resource->getModificationDate();
             $date_res = $res_tmp->getTimestamp();
             $interval = $date_res - $date_user;
+            //echo $resource->getName() . "<br/>";
+            //echo $interval . "<br/>";
+            
             
             if($interval > 0)
             {
+                //echo
                 //echo 'Name file : ';
                 //echo $resource->getName() . "<br/>";
                 //echo 'This file has been modified' . "<br/>";
@@ -207,7 +215,7 @@ class Manager
         }
         //echo 'Ma date à moi :';
         //echo $dateSync[0]->getLastSynchronization()->format('Y-m-d') . "<br/>";
-        return $resource;
+        return $new_res;
         
     }
     
@@ -217,54 +225,79 @@ class Manager
      * Attention, if the archive file created is empty, it will not write zip file on disk !
      *
      */
-    private function addResourcesToArchive(array $resToAdd, ZipArchive $archive, $manifest)
+    private function addResourcesToArchive(array $resToAdd, ZipArchive $archive, $manifest, $user, $path)
     {
         foreach($resToAdd as $element)
         {
             $this->addResourceToManifest($manifest, $element);
-            $this->addResourceToZip($archive, $element);
+            $this->addResourceToZip($archive, $element, $user, $archive, $manifest, $path);
         }
     }
     
-    private function addResourceToZip(ZipArchive $archive, $resToAdd)
+    private function addResourceToZip(ZipArchive $archive, $resToAdd, $user, $archive, $manifest, $path)
     {
         switch($resToAdd->getResourceType()->getId())
         {
             case FILE :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
-                echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
-                echo 'Add to the Archive' . "<br/>";
-                $workspace_id = $resToAdd->getWorkspace()->getId();
-                $archive->addFile('../files/'.$my_res->getHashName());
-                $archive->renameName('../files/'.$my_res->getHashName(), 'data/'.$workspace_id.'/files/'.$my_res->getHashName());
+                //echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
+                //echo 'Add to the Archive' . "<br/>";
+                //$path = $path.$resToAdd->getWorkspace()->getId();
+                $archive->addFile('../files/'.$my_res->getHashName(), 'data/'.$path.'/files/'.$my_res->getHashName());
+                //$archive->renameName('../files/'.$my_res->getHashName(), 'data/'.$workspace_id.'/files/'.$my_res->getHashName());
+                break;
+            case DIR :
+                // TOREMOVE SI BUG! ATTENTION LES WORKSPACES SONT AUSSI DES DIRECTORY GARE AU DOUBLE CHECK
+                //$my_res = $this->resourceManager->getResourceFromNode($resToAdd);
+                //$this->resourceFromDir($resToAdd, $user, $archive, $manifest, $path);
                 break;
             case TEXT :
-                echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
-                echo 'Work In Progress'. "<br/>";
+                //echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
+                //echo 'Work In Progress'. "<br/>";
                 break;
         }
     }
     
+    //TOREMOVE SI BUG!
+    private function resourceFromDir($directory, $user, $archive, $manifest, $path) 
+    {
+        if($directory->getParent() != NULL)
+        {
+            $resource = $this->resourceManager->getAllChildren($directory, false);
+            $resource = $this->checkObsolete($resource, $user); 
+            $this->addResourcesToArchive($resource,  $archive, $manifest, $user, $path.'/'.$directory->getId());
+        }
+    }
     /*
     *   Here figure all methods used to manipulate the xml file.
     */
     
     private function addResourceToManifest($manifest, $resToAdd)
     {
+    
+    /* 
+    *  Les parametres requis vont dependre de la manière dont on veut creer la ressource.
+    *  - si on utilise createAction de ResourceController.php il nous faut le type de ressource, 
+    *  les parents et le user.
+    *  - si on utilise directement create de ResourceManager.php il nous faut la ressource en elle-même
+    *  le type, le user, le workspace, les parents, l'icon et les droits.
+    *  - si on utilise INSERT de php il nous faut également tout les champs.
+    */
+    
         fputs($manifest,  '
-            <resource type="'.$resToAdd->getResourceType()->getId().'" />
-        ');
+            <resource type="'.$resToAdd->getResourceType()->getId().'" />');
     }    
     
     private function addWorkspaceToManifest($manifest, $workspace)
     {
         fputs($manifest,  '
-        <workspace type="'.get_class($workspace).'" />
-        <workspace name="'.$workspace->getName().'" />
-        <workspace code="'.$workspace->getCode().'" />
-        <workspace displayable="'.$workspace->isDisplayable().'" />
-        <workspace selfregistration="'.$workspace->getSelfRegistration().'" />
-        <workspace selfunregistration="'.$workspace->getSelfUnregistration().'" />
+        <workspace id="'.$workspace->getId().'"
+        type="'.get_class($workspace).'"
+        name="'.$workspace->getName().'"
+        code="'.$workspace->getCode().'"
+        displayable="'.$workspace->isDisplayable().'"
+        selfregistration="'.$workspace->getSelfRegistration().'"
+        selfunregistration="'.$workspace->getSelfUnregistration().'" />
         ');
     }
     

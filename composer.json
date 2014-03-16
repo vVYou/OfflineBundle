@@ -2,9 +2,16 @@
     "name": "claroline/offline-bundle",
     "description": "Sync bundle for Claroline 2.0",
     "license": "GPL-3.0+",
+    "authors": [
+    {
+        "name": "Legena Pierre-Yves et Van Ouytsel Vincent",
+        "homepage": "https://github.com/vVYou/OfflineBundle"
+    }
+    ],
     "require": {
         "claroline/core-bundle": "~2.9",
-        "claroline/migration-bundle": "dev-master"
+        "claroline/migration-bundle": "dev-master",
+        "sensio/buzz-bundle": "~1.0.*",
     },
     "autoload": {
         "psr-0": { "Claroline\\OfflineBundle": "" }

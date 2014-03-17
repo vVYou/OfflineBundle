@@ -119,4 +119,28 @@ class OfflineController extends Controller
     {
         
     }
+    
+    /**
+    *  Transfer a file (sync archive) from a computer to another
+    *   
+    *   @EXT\Route(
+    *       "/sync/transfer",
+    *       name="claro_sync_transfer"
+    *   )
+    *
+    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:transfer.html.twig")
+    *
+    * @param User $user
+    * @return Reponse
+    */
+    public function transferAction(User $user)
+    {
+        $test = $this->get('claroline.manager.transfer_manager')->getSyncZip();
+        $username = $user->getFirstName() . ' ' . $user->getLastName(); 
+           
+        return array(
+            'user' => $username
+        );
+    }
 }

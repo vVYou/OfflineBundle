@@ -10,7 +10,7 @@
     ],
     "require": {
         "claroline/core-bundle": "~2.9",
-        "claroline/migration-bundle": "dev-master"
+        "sensio/buzz-bundle": "dev-master"
     },
     "autoload": {
         "psr-0": { "Claroline\\OfflineBundle": "" }

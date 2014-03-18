@@ -90,4 +90,22 @@ class UserSynchronizedRepository extends EntityRepository
 
         return $query->getResult();
     }
+    
+    /**
+     * Returns the resourceNode that corresponds to the workspace
+     * @return ResourceNode
+     */   
+    public function findResourceNodeByWorkspace($workspace)
+    {
+        $dql = '
+            SELECT r
+            FROM Claroline\CoreBundle\Entity\Resource\ResourceNode r
+            WHERE r.workspace = :workspace
+        ';
+
+        $query = $this->_em->createQuery($dql);
+        $query->setParameter('workspace', $workspace);
+
+        return $query->getResult();
+    }
 }

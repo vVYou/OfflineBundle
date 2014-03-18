@@ -282,11 +282,13 @@ class Manager
                     
                 
                 fputs($manifest, '
-                    <resource type="'.$resToAdd->getResourceType()->getId().'"
+                    <resource type="'.$resToAdd->getResourceType()->getName().'"
                     name="'.$resToAdd->getName().'"  
                     mimetype="'.$resToAdd->getMimeType().'"
+                    creator="'.$resToAdd->getCreator()->getId().'"
                     size="'.$my_res->getSize().'"
                     hashname="'.$my_res->getHashName().'">
+                    </resource>
                     ');
             case ResourceTypeConstant::DIR :
                 // TOREMOVE SI BUG! ATTENTION LES WORKSPACES SONT AUSSI DES DIRECTORY GARE AU DOUBLE CHECK

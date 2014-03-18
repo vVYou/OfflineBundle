@@ -16,6 +16,7 @@ use Doctrine\ORM\EntityRepository;
 //use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\CoreBundle\Entity\User;
+use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 //use Claroline\CoreBundle\Entity\Role;
 
 class UserSynchronizedRepository extends EntityRepository
@@ -52,5 +53,41 @@ class UserSynchronizedRepository extends EntityRepository
                 ':user_id'    => $user->getId()
             )
         );
+    }
+  
+    /**
+     * Returns the workspace with the given code
+     * @return AbstractWorkspace
+     */  
+    public function findByCode($code)
+    {
+        $dql = '
+            SELECT w
+            FROM Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace w
+            WHERE w.code = :code
+        ';
+
+        $query = $this->_em->createQuery($dql);
+        $query->setParameter('code', $code);
+
+        return $query->getResult();
+    }
+    
+    /**
+     * Returns the user with the given id
+     * @return User
+     */    
+    public function findById($id)
+    {
+        $dql = '
+            SELECT u
+            FROM Claroline\CoreBundle\Entity\User u
+            WHERE u.id = :id
+        ';
+
+        $query = $this->_em->createQuery($dql);
+        $query->setParameter('id', $id);
+
+        return $query->getResult();
     }
 }

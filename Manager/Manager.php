@@ -24,6 +24,7 @@ use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\Resource\ResourceType;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
+use Claroline\OfflineBundle\ResourceTypeConstant;
 use \ZipArchive;
 use \DateTime;
 
@@ -31,10 +32,10 @@ use \DateTime;
  * @DI\Service("claroline.manager.synchronize_manager")
  */
  
-CONST FILE = 1;
-CONST DIR = 2;
-CONST TEXT = 3;
-CONST FORUM = 9;
+//CONST FILE = 1;
+//CONST DIR = 2;
+//CONST TEXT = 3;
+//CONST FORUM = 9;
 
 class Manager
 {
@@ -234,7 +235,7 @@ class Manager
     {
         switch($resToAdd->getResourceType()->getId())
         {
-            case FILE :
+            case ResourceTypeConstant::FILE :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
                 //echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
                 //echo 'Add to the Archive' . "<br/>";
@@ -242,12 +243,12 @@ class Manager
                 $archive->addFile('../files/'.$my_res->getHashName(), 'data/'.$path.'/files/'.$my_res->getHashName());
                 //$archive->renameName('../files/'.$my_res->getHashName(), 'data/'.$workspace_id.'/files/'.$my_res->getHashName());
                 break;
-            case DIR :
+            case ResourceTypeConstant::DIR :
                 // TOREMOVE SI BUG! ATTENTION LES WORKSPACES SONT AUSSI DES DIRECTORY GARE AU DOUBLE CHECK
                 //$my_res = $this->resourceManager->getResourceFromNode($resToAdd);
                 //$this->resourceFromDir($resToAdd, $user, $archive, $manifest, $path);
                 break;
-            case TEXT :
+            case ResourceTypeConstant::TEXT :
                 //echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
                 //echo 'Work In Progress'. "<br/>";
                 break;
@@ -270,17 +271,33 @@ class Manager
     
     private function addResourceToManifest($manifest, $resToAdd)
     {
-    
-    /* 
-    *  Les parametres requis vont dependre de la manière dont on veut creer la ressource.
-    *  - si on utilise createAction de ResourceController.php il nous faut le type de ressource, 
-    *  les parents et le user.
-    *  - si on utilise directement create de ResourceManager.php il nous faut la ressource en elle-même
-    *  le type, le user, le workspace, les parents, l'icon et les droits.
-    *  - si on utilise INSERT de php il nous faut également tout les champs.
-    */
-        fputs($manifest, '
-            <resource type="'.$resToAdd->getResourceType()->getId().'" />');
+        $type = $resToAdd->getResourceType()->getId();
+        
+        switch($type)
+        {
+            case ResourceTypeConstant::FILE :
+                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
+                //fputs($manifest, '
+                //    <resource type="'.$resToAdd->getResourceType()->getId().'" />');
+                    
+                
+                fputs($manifest, '
+                    <resource type="'.$resToAdd->getResourceType()->getId().'"
+                    name="'.$resToAdd->getName().'"  
+                    mimetype="'.$resToAdd->getMimeType().'"
+                    size="'.$my_res->getSize().'"
+                    hashname="'.$my_res->getHashName().'">
+                    ');
+            case ResourceTypeConstant::DIR :
+                // TOREMOVE SI BUG! ATTENTION LES WORKSPACES SONT AUSSI DES DIRECTORY GARE AU DOUBLE CHECK
+                //$my_res = $this->resourceManager->getResourceFromNode($resToAdd);
+                //$this->resourceFromDir($resToAdd, $user, $archive, $manifest, $path);
+                break;
+            case ResourceTypeConstant::TEXT :
+                //echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
+                //echo 'Work In Progress'. "<br/>";
+                break;
+        }
     }    
     
     private function addWorkspaceToManifest($manifest, $workspace)

@@ -22,6 +22,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use Claroline\CoreBundle\Manager\WorkspaceManager;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Entity\Resource\File;
+use Claroline\OfflineBundle\ResourceTypeConstant;
 use \ZipArchive;
 use \DOMDocument;
 use \DOMElement;
@@ -29,6 +31,9 @@ use \DOMElement;
 /**
  * @DI\Service("claroline.manager.loading_manager")
  */
+ 
+//CONST FIL = 1;
+
 class LoadingManager
 {
     private $om;
@@ -117,47 +122,35 @@ class LoadingManager
     
     private function importPlateform($plateform)
     {
-        $plateformChilds = $plateform->item(0)->childNodes;
+        $plateformChilds = $plateform->item(0)->childNodes; // Platform childs = list of workspaces.
         for($i = 0; $i<$plateformChilds->length; $i++)
         {
+            $item = $plateformChilds->item($i);
             //TODO CREER des constantes pour les fichier XML, ce sera plus propre que tout hardcode partout
-            if($plateformChilds->item($i)->nodeName == 'workspace'){
-                $workspace = $plateformChilds->item($i);
-                $work_id = $workspace->getAttribute('id');              
-                echo $work_id.'<br/>';
+            if($item->nodeName == 'workspace')
+            {
+                $workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByCode($item->getAttribute('code'));
+
+                if(count($workspace) >= 1)
+                {
+                    echo 'I ve got my workspace! Yeah!'.'<br/>';
+                    echo 'Its name : '.$workspace[0]->getName().'<br/>';
+                }
                 
+                else
+                {
+                    echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
+                }
                 /*
-                *   On recupere les differents arguments necessaire pour construire le workspace 
-                *   si besoin (cad qu'il n'existe aucun workspace avec un code similaire).
-                *
                 *   - if workspace_code do not exist then create the workspace
                 *       
-                *   - proceed to the ressources (no matter if we have to create the workspace previously
+                *   - proceed to the ressources (no matter if we have to create the workspace previously)
                 */
                 
                 
-                $this->importWorkspace($workspace->childNodes);
+                $this->importWorkspace($item->childNodes);
             }
         }
-    }
-    
-    private function createWorkspace($workspace)
-    {
-        $ds = DIRECTORY_SEPARATOR;
-        $type = $workspace->getAttribute('type') == "Claroline\CoreBundle\Entity\Workspace\SimpleWorkspace" ?
-            Configuration::TYPE_SIMPLE :
-            Configuration::TYPE_AGGREGATOR;
-        $config = Configuration::fromTemplate(
-            $this->templateDir . $ds . $workspace->getAttribute('type')
-        );
-        $config->setWorkspaceType($type);
-        $config->setWorkspaceName($workspace->getAttribute('name'));
-        $config->setWorkspaceCode($workspace->getAttribute('code'));
-        $config->setDisplayable($$workspace->getAttribute('displayable'));
-        $config->setSelfRegistration($workspace->getAttribute('selfregistration'));
-        $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
-        //$user = $this->security->getToken()->getUser();
-        $this->wsManager->create($config, $user);
     }
     
     /**
@@ -166,12 +159,57 @@ class LoadingManager
     */
     private function importWorkspace($resourceList)
     {
+        
         for($i=0; $i<$resourceList->length; $i++)
-        {
+        {     
             $res = $resourceList->item($i);
-            echo 'Workspace :          '.$res->nodeName.'<br/>';
-            //echo 'Attribute : '.$res->getAttribute('type').'<br/>';
-            
+            if($res->nodeName == 'resource')
+            {
+                echo 'Workspace :          '.$res->nodeName.'<br/>';
+                echo 'Resource Type : '.$res->getAttribute('type').'<br/>';
+                /**
+                * TODO Check if the resource already exist. 
+                * If it does update it
+                * If it doesnt call the createResource method.
+                */
+                $this->createResource($res);
+            }
         }
     }
+    
+    private function createResource($resource)
+    {
+        $newResource;
+        $type = $resource->getAttribute('type');
+        // TODO Create a ressource based on his type. Then send the result to the create method of ResourceManager.
+        switch($type)
+        {
+            
+            case ResourceTypeConstant::FILE :
+                $newResource = new File();
+                $newResource->setSize($resource->getAttribute('size'));
+                $newResource->setHashName($resource->getAttribute('hashname'));
+                echo 'File is done!'.'<br/>';
+                break;
+           // case DIR :            
+            //    break;
+           // case TEXT :
+           //     break;
+            
+            
+        }
+        
+        // Element commun a toutes les ressources.
+        $newResource->setName($resource->getAttribute('name'));
+        $newResource->setMimeType($resource->getAttribute('mimetype'));
+        
+        //$this->resourceManager->create($newResource, $type, $user, $workspace, $parent, $icon);
+    }
+    
+    private function createWorkspace($workspace)
+    {
+        // TODO Create a workspace if no CODE was found in the DataBase.
+        // Use the create method from WorkspaceManager.
+    }
+    
 }

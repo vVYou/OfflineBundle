@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
@@ -26,7 +27,22 @@ use \ZipArchive;
  */
 class OfflineController extends Controller
 {
- /**
+    private $router;
+    
+    /**
+    * @DI\InjectParams({
+    *      "router" = @DI\Inject("router")
+    *   })
+    **/
+    public function _construct(
+        UrlGeneratorInterface $router
+    )
+    {
+        $this->router = $router;
+    }
+    
+    
+    /**
      * Get content by id
      *
      * @EXT\Route(
@@ -138,7 +154,7 @@ class OfflineController extends Controller
     */
     public function transferAction(User $user)
     {
-        $this->get('claroline.manager.transfer_manager')->getSyncZip();
+        $test = $this->get('claroline.manager.transfer_manager')->getSyncZip();
         $username = $user->getFirstName() . ' ' . $user->getLastName(); 
            
         return array(
@@ -150,7 +166,6 @@ class OfflineController extends Controller
     *   @EXT\Route(
     *       "/sync/getzip",
     *       name="claro_sync_get_zip",
-    *     options={"expose"=false}
     *   )
     
     *   @EXT\Method("GET")
@@ -158,16 +173,22 @@ class OfflineController extends Controller
     *   @return Response
     */
     public function getZipAction(){
-
+    
         //TODO verfier securite? => dans FileController il fait un checkAccess....
-        
-        $response = new StreamedResponse();
-        
-        $response->setCallBack(
-            function () use ($zip) {
-                readfile('archive_1395158553.zip');
-            }
-        );
-        return $response;
+        $zip = new ZipArchive();
+        if($zip->open('archive_1395158553.zip') == TRUE){
+            $response = new StreamedResponse();
+            
+            $response->setCallBack(
+                function () use ($zip) {
+                    readfile('archive_1395158553.zip');
+                }
+            );
+            
+            return $response;
+        }else{
+            $route = $this->router->generate('claro_sync');
+            return new RedirectResponse($route);
+        }
     }
 }

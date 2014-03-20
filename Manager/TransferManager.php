@@ -27,6 +27,7 @@ use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use \ZipArchive;
 use \DateTime;
 use \Buzz\Browser;
+use \Buzz\Client\Curl;
 
 /**
  * @DI\Service("claroline.manager.transfer_manager")
@@ -66,11 +67,12 @@ class TransferManager
     
     public function getSyncZip()
     {
-        $browser = new Browser();
-        echo 'I got a browser 2'.'<br/>';
+        $client = new Curl();
+        $client->setTimeout(30);
+        $browser = new Browser($client);
         
-        $reponse = $browser->get('http://127.0.0.1/test/index.html');
-        //$reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php');
+        //$reponse = $browser->get('http://127.0.0.1/test/index.html');
+        $reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php');
         echo $browser->getLastRequest().'<br/>';
         echo 'REPONSE'.$reponse;
     }

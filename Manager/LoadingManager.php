@@ -24,6 +24,8 @@ use Claroline\CoreBundle\Manager\WorkspaceManager;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\OfflineBundle\ResourceTypeConstant;
+use Symfony\Component\HttpFoundation\Request;
+use Claroline\CoreBundle\Library\Workspace\Configuration;
 use \ZipArchive;
 use \DOMDocument;
 use \DOMElement;
@@ -41,6 +43,8 @@ class LoadingManager
     private $translator;
     private $userSynchronizedRepo;
     private $resourceManager;
+    private $workspaceManager;
+    private $templateDir;
 
     /**
      * Constructor.
@@ -50,7 +54,9 @@ class LoadingManager
      *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
      *     "translator"     = @DI\Inject("translator"),
      *     "wsManager"      = @DI\Inject("claroline.manager.workspace_manager"),
-     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager")
+     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
+     *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
+     *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%")
      * })
      */
     public function __construct(
@@ -58,7 +64,9 @@ class LoadingManager
         PagerFactory $pagerFactory,
         TranslatorInterface $translator,
         WorkspaceManager $wsManager,
-        ResourceManager $resourceManager
+        ResourceManager $resourceManager,
+        WorkspaceManager $workspaceManager,
+        $templateDir
     )
     {
         $this->om = $om;
@@ -67,6 +75,8 @@ class LoadingManager
         $this->translator = $translator;
         $this->wsManager = $wsManager;
         $this->resourceManager = $resourceManager;
+        $this->workspaceManager = $workspaceManager;
+        $this->templateDir = $templateDir;
     }
     
     /**
@@ -143,6 +153,8 @@ class LoadingManager
                 else
                 {
                     echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
+                    $workspace_creator = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($item->getAttribute('creator'));
+                    $this->createWorkspace($item, $workspace_creator[0]);
                 }
                 /*
                 *   - if workspace_code do not exist then create the workspace
@@ -151,7 +163,7 @@ class LoadingManager
                 */
                 
                 
-                $this->importWorkspace($item->childNodes, $workspace[0]);
+                $this->importWorkspace($item->childNodes, $workspace);
             }
         }
     }
@@ -170,12 +182,22 @@ class LoadingManager
             {
                 echo 'Workspace :          '.$res->nodeName.'<br/>';
                 echo 'Resource Type : '.$res->getAttribute('type').'<br/>';
+                $node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByHashname($res->getAttribute('hashname_node'));
                 /**
                 * TODO Check if the resource already exist. 
                 * If it does update it
                 * If it doesnt call the createResource method.
                 */
-                $this->createResource($res, $workspace);
+                if(count($node) >= 1)
+                {
+                    echo 'I need to update my resource!'.'<br/>';
+                }
+                
+                else
+                {
+                    $this->createResource($res, $workspace);
+                }
+                
             }
         }
     }
@@ -188,7 +210,7 @@ class LoadingManager
         
         // TODO a changer
         
-        $parent_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($workspace);
+        $parent_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByHashname($resource->getAttribute('hashname_parent'));
         
         
         // TODO Create a ressource based on his type. Then send the result to the create method of ResourceManager.
@@ -200,28 +222,50 @@ class LoadingManager
                 $newResource = new File();
                 $newResource->setSize($resource->getAttribute('size'));
                 $newResource->setHashName($resource->getAttribute('hashname'));
-                $newResource->setName($resource->getAttribute('name'));
-                $newResource->setMimeType($resource->getAttribute('mimetype'));
-                echo 'I ask to create a resource'.'<br/>';
-                $this->resourceManager->create($newResource, $type, $creator[0], $workspace, $parent_node[0]);
-                echo 'File is done!'.'<br/>';
+                echo 'boum'.'<br/>';
                 break;
            // case DIR :            
             //    break;
            // case TEXT :
-           //     break;
-            
+            //     break;
+
             
         }
+        
+        $newResource->setName($resource->getAttribute('name'));
+        $newResource->setMimeType($resource->getAttribute('mimetype'));
+        //$newResource->setNodeHashName($resource->getAttribute('hashname_node'));
+        echo 'I ask to create a resource'.'<br/>';
+        $this->resourceManager->create($newResource, $type, $creator[0], $workspace, $parent_node[0]);
+        echo 'File is done!'.'<br/>';
         
         // Element commun a toutes les ressources.
 
     }
     
-    private function createWorkspace($workspace)
+    private function createWorkspace($workspace, $user)
     {
         // TODO Create a workspace if no CODE was found in the DataBase.
         // Use the create method from WorkspaceManager.
+        $ds = DIRECTORY_SEPARATOR;
+
+        $type = Configuration::TYPE_SIMPLE;
+        $config = Configuration::fromTemplate(
+            $this->templateDir . $ds . 'default.zip'
+        );
+        $config->setWorkspaceType($type);
+        $config->setWorkspaceName($workspace->getAttribute('name'));
+        $config->setWorkspaceCode($workspace->getAttribute('code'));
+        $config->setDisplayable($workspace->getAttribute('displayable'));
+        $config->setSelfRegistration($workspace->getAttribute('selfregistration'));
+        $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
+        //$user = $this->security->getToken()->getUser();
+        $this->workspaceManager->create($config, $user);
+        //$this->tokenUpdater->update($this->security->getToken());
+        //$route = $this->router->generate('claro_workspace_list');
+        echo 'Workspace Created!'.'<br/>';
+        //return new RedirectResponse($route);
+
     }
     
 }

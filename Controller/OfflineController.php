@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
@@ -15,7 +16,9 @@ use Claroline\CoreBundle\Repository;
 use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\ResourceNode;
+use Claroline\CoreBundle\Controller\FileController;
 use \DateTime;
+use \ZipArchive;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -40,7 +43,6 @@ class OfflineController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
         $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-        //Pourquoi n'a-t-on plus la date dans la vue ???
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         
@@ -68,7 +70,7 @@ class OfflineController extends Controller
     * @EXT\Template("ClarolineOfflineBundle:Offline:load.html.twig")
     *
     * @param User $user
-    * @return Reponse
+    * @return Response
     */
     public function synchronizeAction(User $user)
     {
@@ -98,7 +100,7 @@ class OfflineController extends Controller
     * @EXT\Template("ClarolineOfflineBundle:Offline:courses.html.twig")
     *
     * @param User $user
-    * @return Reponse
+    * @return Response
     */
     public function seekAction(User $user)
     {
@@ -136,11 +138,36 @@ class OfflineController extends Controller
     */
     public function transferAction(User $user)
     {
-        $test = $this->get('claroline.manager.transfer_manager')->getSyncZip();
+        $this->get('claroline.manager.transfer_manager')->getSyncZip();
         $username = $user->getFirstName() . ' ' . $user->getLastName(); 
            
         return array(
             'user' => $username
         );
+    }
+    
+    /**
+    *   @EXT\Route(
+    *       "/sync/getzip",
+    *       name="claro_sync_get_zip",
+    *     options={"expose"=false}
+    *   )
+    
+    *   @EXT\Method("GET")
+    *
+    *   @return Response
+    */
+    public function getZipAction(){
+
+        //TODO verfier securite? => dans FileController il fait un checkAccess....
+        
+        $response = new StreamedResponse();
+        
+        $response->setCallBack(
+            function () use ($zip) {
+                readfile('archive_1395158553.zip');
+            }
+        );
+        return $response;
     }
 }

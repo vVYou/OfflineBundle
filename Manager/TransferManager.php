@@ -69,7 +69,8 @@ class TransferManager
         $browser = new Browser();
         echo 'I got a browser 2'.'<br/>';
         
-        $reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php');
+        $reponse = $browser->get('http://127.0.0.1/test/index.html');
+        //$reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php');
         echo $browser->getLastRequest().'<br/>';
         echo 'REPONSE'.$reponse;
     }

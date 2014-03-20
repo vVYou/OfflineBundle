@@ -129,6 +129,9 @@ class LoadingManager
             //TODO CREER des constantes pour les fichier XML, ce sera plus propre que tout hardcode partout
             if($item->nodeName == 'workspace')
             {
+                /**
+                *   Check if a workspace with the given code already exist.
+                */
                 $workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByCode($item->getAttribute('code'));
 
                 if(count($workspace) >= 1)
@@ -148,7 +151,7 @@ class LoadingManager
                 */
                 
                 
-                $this->importWorkspace($item->childNodes);
+                $this->importWorkspace($item->childNodes, $workspace[0]);
             }
         }
     }
@@ -157,7 +160,7 @@ class LoadingManager
     * Recupere un NodeList contenant les ressources  d'un workspace
     * Chaque ressource de cette NodeList devra donc être importee dans Claroline
     */
-    private function importWorkspace($resourceList)
+    private function importWorkspace($resourceList, $workspace)
     {
         
         for($i=0; $i<$resourceList->length; $i++)
@@ -172,23 +175,35 @@ class LoadingManager
                 * If it does update it
                 * If it doesnt call the createResource method.
                 */
-                $this->createResource($res);
+                $this->createResource($res, $workspace);
             }
         }
     }
     
-    private function createResource($resource)
+    private function createResource($resource, $workspace)
     {
         $newResource;
-        $type = $resource->getAttribute('type');
+        $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
+        $creator = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($resource->getAttribute('creator'));
+        
+        // TODO a changer
+        
+        $parent_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($workspace);
+        
+        
         // TODO Create a ressource based on his type. Then send the result to the create method of ResourceManager.
-        switch($type)
+        echo 'HAAAAAAAAAAAAAAAAA '.get_class($type);
+        switch($type->getId())
         {
             
             case ResourceTypeConstant::FILE :
                 $newResource = new File();
                 $newResource->setSize($resource->getAttribute('size'));
                 $newResource->setHashName($resource->getAttribute('hashname'));
+                $newResource->setName($resource->getAttribute('name'));
+                $newResource->setMimeType($resource->getAttribute('mimetype'));
+                echo 'I ask to create a resource'.'<br/>';
+                $this->resourceManager->create($newResource, $type, $creator[0], $workspace, $parent_node[0]);
                 echo 'File is done!'.'<br/>';
                 break;
            // case DIR :            
@@ -200,10 +215,7 @@ class LoadingManager
         }
         
         // Element commun a toutes les ressources.
-        $newResource->setName($resource->getAttribute('name'));
-        $newResource->setMimeType($resource->getAttribute('mimetype'));
-        
-        //$this->resourceManager->create($newResource, $type, $user, $workspace, $parent, $icon);
+
     }
     
     private function createWorkspace($workspace)

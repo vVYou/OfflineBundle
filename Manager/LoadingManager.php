@@ -28,6 +28,7 @@ use Claroline\CoreBundle\Entity\Resource\Text;
 use Claroline\OfflineBundle\ResourceTypeConstant;
 use Symfony\Component\HttpFoundation\Request;
 use Claroline\CoreBundle\Library\Workspace\Configuration;
+use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use \ZipArchive;
 use \DOMDocument;
 use \DOMElement;
@@ -45,6 +46,8 @@ class LoadingManager
     private $resourceManager;
     private $workspaceManager;
     private $templateDir;
+    private $user;
+    private $ut;
 
     /**
      * Constructor.
@@ -56,7 +59,8 @@ class LoadingManager
      *     "wsManager"      = @DI\Inject("claroline.manager.workspace_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
      *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
-     *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%")
+     *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%"),
+     *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
     public function __construct(
@@ -66,7 +70,8 @@ class LoadingManager
         WorkspaceManager $wsManager,
         ResourceManager $resourceManager,
         WorkspaceManager $workspaceManager,
-        $templateDir
+        $templateDir,
+        ClaroUtilities $ut
     )
     {
         $this->om = $om;
@@ -77,6 +82,7 @@ class LoadingManager
         $this->resourceManager = $resourceManager;
         $this->workspaceManager = $workspaceManager;
         $this->templateDir = $templateDir;
+        $this->ut = $ut;
     }
     
     /**
@@ -124,7 +130,8 @@ class LoadingManager
             */
             if($descriptionChilds->item($i)->nodeName == 'user_id')
             {
-                //$this->user = $descriptionChilds->item($i)->nodeValue;
+                $this->user = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($descriptionChilds->item($i)->nodeValue);
+                echo 'Mon user : '.$this->user[0]->getFirstName().'<br/>';
             }
         }
         //echo $this->user;
@@ -141,13 +148,23 @@ class LoadingManager
             {
                 /**
                 *   Check if a workspace with the given code already exist.
+                *   - if it doesn't exist then it will be created 
+                *   - then proceed to the resources (no matter if we have to create the workspace previously)
                 */
-                $workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByCode($item->getAttribute('code'));
+                $workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
 
                 if(count($workspace) >= 1)
                 {
-                    echo 'I ve got my workspace! Yeah!'.'<br/>';
-                    echo 'Its name : '.$workspace[0]->getName().'<br/>';
+                    /*  When a workspace with the same guid is found, we can update him if it's required.
+                    *   First, we need to check if : modification_date_offline > modification_date_online.
+                    *       - If it is, we need to check if : modification_date_online <= user_synchronisation_date
+                    *           - If it is, we just need to update the workspace
+                    *           - If it's not, that means that the workspace has been manipulated offline AND online.
+                    *       - If it's not, we don't need to go further.
+                    */
+                    
+                    echo 'I need to update my workspace!'.'<br/>';
+                    echo 'Mon Super user : '.$this->user[0]->getFirstName().'<br/>';
                 }
                 
                 else
@@ -157,13 +174,8 @@ class LoadingManager
                     $this->createWorkspace($item, $workspace_creator[0]);
                     $workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByCode($item->getAttribute('code'));
                 }
-                /*
-                *   - if workspace_code do not exist then create the workspace
-                *       
-                *   - proceed to the ressources (no matter if we have to create the workspace previously)
-                */
                 
-                
+                echo 'En route pour les ressources!'.'<br/>';
                 $this->importWorkspace($item->childNodes, $workspace[0]);
             }
         }
@@ -184,26 +196,55 @@ class LoadingManager
                 echo 'Workspace :          '.$res->nodeName.'<br/>';
                 echo 'Resource Type : '.$res->getAttribute('type').'<br/>';
                 $node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByHashname($res->getAttribute('hashname_node'));
-                /**
-                * TODO Check if the resource already exist. 
-                * If it does update it
-                * If it doesnt call the createResource method.
-                */
+
                 if(count($node) >= 1)
                 {
                     echo 'I need to update my resource!'.'<br/>';
+                    $modif_date = $res->getAttribute('modification_date');
+                    $creation_date = $res->getAttribute('creation_date');
+                    $node_modif_date = $node[0]->getModificationDate()->getTimestamp();
+                    
+                    /*  When a resource with the same hashname is found, we can update him if it's required.
+                    *   First, we need to check if : modification_date_online <= user_synchronisation_date.
+                    *       - If it is, we know that the resource can be erased.
+                    *       - If it's not, we don't need to go further.
+                    */
+
+                    $user_sync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($this->user[0]);
+                    if($node_modif_date <= $user_sync[0]->getLastSynchronization()->getTimestamp())
+                    {
+                        // La nouvelle ressource est une update de l'ancienne
+                        $this->resourceManager->delete($node[0]);
+                        $this->createResource($res, $workspace, null);
+                    }
+                    else 
+                    {
+                        // On sait que la ressource a ete update entre nos deux synchro
+                        // On regarde si les dates de modifications de nos deux ressources sont différentes
+                        // On part du postulat que deux ressources avec meme hashname et modification_date sont identiques.
+                        if($node_modif_date != $modif_date)
+                        {
+                            // Génération des doublons
+                            $this->createResource($res, $workspace, $node[0], true);
+                        }
+                        else
+                        {
+                            echo 'Already in the Database!'.'<br/>';
+                        }
+                    }
+                    echo 'Mon Ultra user : '.$this->user[0]->getFirstName().'<br/>';
                 }
                 
                 else
                 {
-                    $this->createResource($res, $workspace);
+                    $this->createResource($res, $workspace, null);
                 }
                 
             }
         }
     }
     
-    private function createResource($resource, $workspace)
+    private function createResource($resource, $workspace, $node, $doublon = false)
     {
         $newResource;
         $newResourceNode;
@@ -228,18 +269,28 @@ class LoadingManager
             case ResourceTypeConstant::TEXT :
                 $newResource = new Text();
                 break;
-
-            
+     
         }
         
-        $newResource->setName($resource->getAttribute('name'));
         $newResource->setMimeType($resource->getAttribute('mimetype'));
-        //echo 'Mon createur : '.get_class($creator[0]).'<br/>';
-        //echo 'Mon parent : '.get_class($parent_node[0]).'<br/>';
-        //$newResource->setNodeHashName($resource->getAttribute('hashname_node'));
         echo 'I ask to create a resource'.'<br/>';
-
-        $this->resourceManager->create($newResource, $type, $creator[0], $workspace, $parent_node[0], null, array(), $resource->getAttribute('hashname_node'));
+        
+        if($doublon)
+        {
+            $newResource->setName($resource->getAttribute('name').'@offline');
+            
+            echo 'I ask to create a resource'.'<br/>';
+            $this->om->startFlushSuite();
+            $node->setNodeHashName($this->ut->generateGuid());
+            $this->om->endFlushSuite();   
+        }
+        else
+        {
+            $newResource->setName($resource->getAttribute('name'));
+        }
+        
+        $this->resourceManager->create($newResource, $type, $creator[0], $workspace, $parent_node[0], null, array(), $resource->getAttribute('hashname_node'));       
+        
         //$newResourceNode = $newResource->getResourceNode();
         //echo 'New Resource Node : '.get_class($newResourceNode).'<br/>';
         //echo 'New Resource Node Hashname Before'.$newResourceNode->getNodeHashName().'<br/>';
@@ -249,7 +300,7 @@ class LoadingManager
         // Element commun a toutes les ressources.
 
     }
-    
+       
     private function createWorkspace($workspace, $user)
     {
         // TODO Create a workspace if no CODE was found in the DataBase.

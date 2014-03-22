@@ -147,7 +147,7 @@ class OfflineController extends Controller
     */
     public function transferAction(User $user)
     {
-        $test = $this->get('claroline.manager.transfer_manager')->getSyncZip();
+        $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($user);
         $username = $user->getFirstName() . ' ' . $user->getLastName(); 
            
         return array(
@@ -157,31 +157,27 @@ class OfflineController extends Controller
     
     /**
     *   @EXT\Route(
-    *       "/sync/getzip",
+    *       "/sync/getzip/{user}",
     *       name="claro_sync_get_zip",
     *   )
     
     *   @EXT\Method("GET")
     *
+    *   @param User $user
     *   @return Response
     */
-    public function getZipAction(){
+    public function getZipAction(User $user){
     
         //TODO verfier securite? => dans FileController il fait un checkAccess....
-        $zip = new ZipArchive();
-        if($zip->open('archive_1395158553.zip') == TRUE){
-            $response = new StreamedResponse();
-            
-            $response->setCallBack(
-                function () use ($zip) {
-                    readfile('archive_1395158553.zip');
-                }
-            );
-            
-            return $response;
-        }else{
-            $route = $this->router->generate('claro_sync');
-            return new RedirectResponse($route);
-        }
+        $response = new StreamedResponse();
+        $var = null;
+        $response->setCallBack(
+            function () use ($var) {
+                readfile('archive_1395158553.zip');
+            }
+        );
+        
+        return $response;
+
     }
 }

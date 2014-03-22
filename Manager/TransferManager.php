@@ -19,6 +19,7 @@ use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
@@ -28,6 +29,7 @@ use \ZipArchive;
 use \DateTime;
 use \Buzz\Browser;
 use \Buzz\Client\Curl;
+use \Buzz\Client\FileGetContents;
 
 /**
  * @DI\Service("claroline.manager.transfer_manager")
@@ -40,7 +42,8 @@ class TransferManager
     private $translator;
     private $userSynchronizedRepo;
     private $resourceManager;
-
+    private $router;
+    
     /**
      * Constructor.
      *
@@ -48,14 +51,16 @@ class TransferManager
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
      *     "translator"     = @DI\Inject("translator"),
-     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager")
+     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
+     *     "router"         = @DI\Inject("router")
      * })
      */
     public function __construct(
         ObjectManager $om,
         PagerFactory $pagerFactory,
         TranslatorInterface $translator,
-        ResourceManager $resourceManager
+        ResourceManager $resourceManager,
+        UrlGeneratorInterface $router
     )
     {
         $this->om = $om;
@@ -63,18 +68,42 @@ class TransferManager
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
+        $this->router = $router;
     }
     
-    public function getSyncZip()
+    
+    /*
+    *   @param User $user
+    */
+    public function getSyncZip(User $user)    
     {
-        $client = new Curl();
+    /*
+    * ATTENTION, droits d'ecriture de fichier
+    */
+        $client = new FileGetContents(); // File get contents ou juste CURL ?? Aucune idée de la différence chez kriswallsmith
         $client->setTimeout(30);
         $browser = new Browser($client);
         
-        //$reponse = $browser->get('http://127.0.0.1/test/index.html');
-        $reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php');
+        //TODO Constante pour l'URL du site, ce sera plus propre
+        /*
+        TODO rendre ca propre avec une route geree dynamiquement
+        $route = $this->router->generate('claro_sync_get_zip');
+        echo '<br/>This is my route !!! : '.$route.'<br/>';
+        */
+        $reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php/sync/getzip/'.$user->getId());        
+        $content = $reponse->getContent();
+        
         echo $browser->getLastRequest().'<br/>';
-        echo 'REPONSE'.$reponse;
+        
+        $zipFile = fopen('./test.zip', 'w+');
+        $write = fwrite($zipFile, $content);
+        if(!$write){
+        //SHOULD RETURN ERROR
+            echo 'An ERROR happen re-writing zip file at reception<br/>';
+        }
+        fclose($zipFile);
+        //TODO Controller erreur a la fermeture
+        echo 'TRANSFER PASS !';
     }
   
 }

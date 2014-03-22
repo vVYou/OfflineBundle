@@ -32,6 +32,7 @@ use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use \ZipArchive;
 use \DOMDocument;
 use \DOMElement;
+use \DateTime;
 
 /**
  * @DI\Service("claroline.manager.loading_manager")
@@ -248,11 +249,16 @@ class LoadingManager
     {
         $newResource;
         $newResourceNode;
+        $creation_date = new DateTime();
+        $modification_date = new DateTime();
+        
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $creator = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($resource->getAttribute('creator'));
         
         $parent_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByHashname($resource->getAttribute('hashname_parent'));
         
+        $creation_date->setTimestamp($resource->getAttribute('creation_date'));
+        $modification_date->setTimestamp($resource->getAttribute('modification_date'));
         // TODO Create a ressource based on his type. Then send the result to the create method of ResourceManager.
         switch($type->getId())
         {
@@ -290,13 +296,11 @@ class LoadingManager
         }
         
         $this->resourceManager->create($newResource, $type, $creator[0], $workspace, $parent_node[0], null, array(), $resource->getAttribute('hashname_node'));       
-        
-        //$newResourceNode = $newResource->getResourceNode();
-        //echo 'New Resource Node : '.get_class($newResourceNode).'<br/>';
-        //echo 'New Resource Node Hashname Before'.$newResourceNode->getNodeHashName().'<br/>';
-        //$newResourceNode->setNodeHashName($resource->getAttribute('hashname_node'));
-        //echo 'New Resource Node Hashname After'.$newResourceNode->getNodeHashName().'<br/>';
-        
+        $newResourceNode = $newResource->getResourceNode();
+        $this->om->startFlushSuite();
+        $newResourceNode->setCreationDate($creation_date);
+        $newResourceNode->setModificationDate($modification_date);
+        $this->om->endFlushSuite();  
         // Element commun a toutes les ressources.
 
     }

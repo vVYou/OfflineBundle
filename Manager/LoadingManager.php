@@ -23,6 +23,8 @@ use JMS\DiExtraBundle\Annotation as DI;
 use Claroline\CoreBundle\Manager\WorkspaceManager;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\Resource\File;
+use Claroline\CoreBundle\Entity\Resource\Directory;
+use Claroline\CoreBundle\Entity\Resource\Text;
 use Claroline\OfflineBundle\ResourceTypeConstant;
 use Symfony\Component\HttpFoundation\Request;
 use Claroline\CoreBundle\Library\Workspace\Configuration;
@@ -33,8 +35,6 @@ use \DOMElement;
 /**
  * @DI\Service("claroline.manager.loading_manager")
  */
- 
-//CONST FIL = 1;
 
 class LoadingManager
 {
@@ -155,6 +155,7 @@ class LoadingManager
                     echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
                     $workspace_creator = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($item->getAttribute('creator'));
                     $this->createWorkspace($item, $workspace_creator[0]);
+                    $workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByCode($item->getAttribute('code'));
                 }
                 /*
                 *   - if workspace_code do not exist then create the workspace
@@ -163,7 +164,7 @@ class LoadingManager
                 */
                 
                 
-                $this->importWorkspace($item->childNodes, $workspace);
+                $this->importWorkspace($item->childNodes, $workspace[0]);
             }
         }
     }
@@ -205,16 +206,13 @@ class LoadingManager
     private function createResource($resource, $workspace)
     {
         $newResource;
+        $newResourceNode;
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $creator = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($resource->getAttribute('creator'));
         
-        // TODO a changer
-        
         $parent_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByHashname($resource->getAttribute('hashname_parent'));
         
-        
         // TODO Create a ressource based on his type. Then send the result to the create method of ResourceManager.
-        echo 'HAAAAAAAAAAAAAAAAA '.get_class($type);
         switch($type->getId())
         {
             
@@ -224,20 +222,29 @@ class LoadingManager
                 $newResource->setHashName($resource->getAttribute('hashname'));
                 echo 'boum'.'<br/>';
                 break;
-           // case DIR :            
-            //    break;
-           // case TEXT :
-            //     break;
+            case ResourceTypeConstant::DIR : 
+                $newResource = new Directory();            
+                break;
+            case ResourceTypeConstant::TEXT :
+                $newResource = new Text();
+                break;
 
             
         }
         
         $newResource->setName($resource->getAttribute('name'));
         $newResource->setMimeType($resource->getAttribute('mimetype'));
+        //echo 'Mon createur : '.get_class($creator[0]).'<br/>';
+        //echo 'Mon parent : '.get_class($parent_node[0]).'<br/>';
         //$newResource->setNodeHashName($resource->getAttribute('hashname_node'));
         echo 'I ask to create a resource'.'<br/>';
-        $this->resourceManager->create($newResource, $type, $creator[0], $workspace, $parent_node[0]);
-        echo 'File is done!'.'<br/>';
+
+        $this->resourceManager->create($newResource, $type, $creator[0], $workspace, $parent_node[0], null, array(), $resource->getAttribute('hashname_node'));
+        //$newResourceNode = $newResource->getResourceNode();
+        //echo 'New Resource Node : '.get_class($newResourceNode).'<br/>';
+        //echo 'New Resource Node Hashname Before'.$newResourceNode->getNodeHashName().'<br/>';
+        //$newResourceNode->setNodeHashName($resource->getAttribute('hashname_node'));
+        //echo 'New Resource Node Hashname After'.$newResourceNode->getNodeHashName().'<br/>';
         
         // Element commun a toutes les ressources.
 

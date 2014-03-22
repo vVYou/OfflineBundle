@@ -103,7 +103,7 @@ class Manager
         $syncTime = time();
         
         $userRes = array();
-        $typeList = array('file', 'text'); // ! PAS OPTIMAL !
+        $typeList = array('file', 'directory', 'text'); // ! PAS OPTIMAL !
         $typeArray = $this->buildTypeArray($typeList);
         $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
 
@@ -254,17 +254,7 @@ class Manager
                 break;
         }
     }
-    
-    //TOREMOVE SI BUG!
-    private function resourceFromDir($directory, $user, $archive, $manifest, $path) 
-    {
-        if($directory->getParent() != NULL)
-        {
-            $resource = $this->resourceManager->getAllChildren($directory, false);
-            $resource = $this->checkObsolete($resource, $user); 
-            $this->addResourcesToArchive($resource,  $archive, $manifest, $user, $path.'/'.$directory->getId());
-        }
-    }
+
     /*
     *   Here figure all methods used to manipulate the xml file.
     */
@@ -277,9 +267,8 @@ class Manager
         {
             case ResourceTypeConstant::FILE :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
-                //fputs($manifest, '
-                //    <resource type="'.$resToAdd->getResourceType()->getId().'" />');
-                    
+                echo 'My res class : '.get_class($my_res).'<br/>';
+                $creation_time = $resToAdd->getCreationDate()->getTimestamp();                
                 
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
@@ -287,23 +276,53 @@ class Manager
                     mimetype="'.$resToAdd->getMimeType().'"
                     creator="'.$resToAdd->getCreator()->getId().'"
                     size="'.$my_res->getSize().'"
-                    hashname="'.$my_res->getHashName().'">
+                    hashname="'.$my_res->getHashName().'"
+                    hashname_node="'.$resToAdd->getNodeHashName().'"
+                    hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
+                    creation_date="'.$creation_time.'">
                     </resource>
                     ');
+                break;
             case ResourceTypeConstant::DIR :
                 // TOREMOVE SI BUG! ATTENTION LES WORKSPACES SONT AUSSI DES DIRECTORY GARE AU DOUBLE CHECK
-                //$my_res = $this->resourceManager->getResourceFromNode($resToAdd);
-                //$this->resourceFromDir($resToAdd, $user, $archive, $manifest, $path);
+                if($resToAdd->getParent() != NULL)
+                {
+                    $creation_time = $resToAdd->getCreationDate()->getTimestamp();  
+                    
+                fputs($manifest, '
+                    <resource type="'.$resToAdd->getResourceType()->getName().'"
+                    name="'.$resToAdd->getName().'"  
+                    mimetype="'.$resToAdd->getMimeType().'"
+                    creator="'.$resToAdd->getCreator()->getId().'"
+                    hashname_node="'.$resToAdd->getNodeHashName().'"
+                    hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
+                    creation_date="'.$creation_time.'">
+                    </resource>
+                    ');
+                }
                 break;
             case ResourceTypeConstant::TEXT :
-                //echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
-                //echo 'Work In Progress'. "<br/>";
+                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);                   
+                $creation_time = $resToAdd->getCreationDate()->getTimestamp();    
+                
+                fputs($manifest, '
+                    <resource type="'.$resToAdd->getResourceType()->getName().'"
+                    name="'.$resToAdd->getName().'"  
+                    mimetype="'.$resToAdd->getMimeType().'"
+                    creator="'.$resToAdd->getCreator()->getId().'"
+                    version="'.$my_res->getVersion().'"
+                    hashname_node="'.$resToAdd->getNodeHashName().'"
+                    hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
+                    creation_date="'.$creation_time.'">
+                    </resource>
+                    ');
                 break;
         }
     }    
     
     private function addWorkspaceToManifest($manifest, $workspace)
     {
+        $my_res_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($workspace);
         fputs($manifest,  '
         <workspace id="'.$workspace->getId().'"
         type="'.get_class($workspace).'"
@@ -312,7 +331,8 @@ class Manager
         displayable="'.$workspace->isDisplayable().'"
         selfregistration="'.$workspace->getSelfRegistration().'"
         selfunregistration="'.$workspace->getSelfUnregistration().'"
-        guid="'.$workspace->getGuid().'">
+        guid="'.$workspace->getGuid().'"
+        hashname_node="'.$my_res_node[0]->getNodeHashName().'">
         ');
     }
     

@@ -175,10 +175,14 @@ class OfflineController extends Controller
     public function getZipAction(){
     
         //TODO verfier securite? => dans FileController il fait un checkAccess....
+        /*
+        * Code louche avec cette declaration de zip inutile, sans doute moyen d'optimiser ca.
+        * En plus zip ouvert et jamais fermé
+        */
         $zip = new ZipArchive();
         if($zip->open('archive_1395158553.zip') == TRUE){
             $response = new StreamedResponse();
-            
+            $zip->close(); 
             $response->setCallBack(
                 function () use ($zip) {
                     readfile('archive_1395158553.zip');

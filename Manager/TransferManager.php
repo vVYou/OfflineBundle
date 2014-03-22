@@ -71,7 +71,11 @@ class TransferManager
         $this->router = $router;
     }
     
-    public function getSyncZip()    
+    
+    /*
+    *   @param User $user
+    */
+    public function getSyncZip(User $user)    
     {
     /*
     * ATTENTION, droits d'ecriture de fichier
@@ -86,7 +90,7 @@ class TransferManager
         $route = $this->router->generate('claro_sync_get_zip');
         echo '<br/>This is my route !!! : '.$route.'<br/>';
         */
-        $reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php/sync/getzip');        
+        $reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php/sync/getzip/'.$user->getId());        
         $content = $reponse->getContent();
         
         echo $browser->getLastRequest().'<br/>';

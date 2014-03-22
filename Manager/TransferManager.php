@@ -29,6 +29,7 @@ use \ZipArchive;
 use \DateTime;
 use \Buzz\Browser;
 use \Buzz\Client\Curl;
+use \Buzz\Client\FileGetContents;
 
 /**
  * @DI\Service("claroline.manager.transfer_manager")
@@ -70,9 +71,12 @@ class TransferManager
         $this->router = $router;
     }
     
-    public function getSyncZip()
+    public function getSyncZip()    
     {
-        $client = new Curl();
+    /*
+    * ATTENTION, droits d'ecriture de fichier
+    */
+        $client = new FileGetContents(); // File get contents ou juste CURL ?? Aucune idée de la différence chez kriswallsmith
         $client->setTimeout(30);
         $browser = new Browser($client);
         
@@ -82,22 +86,20 @@ class TransferManager
         $route = $this->router->generate('claro_sync_get_zip');
         echo '<br/>This is my route !!! : '.$route.'<br/>';
         */
-        
-        //$reponse = $browser->get('http://127.0.0.1/test/index.html');
-        //$reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php');
-        $reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php/sync/getzip');
-        
-        echo $browser->getLastRequest().'<br/>';
-        //echo 'REPONSE'.$reponse;
-        
+        $reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php/sync/getzip');        
         $content = $reponse->getContent();
         
-        //$zip = new ZipArchive();
-        //$zip = (ZipArchive) $content;
+        echo $browser->getLastRequest().'<br/>';
         
-        //echo '<br/>Zip name : '.$zip->filename;
-        $content->extractTo(".");
-        echo 'EXTRACT PASS !';
+        $zipFile = fopen('./test.zip', 'w+');
+        $write = fwrite($zipFile, $content);
+        if(!$write){
+        //SHOULD RETURN ERROR
+            echo 'An ERROR happen re-writing zip file at reception<br/>';
+        }
+        fclose($zipFile);
+        //TODO Controller erreur a la fermeture
+        echo 'TRANSFER PASS !';
     }
   
 }

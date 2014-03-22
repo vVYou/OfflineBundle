@@ -108,4 +108,22 @@ class UserSynchronizedRepository extends EntityRepository
 
         return $query->getResult();
     }
+    
+     /**
+     * Returns the resourceNode that corresponds to the hashname
+     * @return ResourceNode
+     */   
+    public function findResourceNodeByHashname($hashname)
+    {
+        $dql = '
+            SELECT r
+            FROM Claroline\CoreBundle\Entity\Resource\ResourceNode r
+            WHERE r.hashName = :hashname
+        ';
+
+        $query = $this->_em->createQuery($dql);
+        $query->setParameter('hashname', $hashname);
+
+        return $query->getResult();
+    }
 }

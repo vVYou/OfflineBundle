@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
@@ -31,14 +31,14 @@ class OfflineController extends Controller
     
     /**
     * @DI\InjectParams({
-    *      "router" = @DI\Inject("router")
-    *   })
-    **/
-    public function _construct(
+    *      "router"             = @DI\Inject("router")
+    * })
+    */
+    public function __construct(
         UrlGeneratorInterface $router
     )
     {
-        $this->router = $router;
+       $this->router = $router;
     }
     
     
@@ -129,13 +129,6 @@ class OfflineController extends Controller
             //'user_courses' => $test['user_courses'],
             //'user_res' => $test['user_res']
         );
-    }
-
-    /**
-    */
-    public function loadAction()
-    {
-        
     }
     
     /**

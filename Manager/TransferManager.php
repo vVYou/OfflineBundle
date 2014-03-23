@@ -77,25 +77,18 @@ class TransferManager
     */
     public function getSyncZip(User $user)    
     {
-    /*
-    * ATTENTION, droits d'ecriture de fichier
-    */
-        $client = new FileGetContents(); // File get contents ou juste CURL ?? Aucune idée de la différence chez kriswallsmith
+    // ATTENTION, droits d'ecriture de fichier
+        $client = new FileGetContents();
         $client->setTimeout(30);
         $browser = new Browser($client);
         
         //TODO Constante pour l'URL du site, ce sera plus propre
-        /*
-        TODO rendre ca propre avec une route geree dynamiquement
-        $route = $this->router->generate('claro_sync_get_zip');
-        echo '<br/>This is my route !!! : '.$route.'<br/>';
-        */
         $reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php/sync/getzip/'.$user->getId());        
         $content = $reponse->getContent();
         
         echo $browser->getLastRequest().'<br/>';
         
-        $zipFile = fopen('./test.zip', 'w+');
+        $zipFile = fopen('./synchronize_up/'.$user->getId().'/sync.zip', 'w+');
         $write = fwrite($zipFile, $content);
         if(!$write){
         //SHOULD RETURN ERROR

@@ -56,7 +56,7 @@ class UserSynchronizedRepository extends EntityRepository
     }
   
     /**
-     * Returns the workspace with the given code
+     * Returns the workspace with the given guid
      * @return AbstractWorkspace
      */  
     public function findByGuid($guid)
@@ -69,6 +69,24 @@ class UserSynchronizedRepository extends EntityRepository
 
         $query = $this->_em->createQuery($dql);
         $query->setParameter('guid', $guid);
+
+        return $query->getResult();
+    }
+
+    /**
+     * Returns the workspace with the given code
+     * @return AbstractWorkspace
+     */  
+    public function findByCode($code)
+    {
+        $dql = '
+            SELECT w
+            FROM Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace w
+            WHERE w.code = :code
+        ';
+
+        $query = $this->_em->createQuery($dql);
+        $query->setParameter('code', $code);
 
         return $query->getResult();
     }

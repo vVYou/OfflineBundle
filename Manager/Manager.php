@@ -331,12 +331,15 @@ class Manager
     private function addWorkspaceToManifest($manifest, $workspace)
     {
         $my_res_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($workspace);
+        //echo 'Ma creation_time : '.$my_res_node[0]->getCreationDate()->format('Y-m-d H:i:s').'<br/>';
+        //echo 'Ma modification_time : '.$my_res_node[0]->getModificationDate()->format('Y-m-d H:i:s').'<br/>';
         $creation_time = $my_res_node[0]->getCreationDate()->getTimestamp();  
         $modification_time = $my_res_node[0]->getModificationDate()->getTimestamp(); 
         
         fputs($manifest,  '
         <workspace id="'.$workspace->getId().'"
         type="'.get_class($workspace).'"
+        creator="'.$workspace->getCreator()->getId().'"
         name="'.$workspace->getName().'"
         code="'.$workspace->getCode().'"
         displayable="'.$workspace->isDisplayable().'"

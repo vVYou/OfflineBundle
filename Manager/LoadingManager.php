@@ -135,7 +135,6 @@ class LoadingManager
                 echo 'Mon user : '.$this->user[0]->getFirstName().'<br/>';
             }
         }
-        //echo $this->user;
     }
     
     private function importPlateform($plateform)
@@ -164,6 +163,12 @@ class LoadingManager
                     *       - If it's not, we don't need to go further.
                     */
                     
+                    /*
+                    *   Si la date de modif_offline > user_sync alors c'est qu'on l'a modifié offline
+                    *       - Si la date de modif online <= user_sync alors c'est qu'on l'a modifié offline et pas online
+                    *       - Sinon c'est qu'on l'a modifié online ET offline
+                    *   Sinon c'est qu'on ne l'a pas modifié et on skip.
+                    */
                     echo 'I need to update my workspace!'.'<br/>';
                     echo 'Mon Super user : '.$this->user[0]->getFirstName().'<br/>';
                 }
@@ -173,7 +178,7 @@ class LoadingManager
                     echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
                     $workspace_creator = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($item->getAttribute('creator'));
                     $this->createWorkspace($item, $workspace_creator[0]);
-                    $workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByCode($item->getAttribute('code'));
+                    $workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
                 }
                 
                 echo 'En route pour les ressources!'.'<br/>';
@@ -183,8 +188,8 @@ class LoadingManager
     }
     
     /**
-    * Recupere un NodeList contenant les ressources  d'un workspace
-    * Chaque ressource de cette NodeList devra donc être importee dans Claroline
+    * Visit all the 'resource' field in the 'workspace' inside the XML file and
+    * either create or update the corresponding resources.
     */
     private function importWorkspace($resourceList, $workspace)
     {
@@ -200,53 +205,64 @@ class LoadingManager
 
                 if(count($node) >= 1)
                 {
-                    echo 'I need to update my resource!'.'<br/>';
-                    $modif_date = $res->getAttribute('modification_date');
-                    $creation_date = $res->getAttribute('creation_date');
-                    $node_modif_date = $node[0]->getModificationDate()->getTimestamp();
-                    
-                    /*  When a resource with the same hashname is found, we can update him if it's required.
-                    *   First, we need to check if : modification_date_online <= user_synchronisation_date.
-                    *       - If it is, we know that the resource can be erased.
-                    *       - If it's not, we don't need to go further.
-                    */
-
-                    $user_sync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($this->user[0]);
-                    if($node_modif_date <= $user_sync[0]->getLastSynchronization()->getTimestamp())
-                    {
-                        // La nouvelle ressource est une update de l'ancienne
-                        $this->resourceManager->delete($node[0]);
-                        $this->createResource($res, $workspace, null);
-                    }
-                    else 
-                    {
-                        // On sait que la ressource a ete update entre nos deux synchro
-                        // On regarde si les dates de modifications de nos deux ressources sont différentes
-                        // On part du postulat que deux ressources avec meme hashname et modification_date sont identiques.
-                        if($node_modif_date != $modif_date)
-                        {
-                            // Génération des doublons
-                            $this->createResource($res, $workspace, $node[0], true);
-                        }
-                        else
-                        {
-                            echo 'Already in the Database!'.'<br/>';
-                        }
-                    }
-                    echo 'Mon Ultra user : '.$this->user[0]->getFirstName().'<br/>';
-                }
-                
+                    $this->updateResource($res, $node, $workspace);
+                }               
                 else
                 {
                     $this->createResource($res, $workspace, null);
-                }
-                
+                } 
+            }
+        }
+    }
+    
+    private function updateResource($resource, $node, $workspace)
+    {
+        echo 'I need to update my resource!'.'<br/>';
+        $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
+        $modif_date = $resource->getAttribute('modification_date');
+        $creation_date = $resource->getAttribute('creation_date'); //USELESS?
+        $node_modif_date = $node[0]->getModificationDate()->getTimestamp();
+        $user_sync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($this->user[0]);
+        
+        /*  When a resource with the same hashname is found, we can update him if it's required.
+        *   First, we need to check if : modification_date_online <= user_synchronisation_date.
+        *       - If it is, we know that the resource can be erased.
+        *       - If it's not, we check if the modification_date of both resources (in database and in the xml) are
+        *       different. 
+        *           - If it is we need to create 'doublon' to preserve both resource
+        *           - If it's not we suppose that there are the same
+        */
+
+        if($node_modif_date <= $user_sync[0]->getLastSynchronization()->getTimestamp())
+        {
+            // La nouvelle ressource est une update de l'ancienne
+            // TODO NOT GOOD!e
+            echo 'I ask to erase a resource'.'<br/>';
+            $this->resourceManager->delete($node[0]);
+            $this->createResource($resource, $workspace, null);
+        }
+        else 
+        {
+            // On sait que la ressource a ete update entre nos deux synchro
+            // On regarde si les dates de modifications de nos deux ressources sont différentes
+            // On part du postulat que deux ressources avec meme hashname et modification_date sont identiques.
+            if($node_modif_date != $modif_date)
+            {
+                // Génération des doublons
+                echo 'I ask to create a doublon'.'<br/>';
+                $this->createResource($resource, $workspace, $node[0], true);
+            }
+            else
+            {
+                //TODO : Afficher ce message dans une fenetre plutot que via un echo.
+                echo 'Already in the Database!'.'<br/>';
             }
         }
     }
     
     private function createResource($resource, $workspace, $node, $doublon = false)
     {
+        echo 'I ask to create a resource'.'<br/>';
         $newResource;
         $newResourceNode;
         $creation_date = new DateTime();
@@ -256,6 +272,12 @@ class LoadingManager
         $creator = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($resource->getAttribute('creator'));
         
         $parent_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByHashname($resource->getAttribute('hashname_parent'));
+        if(count($parent_node) < 1)
+        {
+            // If the parent node doesn't exist anymore, workspace will be the parent.
+            echo 'Mon parent est mort ! '.'<br/>';
+            $parent_node  = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($workspace);
+        }
         
         $creation_date->setTimestamp($resource->getAttribute('creation_date'));
         $modification_date->setTimestamp($resource->getAttribute('modification_date'));
@@ -279,15 +301,14 @@ class LoadingManager
         }
         
         $newResource->setMimeType($resource->getAttribute('mimetype'));
-        echo 'I ask to create a resource'.'<br/>';
         
         if($doublon)
         {
             $newResource->setName($resource->getAttribute('name').'@offline');
-            
-            echo 'I ask to create a resource'.'<br/>';
+            $oldModificationDate = $node->getModificationDate();
             $this->om->startFlushSuite();
-            $node->setNodeHashName($this->ut->generateGuid());
+            $node->setNodeHashName($this->ut->generateGuid()); 
+            $node->setModificationDate($oldModificationDate);      
             $this->om->endFlushSuite();   
         }
         else
@@ -325,6 +346,10 @@ class LoadingManager
         $this->workspaceManager->create($config, $user);
         //$this->tokenUpdater->update($this->security->getToken());
         //$route = $this->router->generate('claro_workspace_list');
+        $my_ws = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByCode($workspace->getAttribute('code'));
+        $this->om->startFlushSuite();
+        $my_ws[0]->setGuid($workspace->getAttribute('guid'));
+        $this->om->endFlushSuite();  
         echo 'Workspace Created!'.'<br/>';
         //return new RedirectResponse($route);
 

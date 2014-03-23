@@ -162,15 +162,19 @@ class LoadingManager
                     *           - If it's not, that means that the workspace has been manipulated offline AND online.
                     *       - If it's not, we don't need to go further.
                     */
-                    
-                    /*
-                    *   Si la date de modif_offline > user_sync alors c'est qu'on l'a modifié offline
-                    *       - Si la date de modif online <= user_sync alors c'est qu'on l'a modifié offline et pas online
-                    *       - Sinon c'est qu'on l'a modifié online ET offline
-                    *   Sinon c'est qu'on ne l'a pas modifié et on skip.
-                    */
                     echo 'I need to update my workspace!'.'<br/>';
-                    echo 'Mon Super user : '.$this->user[0]->getFirstName().'<br/>';
+                    $NodeWorkspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($workspace[0]);
+                    // TODO Mettre à jour la date de modification et le nom du directory
+                    $node_modif_date = $NodeWorkspace[0]->getModificationDate()->getTimestamp();
+                    $modif_date = $item->getAttribute('modification_date');
+                    if($modif_date > $node_modif_date)
+                    {
+                        echo 'Need to update!'.'<br/>';
+                    }
+                    else
+                    {
+                        echo 'No need to update!'.'<br/>';
+                    }
                 }
                 
                 else
@@ -224,39 +228,57 @@ class LoadingManager
         $node_modif_date = $node[0]->getModificationDate()->getTimestamp();
         $user_sync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($this->user[0]);
         
-        /*  When a resource with the same hashname is found, we can update him if it's required.
-        *   First, we need to check if : modification_date_online <= user_synchronisation_date.
-        *       - If it is, we know that the resource can be erased.
-        *       - If it's not, we check if the modification_date of both resources (in database and in the xml) are
-        *       different. 
-        *           - If it is we need to create 'doublon' to preserve both resource
-        *           - If it's not we suppose that there are the same
-        */
-
-        if($node_modif_date <= $user_sync[0]->getLastSynchronization()->getTimestamp())
+        switch($type->getId())
         {
-            // La nouvelle ressource est une update de l'ancienne
-            // TODO NOT GOOD!e
-            echo 'I ask to erase a resource'.'<br/>';
-            $this->resourceManager->delete($node[0]);
-            $this->createResource($resource, $workspace, null);
-        }
-        else 
-        {
-            // On sait que la ressource a ete update entre nos deux synchro
-            // On regarde si les dates de modifications de nos deux ressources sont différentes
-            // On part du postulat que deux ressources avec meme hashname et modification_date sont identiques.
-            if($node_modif_date != $modif_date)
-            {
-                // Génération des doublons
-                echo 'I ask to create a doublon'.'<br/>';
-                $this->createResource($resource, $workspace, $node[0], true);
-            }
-            else
-            {
-                //TODO : Afficher ce message dans une fenetre plutot que via un echo.
-                echo 'Already in the Database!'.'<br/>';
-            }
+            case ResourceTypeConstant::DIR :
+                echo 'It s a directory!'.'<br/>';
+                if($node_modif_date < $modif_date)
+                {
+                    // TODO Mettre à jour la date de modification et le nom du directory
+                }
+                else
+                {
+                    echo 'No need to update'.'<br/>';
+                }
+                break;
+            case ResourceTypeConstant::FORUM :
+                break;
+            default :
+                /*  When a resource with the same hashname is found, we can update him if it's required.
+                *   First, we need to check if : modification_date_online <= user_synchronisation_date.
+                *       - If it is, we know that the resource can be erased.
+                *       - If it's not, we check if the modification_date of both resources (in database and in the xml) are
+                *       different. 
+                *           - If it is we need to create 'doublon' to preserve both resource
+                *           - If it's not we suppose that there are the same
+                */
+                echo 'It s somthing else...'.'<br/>';
+                if($node_modif_date <= $user_sync[0]->getLastSynchronization()->getTimestamp())
+                {
+                    // La nouvelle ressource est une update de l'ancienne
+                    // TODO NOT GOOD!e
+                    echo 'I ask to erase a resource'.'<br/>';
+                    $this->resourceManager->delete($node[0]);
+                    $this->createResource($resource, $workspace, null);
+                }
+                else 
+                {
+                    // On sait que la ressource a ete update entre nos deux synchro
+                    // On regarde si les dates de modifications de nos deux ressources sont différentes
+                    // On part du postulat que deux ressources avec meme hashname et modification_date sont identiques.
+                    if($node_modif_date != $modif_date)
+                    {
+                        // Génération des doublons
+                        echo 'I ask to create a doublon'.'<br/>';
+                        $this->createResource($resource, $workspace, $node[0], true);
+                    }
+                    else
+                    {
+                        //TODO : Afficher ce message dans une fenetre plutot que via un echo.
+                        echo 'Already in the Database!'.'<br/>';
+                    }
+                }
+                break;
         }
     }
     
@@ -318,6 +340,7 @@ class LoadingManager
         
         $this->resourceManager->create($newResource, $type, $creator[0], $workspace, $parent_node[0], null, array(), $resource->getAttribute('hashname_node'));       
         $newResourceNode = $newResource->getResourceNode();
+        
         $this->om->startFlushSuite();
         $newResourceNode->setCreationDate($creation_date);
         $newResourceNode->setModificationDate($modification_date);
@@ -330,6 +353,9 @@ class LoadingManager
     {
         // TODO Create a workspace if no CODE was found in the DataBase.
         // Use the create method from WorkspaceManager.
+        $creation_date = new DateTime();
+        $modification_date = new DateTime();
+        
         $ds = DIRECTORY_SEPARATOR;
 
         $type = Configuration::TYPE_SIMPLE;
@@ -346,10 +372,18 @@ class LoadingManager
         $this->workspaceManager->create($config, $user);
         //$this->tokenUpdater->update($this->security->getToken());
         //$route = $this->router->generate('claro_workspace_list');
+        
         $my_ws = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByCode($workspace->getAttribute('code'));
+        $NodeWorkspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($my_ws[0]);
+        $creation_date->setTimestamp($workspace->getAttribute('creation_date'));
+        $modification_date->setTimestamp($workspace->getAttribute('modification_date'));      
+        
         $this->om->startFlushSuite();
         $my_ws[0]->setGuid($workspace->getAttribute('guid'));
+        $NodeWorkspace[0]->setCreationDate($creation_date);
+        $NodeWorkspace[0]->setModificationDate($modification_date);
         $this->om->endFlushSuite();  
+        
         echo 'Workspace Created!'.'<br/>';
         //return new RedirectResponse($route);
 

@@ -262,13 +262,16 @@ class Manager
     private function addResourceToManifest($manifest, $resToAdd)
     {
         $type = $resToAdd->getResourceType()->getId();
+        $creation_time = $resToAdd->getCreationDate()->getTimestamp();  
+        $modification_time = $resToAdd->getModificationDate()->getTimestamp(); 
         
         switch($type)
         {
             case ResourceTypeConstant::FILE :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
                 echo 'My res class : '.get_class($my_res).'<br/>';
-                $creation_time = $resToAdd->getCreationDate()->getTimestamp();                
+                //$creation_time = $resToAdd->getCreationDate()->getTimestamp();  
+                //$modification_time = $resToAdd->getModificationDate()->getTimestamp();                
                 
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
@@ -279,7 +282,8 @@ class Manager
                     hashname="'.$my_res->getHashName().'"
                     hashname_node="'.$resToAdd->getNodeHashName().'"
                     hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
-                    creation_date="'.$creation_time.'">
+                    creation_date="'.$creation_time.'"
+                    modification_date="'.$modification_time.'">
                     </resource>
                     ');
                 break;
@@ -287,7 +291,8 @@ class Manager
                 // TOREMOVE SI BUG! ATTENTION LES WORKSPACES SONT AUSSI DES DIRECTORY GARE AU DOUBLE CHECK
                 if($resToAdd->getParent() != NULL)
                 {
-                    $creation_time = $resToAdd->getCreationDate()->getTimestamp();  
+                    //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
+                    //$modification_time = $resToAdd->getModificationDate()->getTimestamp();                    
                     
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
@@ -296,14 +301,16 @@ class Manager
                     creator="'.$resToAdd->getCreator()->getId().'"
                     hashname_node="'.$resToAdd->getNodeHashName().'"
                     hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
-                    creation_date="'.$creation_time.'">
+                    creation_date="'.$creation_time.'"
+                    modification_date="'.$modification_time.'">
                     </resource>
                     ');
                 }
                 break;
             case ResourceTypeConstant::TEXT :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);                   
-                $creation_time = $resToAdd->getCreationDate()->getTimestamp();    
+                //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
+                //$modification_time = $resToAdd->getModificationDate()->getTimestamp();
                 
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
@@ -313,7 +320,8 @@ class Manager
                     version="'.$my_res->getVersion().'"
                     hashname_node="'.$resToAdd->getNodeHashName().'"
                     hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
-                    creation_date="'.$creation_time.'">
+                    creation_date="'.$creation_time.'"
+                    modification_date="'.$modification_time.'">
                     </resource>
                     ');
                 break;
@@ -323,6 +331,9 @@ class Manager
     private function addWorkspaceToManifest($manifest, $workspace)
     {
         $my_res_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($workspace);
+        $creation_time = $my_res_node[0]->getCreationDate()->getTimestamp();  
+        $modification_time = $my_res_node[0]->getModificationDate()->getTimestamp(); 
+        
         fputs($manifest,  '
         <workspace id="'.$workspace->getId().'"
         type="'.get_class($workspace).'"
@@ -332,7 +343,9 @@ class Manager
         selfregistration="'.$workspace->getSelfRegistration().'"
         selfunregistration="'.$workspace->getSelfUnregistration().'"
         guid="'.$workspace->getGuid().'"
-        hashname_node="'.$my_res_node[0]->getNodeHashName().'">
+        hashname_node="'.$my_res_node[0]->getNodeHashName().'"
+        creation_date="'.$creation_time.'"
+        modification_date="'.$modification_time.'">
         ');
     }
     

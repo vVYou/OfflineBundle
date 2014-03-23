@@ -5,8 +5,14 @@
 {% extends layout%}
 
 {%block sync%}
-<p>
-I am on transfer page 
-Here you can to download zip.
-</p>
+    {% if transfer %}
+        <p>
+        I am on transfer page 
+        Here you can to download zip.
+        </p>
+    {%else%}
+        <p>
+            We can't begin the transfer, you try to catch sync file of someone else
+        </p>
+    {%endif%}
 {%endblock%}

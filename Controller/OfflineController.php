@@ -135,23 +135,31 @@ class OfflineController extends Controller
     *  Transfer a file (sync archive) from a computer to another
     *   
     *   @EXT\Route(
-    *       "/sync/transfer",
+    *       "/sync/transfer/{user}",
     *       name="claro_sync_transfer"
     *   )
     *
-    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+    * @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
     * @EXT\Template("ClarolineOfflineBundle:Offline:transfer.html.twig")
     *
     * @param User $user
     * @return Reponse
     */
-    public function transferAction(User $user)
+    public function transferAction($user, User $authUser)
     {
-        $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($user);
-        $username = $user->getFirstName() . ' ' . $user->getLastName(); 
-           
+        //echo 'User URL = '.$user.'<br/>';
+        //echo "USER ID = ".$authUser->getId().'<br/>';
+        $transfer = true;
+        if($user == $authUser->getId()){
+            $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
+        }else{
+            $transfer = false;
+        }
+        
+        $username = $authUser->getFirstName() . ' ' . $authUser->getLastName(); 
         return array(
-            'user' => $username
+            'user' => $username,
+            'transfer' => $transfer
         );
     }
     
@@ -171,9 +179,11 @@ class OfflineController extends Controller
         //TODO verfier securite? => dans FileController il fait un checkAccess....
         $response = new StreamedResponse();
         $var = null;
+        //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
+        //TODO, protéger plus le zip? Seul le propriétaire devrait avoir accès
         $response->setCallBack(
             function () use ($var) {
-                readfile('archive_1395158553.zip');
+                readfile('synchronize_down/'.$user->getId().'/sync.zip');
             }
         );
         

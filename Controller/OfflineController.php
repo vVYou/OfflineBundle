@@ -169,22 +169,25 @@ class OfflineController extends Controller
     *       "/sync/getzip/{user}",
     *       name="claro_sync_get_zip",
     *   )
-    
-    *   @EXT\Method("GET")
+    *
+    *   @EXT\Method("GET")    
+    *   @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
     *
     *   @param User $user
     *   @return Response
     */
-    public function getZipAction(User $user){
+    public function getZipAction($user, User $authUser){
     
+        echo 'user : '.$user;
+        echo '  Auth user : '.$authUser->getId();
         //TODO verfier securite? => dans FileController il fait un checkAccess....
         $response = new StreamedResponse();
-        $var = null;
+       // $var = $user;
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
         //TODO, protéger plus le zip? Seul le propriétaire devrait avoir accès
         $response->setCallBack(
-            function () use ($var) {
-                readfile('synchronize_down/'.$user->getId().'/sync.zip');
+            function () use ($user) {
+                readfile('synchronize_down/'.$user.'/sync.zip');
             }
         );
         

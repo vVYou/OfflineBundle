@@ -83,7 +83,7 @@ class TransferManager
         $browser = new Browser($client);
         
         //TODO Constante pour l'URL du site, ce sera plus propre
-        $reponse = $browser->get('127.0.0.1:14580/Claroline2/web/app_dev.php/sync/getzip/'.$user->getId());        
+        $reponse = $browser->get(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId());        
         $content = $reponse->getContent();
         
         echo $browser->getLastRequest().'<br/>';

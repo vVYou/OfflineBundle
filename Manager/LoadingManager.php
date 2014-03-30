@@ -160,14 +160,14 @@ class LoadingManager
     {
         $descriptionChilds = $documentDescription->item(0)->childNodes;
         for($i = 0; $i<$descriptionChilds->length ; $i++){
-            echo '$i : '.$i.' '.$descriptionChilds->item($i)->nodeName.' '.$descriptionChilds->item($i)->nodeValue.'<br/>' ;
+            //echo '$i : '.$i.' '.$descriptionChilds->item($i)->nodeName.' '.$descriptionChilds->item($i)->nodeValue.'<br/>' ;
             /*
             *   ICI on peut controler / stocker les metadata du manfiest
             */
             if($descriptionChilds->item($i)->nodeName == 'user_id')
             {
                 $this->user = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($descriptionChilds->item($i)->nodeValue);
-                echo 'Mon user : '.$this->user[0]->getFirstName().'<br/>';
+               // echo 'Mon user : '.$this->user[0]->getFirstName().'<br/>';
             }
         }
     }
@@ -197,30 +197,30 @@ class LoadingManager
                     *           - If it's not, that means that the workspace has been manipulated offline AND online.
                     *       - If it's not, we don't need to go further.
                     */
-                    echo 'I need to update my workspace!'.'<br/>';
+                    //echo 'I need to update my workspace!'.'<br/>';
                     $NodeWorkspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($workspace[0]);
                     // TODO Mettre à jour la date de modification et le nom du directory
                     $node_modif_date = $NodeWorkspace[0]->getModificationDate()->getTimestamp();
                     $modif_date = $item->getAttribute('modification_date');
                     if($modif_date > $node_modif_date)
                     {
-                        echo 'Need to update!'.'<br/>';
+                       // echo 'Need to update!'.'<br/>';
                     }
                     else
                     {
-                        echo 'No need to update!'.'<br/>';
+                       // echo 'No need to update!'.'<br/>';
                     }
                 }
                 
                 else
                 {
-                    echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
+                  //  echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
                     $workspace_creator = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($item->getAttribute('creator'));
                     $this->createWorkspace($item, $workspace_creator[0]);
                     $workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
                 }
                 
-                echo 'En route pour les ressources!'.'<br/>';
+               // echo 'En route pour les ressources!'.'<br/>';
                 $this->importWorkspace($item->childNodes, $workspace[0]);
             }
         }
@@ -238,8 +238,8 @@ class LoadingManager
             $res = $resourceList->item($i);
             if($res->nodeName == 'resource')
             {
-                echo 'Workspace :          '.$res->nodeName.'<br/>';
-                echo 'Resource Type : '.$res->getAttribute('type').'<br/>';
+               // echo 'Workspace :          '.$res->nodeName.'<br/>';
+               // echo 'Resource Type : '.$res->getAttribute('type').'<br/>';
                 $node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByHashname($res->getAttribute('hashname_node'));
 
                 if(count($node) >= 1)
@@ -271,18 +271,20 @@ class LoadingManager
                 {
                     // TODO Mettre à jour la date de modification et le nom du directory
                     // Only Rename?
-                    echo 'Mon directory est renomme'.'<br/>';
+                  //  echo 'Mon directory est renomme'.'<br/>';
                     $this->resourceManager->rename($node[0], $resource->getAttribute('name'));
                 }
                 else
                 {
-                    echo 'No need to update'.'<br/>';
+                   // echo 'No need to update'.'<br/>';
                 }
                 break;
             case SyncConstant::FORUM :
+                echo 'It s a forum!'.'<br/>';
                 // trouver le forum-category-sujet-message et ajouter/
                 break;
             default :
+                echo 'It s a file or a text!'.'<br/>';
                 /*  When a resource with the same hashname is found, we can update him if it's required.
                 *   First, we need to check if : modification_date_online <= user_synchronisation_date.
                 *       - If it is, we know that the resource can be erased.
@@ -291,12 +293,12 @@ class LoadingManager
                 *           - If it is we need to create 'doublon' to preserve both resource
                 *           - If it's not we suppose that there are the same
                 */
-                echo 'It s somthing else...'.'<br/>';
+                //echo 'It s somthing else...'.'<br/>';
                 if($node_modif_date <= $user_sync[0]->getLastSynchronization()->getTimestamp())
                 {
                     // La nouvelle ressource est une update de l'ancienne
                     // TODO NOT GOOD!e
-                    echo 'I ask to erase a resource'.'<br/>';
+                   // echo 'I ask to erase a resource'.'<br/>';
                     $this->resourceManager->delete($node[0]);
                     $this->createResource($resource, $workspace, null);
                 }
@@ -308,7 +310,7 @@ class LoadingManager
                     if($node_modif_date != $modif_date)
                     {
                         // Génération des doublons
-                        echo 'I ask to create a doublon'.'<br/>';
+                       // echo 'I ask to create a doublon'.'<br/>';
                         $this->createResource($resource, $workspace, $node[0], true);
                     }
                     else
@@ -351,9 +353,20 @@ class LoadingManager
                 $newResource = new File();
                 $file_hashname = $resource->getAttribute('hashname');
                 $newResource->setSize($resource->getAttribute('size'));
+                if($doublon)
+                {
+                    echo 'doublon part'.'<br/>';
+                    // The file already exist inside the database. We have to modify the Hashname of the file already presents.
+                    $old_file = $this->resourceManager->getResourceFromNode($node);
+                    $this->om->startFlushSuite();
+                    $old_file->setHashName($this->ut->generateGuid());
+                    //TODO Modify the file present in the files directory
+                    $this->om->endFlushSuite();  
+                }
+
                 $newResource->setHashName($file_hashname);
                 rename($this->path.'data'.SyncConstant::ZIPFILEDIR.$file_hashname, '..'.SyncConstant::ZIPFILEDIR.$file_hashname);
-                echo 'boum'.'<br/>';
+                //echo 'boum'.'<br/>';
                 break;
             case SyncConstant::DIR : 
                 $newResource = new Directory();            
@@ -427,7 +440,7 @@ class LoadingManager
         $NodeWorkspace[0]->setModificationDate($modification_date);
         $this->om->endFlushSuite();  
         
-        echo 'Workspace Created!'.'<br/>';
+        //echo 'Workspace Created!'.'<br/>';
         //return new RedirectResponse($route);
 
     }

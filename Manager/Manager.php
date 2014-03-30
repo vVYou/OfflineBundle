@@ -24,7 +24,8 @@ use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\Resource\ResourceType;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
-use Claroline\OfflineBundle\ResourceTypeConstant;
+use Claroline\OfflineBundle\SyncConstant;
+use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use \ZipArchive;
 use \DateTime;
 
@@ -44,6 +45,7 @@ class Manager
     private $translator;
     private $userSynchronizedRepo;
     private $resourceManager;
+    private $ut;
 
     /**
      * Constructor.
@@ -52,14 +54,16 @@ class Manager
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
      *     "translator"     = @DI\Inject("translator"),
-     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager")
+     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
+     *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
     public function __construct(
         ObjectManager $om,
         PagerFactory $pagerFactory,
         TranslatorInterface $translator,
-        ResourceManager $resourceManager
+        ResourceManager $resourceManager,
+        ClaroUtilities $ut
     )
     {
         $this->om = $om;
@@ -67,6 +71,7 @@ class Manager
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
+        $this->ut = $ut;
     }
     
     /**
@@ -106,14 +111,18 @@ class Manager
         $typeList = array('file', 'directory', 'text'); // ! PAS OPTIMAL !
         $typeArray = $this->buildTypeArray($typeList);
         $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
-
-        $manifest_name = 'manifest_'.$syncTime.'.xml';
-        $manifest = fopen($manifest_name, 'w');
+        
+        $hashname_zip = $this->ut->generateGuid(); 
+        
+        $manifestName = SyncConstant::MANIFEST.'_'.$hashname_zip.'.xml';
+        $manifest = fopen($manifestName, 'w');
         fputs($manifest,'<manifest>');
         $this->writeManifestDescription($manifest, $user, $syncTime);
         //echo get_resource_type($manifest).'<br/>';
+        
+
  
-        if($archive->open('archive_'.$syncTime.'.zip', ZipArchive::CREATE) === true)
+        if($archive->open('sync_'.$hashname_zip.'.zip', ZipArchive::CREATE) === true)
         {
         fputs($manifest,'
     <plateform>');
@@ -136,10 +145,11 @@ class Manager
 </manifest>');
         fclose($manifest);
         
-        $archive->addFile($manifest_name);
+        $archive->addFile($manifestName);
         $archive->close();
         
-        unlink($manifest_name);
+        // Erase the manifest from the current folder.
+        unlink($manifestName);
         return $archive;
     }
     
@@ -169,7 +179,7 @@ class Manager
                     $path = '';
                     $ressourcesToSync = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
                     //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
-                    $this->addResourcesToArchive($ressourcesToSync, $archive, $manifest, $user, $path.$element->getId());
+                    $this->addResourcesToArchive($ressourcesToSync, $archive, $manifest, $user, $path);
                     //echo "<br/>".count($ressourcesToSync)."<br/>";
                 }
             }
@@ -235,20 +245,20 @@ class Manager
     {
         switch($resToAdd->getResourceType()->getId())
         {
-            case ResourceTypeConstant::FILE :
+            case SyncConstant::FILE :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
                 //echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
                 //echo 'Add to the Archive' . "<br/>";
                 //$path = $path.$resToAdd->getWorkspace()->getId();
-                $archive->addFile('../files/'.$my_res->getHashName(), 'data/'.$path.'/files/'.$my_res->getHashName());
+                $archive->addFile('..'.SyncConstant::ZIPFILEDIR.$my_res->getHashName(), 'data/'.$path.SyncConstant::ZIPFILEDIR.$my_res->getHashName());
                 //$archive->renameName('../files/'.$my_res->getHashName(), 'data/'.$workspace_id.'/files/'.$my_res->getHashName());
                 break;
-            case ResourceTypeConstant::DIR :
+            case SyncConstant::DIR :
                 // TOREMOVE SI BUG! ATTENTION LES WORKSPACES SONT AUSSI DES DIRECTORY GARE AU DOUBLE CHECK
                 //$my_res = $this->resourceManager->getResourceFromNode($resToAdd);
                 //$this->resourceFromDir($resToAdd, $user, $archive, $manifest, $path);
                 break;
-            case ResourceTypeConstant::TEXT :
+            case SyncConstant::TEXT :
                 //echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
                 //echo 'Work In Progress'. "<br/>";
                 break;
@@ -267,7 +277,7 @@ class Manager
         
         switch($type)
         {
-            case ResourceTypeConstant::FILE :
+            case SyncConstant::FILE :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
                 echo 'My res class : '.get_class($my_res).'<br/>';
                 //$creation_time = $resToAdd->getCreationDate()->getTimestamp();  
@@ -287,7 +297,7 @@ class Manager
                     </resource>
                     ');
                 break;
-            case ResourceTypeConstant::DIR :
+            case SyncConstant::DIR :
                 // TOREMOVE SI BUG! ATTENTION LES WORKSPACES SONT AUSSI DES DIRECTORY GARE AU DOUBLE CHECK
                 if($resToAdd->getParent() != NULL)
                 {
@@ -307,7 +317,7 @@ class Manager
                     ');
                 }
                 break;
-            case ResourceTypeConstant::TEXT :
+            case SyncConstant::TEXT :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);                   
                 //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
                 //$modification_time = $resToAdd->getModificationDate()->getTimestamp();

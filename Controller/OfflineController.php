@@ -95,7 +95,8 @@ class OfflineController extends Controller
         //$em = $this->getDoctrine()->getManager();
         //$userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
          
-        $zip = $this->get('claroline.manager.loading_manager')->loadXML('manifest_test_3.xml');
+        //$zip = $this->get('claroline.manager.loading_manager')->loadXML('manifest_test_3.xml');
+        $zip = $this->get('claroline.manager.loading_manager')->loadZip('sync_DCBA77CB-0A12-423E-839D-D2D657B48AF6.zip');
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         return array(

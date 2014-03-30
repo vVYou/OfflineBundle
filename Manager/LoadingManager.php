@@ -25,10 +25,11 @@ use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Resource\Directory;
 use Claroline\CoreBundle\Entity\Resource\Text;
-use Claroline\OfflineBundle\ResourceTypeConstant;
+use Claroline\OfflineBundle\SyncConstant;
 use Symfony\Component\HttpFoundation\Request;
 use Claroline\CoreBundle\Library\Workspace\Configuration;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
+use Claroline\CoreBundle\Event\StrictDispatcher;
 use \ZipArchive;
 use \DOMDocument;
 use \DOMElement;
@@ -49,6 +50,8 @@ class LoadingManager
     private $templateDir;
     private $user;
     private $ut;
+    private $dispatcher;
+    private $path;
 
     /**
      * Constructor.
@@ -61,7 +64,8 @@ class LoadingManager
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
      *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
      *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc")
+     *     "ut"            = @DI\Inject("claroline.utilities.misc"),
+     *     "dispatcher"      = @DI\Inject("claroline.event.event_dispatcher")
      * })
      */
     public function __construct(
@@ -72,7 +76,8 @@ class LoadingManager
         ResourceManager $resourceManager,
         WorkspaceManager $workspaceManager,
         $templateDir,
-        ClaroUtilities $ut
+        ClaroUtilities $ut,
+        StrictDispatcher $dispatcher
     )
     {
         $this->om = $om;
@@ -84,11 +89,41 @@ class LoadingManager
         $this->workspaceManager = $workspaceManager;
         $this->templateDir = $templateDir;
         $this->ut = $ut;
+        $this->dispatcher = $dispatcher;
+    }
+    
+    /*
+    *   This method open the zip file, call the loadXML function and 
+    *   destroy the zip file while everything is done.
+    */
+    
+    public function loadZip($zipPath)
+    {
+        $ds = DIRECTORY_SEPARATOR;
+        
+        //Extract the Zip
+        $archive = new ZipArchive();
+        if ($archive->open($zipPath))
+        {
+            //Extract the Hashname of the ZIP from the path (length of hashname = 32 char).
+            $zip_hashname = substr($zipPath, strlen($zipPath)-40, 36);
+            $this->path = SyncConstant::DIRZIP.$ds.$zip_hashname.$ds;
+            $tmpdirectory = $archive->extractTo($this->path);
+            //Call LoadXML
+            $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$zip_hashname.'.xml');
+            //Destroy Directory
+        }
+        else
+        {
+            //echo 'Impossible to open the zip file';
+            throw new \Exception('Impossible to load the zip file');
+        }
+        //Destroy the Zip
+        
     }
     
     /**
      * This method will load and parse the manifest XML file
-     *
      *
      */
     public function loadXML($xmlFilePath){
@@ -230,18 +265,22 @@ class LoadingManager
         
         switch($type->getId())
         {
-            case ResourceTypeConstant::DIR :
+            case SyncConstant::DIR :
                 echo 'It s a directory!'.'<br/>';
                 if($node_modif_date < $modif_date)
                 {
                     // TODO Mettre à jour la date de modification et le nom du directory
+                    // Only Rename?
+                    echo 'Mon directory est renomme'.'<br/>';
+                    $this->resourceManager->rename($node[0], $resource->getAttribute('name'));
                 }
                 else
                 {
                     echo 'No need to update'.'<br/>';
                 }
                 break;
-            case ResourceTypeConstant::FORUM :
+            case SyncConstant::FORUM :
+                // trouver le forum-category-sujet-message et ajouter/
                 break;
             default :
                 /*  When a resource with the same hashname is found, we can update him if it's required.
@@ -284,6 +323,7 @@ class LoadingManager
     
     private function createResource($resource, $workspace, $node, $doublon = false)
     {
+        $ds = DIRECTORY_SEPARATOR;
         echo 'I ask to create a resource'.'<br/>';
         $newResource;
         $newResourceNode;
@@ -307,16 +347,18 @@ class LoadingManager
         switch($type->getId())
         {
             
-            case ResourceTypeConstant::FILE :
+            case SyncConstant::FILE :
                 $newResource = new File();
+                $file_hashname = $resource->getAttribute('hashname');
                 $newResource->setSize($resource->getAttribute('size'));
-                $newResource->setHashName($resource->getAttribute('hashname'));
+                $newResource->setHashName($file_hashname);
+                rename($this->path.'data'.SyncConstant::ZIPFILEDIR.$file_hashname, '..'.SyncConstant::ZIPFILEDIR.$file_hashname);
                 echo 'boum'.'<br/>';
                 break;
-            case ResourceTypeConstant::DIR : 
+            case SyncConstant::DIR : 
                 $newResource = new Directory();            
                 break;
-            case ResourceTypeConstant::TEXT :
+            case SyncConstant::TEXT :
                 $newResource = new Text();
                 break;
      
@@ -345,6 +387,7 @@ class LoadingManager
         $newResourceNode->setCreationDate($creation_date);
         $newResourceNode->setModificationDate($modification_date);
         $this->om->endFlushSuite();  
+        
         // Element commun a toutes les ressources.
 
     }
@@ -387,6 +430,19 @@ class LoadingManager
         echo 'Workspace Created!'.'<br/>';
         //return new RedirectResponse($route);
 
+    }
+    
+    private function FileExtract($tmpFile, $hashname)
+    {
+        
+    }
+    
+    private function cleanDirectory()
+    {
+        if (!rmdir($this->path))
+        {
+            throw new \Exception('Impossible to delete the directory containing the extracted files.');
+        }
     }
     
 }

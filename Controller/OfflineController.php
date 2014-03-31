@@ -168,16 +168,26 @@ class OfflineController extends Controller
     *       name="claro_sync_get_zip",
     *   )
     *
-    *   @EXT\Method("GET")    
+    *   @EXT\Method("POST")    
     *   @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
     *
     *   @param User $user
     *   @return Response
     */
     public function getZipAction($user, User $authUser){
-    
+    /*
+    *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
+    *   la methode recevra avec la requete le zip de l'utilisateur offline
+    *   Il faut donc commencer par recevoir le zip du offline
+    *   Ensuite le traiter
+    *   Generer le zip descendant et le retourner dans la stream reponse
+    */
         echo 'user : '.$user;
         echo '  Auth user : '.$authUser->getId();
+        
+        //$request = $this->getRequest();
+        //echo ' <br/>'.'CECI est la requete !!!! <br/>'.' <br/> '.$request.' <br/>';
+        
         //TODO verfier securite? => dans FileController il fait un checkAccess....
         $response = new StreamedResponse();
        // $var = $user;

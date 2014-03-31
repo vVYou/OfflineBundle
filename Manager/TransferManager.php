@@ -78,6 +78,13 @@ class TransferManager
     */
     public function getSyncZip(User $user)    
     {
+    /*
+    *   Objectif de la methode :
+    *   appeler le serveur distant en lui demandant d'envoyer son zip de synchro
+    *   via cette requete, injecter mon zip de synchro local dedans
+    *   enregistrer le zip recu en retour pour le traiter en local
+    */
+    
     // ATTENTION, droits d'ecriture de fichier
         $client = new Curl();
         $client->setTimeout(45);
@@ -85,13 +92,20 @@ class TransferManager
         
         //TODO Constante pour l'URL du site, ce sera plus propre
         
-        echo 'get URL : '.SyncConstant::PLATEFORM_URL.$user->getId().'<br>';
-        $reponse = $browser->get(SyncConstant::PLATEFORM_URL.$user->getId());        
+        //$reponse = $browser->get(SyncConstant::PLATEFORM_URL.$user->getId());        
+        
+        /*  Browser post signature
+        *   public function post($url, $headers = array(), $content = '')
+        *   Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
+        */
+        //TODO Header = array vide ??? peut etre que j'oublie de declarer le content que je pousse derriere
+        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.$user->getId(), array(), './synchronize_up/'.$user->getId().'/sync.zip' );        
         $content = $reponse->getContent();
         
         echo $browser->getLastRequest().'<br/>';
         
-        $zipFile = fopen('./synchronize_up/'.$user->getId().'/sync.zip', 'w+');
+        //TODO Check ouverture du fichier
+        $zipFile = fopen('./synchronize_down/'.$user->getId().'/sync.zip', 'w+');
         $write = fwrite($zipFile, $content);
         if(!$write){
         //SHOULD RETURN ERROR

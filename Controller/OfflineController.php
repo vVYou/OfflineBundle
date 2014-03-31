@@ -185,8 +185,12 @@ class OfflineController extends Controller
         echo 'user : '.$user;
         echo '  Auth user : '.$authUser->getId();
         
-        //$request = $this->getRequest();
-        //echo ' <br/>'.'CECI est la requete !!!! <br/>'.' <br/> '.$request.' <br/>';
+        $request = $this->getRequest();
+        //TODO Decouper le travail de la requete dans une action de manager
+        echo ' <br/>'.'CECI est la requete !!!! <br/>'.' <br/> '.$request.' <br/>';
+        $content = $request->getContent();
+        $zipFile = fopen('./synchronize_up/'.$user.'/sync.zip', 'w+');
+        $write = fwrite($zipFile, $content);
         
         //TODO verfier securite? => dans FileController il fait un checkAccess....
         $response = new StreamedResponse();

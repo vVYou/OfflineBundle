@@ -15,6 +15,7 @@ use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
+use Claroline\OfflineBundle\SyncConstant;
 //use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\Routing\RouterInterface;
@@ -78,12 +79,14 @@ class TransferManager
     public function getSyncZip(User $user)    
     {
     // ATTENTION, droits d'ecriture de fichier
-        $client = new FileGetContents();
-        $client->setTimeout(30);
+        $client = new Curl();
+        $client->setTimeout(45);
         $browser = new Browser($client);
         
         //TODO Constante pour l'URL du site, ce sera plus propre
-        $reponse = $browser->get(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId());        
+        
+        echo 'get URL : '.SyncConstant::PLATEFORM_URL.$user->getId().'<br>';
+        $reponse = $browser->get(SyncConstant::PLATEFORM_URL.$user->getId());        
         $content = $reponse->getContent();
         
         echo $browser->getLastRequest().'<br/>';

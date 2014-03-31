@@ -148,8 +148,6 @@ class OfflineController extends Controller
     */
     public function transferAction($user, User $authUser)
     {
-        //echo 'User URL = '.$user.'<br/>';
-        //echo "USER ID = ".$authUser->getId().'<br/>';
         $transfer = true;
         if($user == $authUser->getId()){
             $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);

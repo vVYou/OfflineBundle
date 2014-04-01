@@ -154,7 +154,7 @@ class OfflineController extends Controller
         $transfer = true;
         if($user == $authUser->getId()){
             $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
-           // $test = $this->get('claroline.manager.transfer_manager')->transferZip($authUser);
+            //$test = $this->get('claroline.manager.transfer_manager')->transferZip($authUser);
         }else{
             $transfer = false;
         }
@@ -172,7 +172,7 @@ class OfflineController extends Controller
     *       name="claro_sync_get_zip",
     *   )
     *
-    *   @EXT\Method("GET")    
+    *   @EXT\Method("POST")    
     *
     *   @param User $user
     *   @return Response
@@ -188,11 +188,18 @@ class OfflineController extends Controller
      //   echo 'user : '.$user;
      //   echo '  Auth user : '.$authUser->getId();
         
-      //  $request = $this->getRequest();
+        $request = $this->getRequest();
         //TODO Decouper le travail de la requete dans une action de manager
-      //  $content = $request->getContent();
-      //  echo '<br/> CONTENT = '.$content.'<br/><br/>-------------------------------------';
+        $content = $request->getContent();
         
+      //  $file = fopen('request.txt', 'w+');
+     //   fwrite($file, '<br/> CONTENT = '.$content.'<br/>-------------------------------------<br/>');
+    //    fwrite($file, '<br /> getBaseURL = '.$request->getBaseUrl().'<br/>');
+    //    fwrite($file, '<br /> getUser = '.$request->getUser().'<br/>');
+    //    fwrite($file, '<br /> getPassword = '.$request->getPassword().'<br/>');
+   //     fwrite($file, '<br /> getMimeType = '.$request->getMimeType('zip').'<br/>');
+     //   fwrite($file, 'Hello');
+      //  fclose($file);
         //TODO verifier le fichier entrant
         
         /*
@@ -217,11 +224,11 @@ class OfflineController extends Controller
         }
         */
         //rename($content, './synchronize_up/'.$user.'/sync.zip');
-        /*
+        
         $zipFile = fopen('./synchronize_up/'.$user.'/sync.zip', 'w+');
         $write = fwrite($zipFile, $content);
         fclose($zipFile);
-        */
+        
         //TODO verfier securite? => dans FileController il fait un checkAccess....
         
         //echo "--------------------------------------------------------------------";

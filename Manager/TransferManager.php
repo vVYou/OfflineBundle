@@ -31,6 +31,12 @@ use \DateTime;
 use \Buzz\Browser;
 use \Buzz\Client\Curl;
 use \Buzz\Client\FileGetContents;
+use \Guzzle\Http\Client;
+use \Guzzle\Http\Post\PostFile;
+use \Guzzle\Http\EntityBody;
+use \Guzzle\Http\EntityBodyInterface;
+use \Guzzle\Http\Post\PostBodyInterface;
+
 
 /**
  * @DI\Service("claroline.manager.transfer_manager")
@@ -116,7 +122,12 @@ class TransferManager
         
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), $inside_zip);        
         */
-        $reponse = $browser->get(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId());//, array(), './synchronize_up/'.$user->getId().'/sync.zip' );        
+        $filename = './synchronize_up/'.$user->getId().'/sync.zip';
+        $handle = fopen($filename, 'r');
+        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), fread($handle, filesize($filename)) );        
+        
+        
+        //$reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), './synchronize_up/'.$user->getId().'/sync.zip' );    
         $content = $reponse->getContent();
         
         echo $browser->getLastRequest().'<br/>';
@@ -138,23 +149,25 @@ class TransferManager
     */
     public function transferZip(User $user)
     {
-        $zip_content ='';
-        $zip_file = fopen('sync.zip', 'r');
-        echo 'yes I open the file <br/>';
-        //TODO Controller l'ouverture
+        $client = new Client();
+       // echo 'tiemout<br/>';
+        $response = $client->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), [
+            'body' => [
+                'field_name' => 'abc',
+                'file_filed' => fopen('./synchronize_up/'.$user->getId().'/sync.zip', 'r')
+            ],
+            'timeout' => 45
+        ]);
+       
         /*
-        while(!feof($zip_file))
-        {
-            $zip_content .= fgets($zip_file);
-        }*/
-        
-        echo '<br/>***********************<br/>'.fgets($zip_file).'<br/>***********************<br/>';
-        echo '<br/>***********************<br/>'.fgets($zip_file).'<br/>***********************<br/>';
-        echo '<br/>***********************<br/>'.fgets($zip_file).'<br/>***********************<br/>';
-        
-        fclose($zip_file);
-        
-        echo 'TRANSFER PASS <br/>';
+        $request = $client->createRequest('POST', SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId());
+        $postBody = $request->getBody();
+        echo 'Body :=  '.get_class($postBody).'<br/>';
+        $postBody->setField('filename', 'sync_zip');
+        //$postBody->addFile(new PostFile('file',  fopen('./synchronize_up/'.$user->getId().'/sync.zip', 'r')));
+        //$response = $client->send($request);
+        */
+        echo 'TRANSFER PASS 2 <br/>';
     }
   
 }

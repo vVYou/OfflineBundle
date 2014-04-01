@@ -7,7 +7,7 @@ class SyncConstant
 {
 
     //Plateform Constants
-    const PLATEFORM_URL = 'localhost:14580/Claroline2/web/app_dev.php';
+    const PLATEFORM_URL = 'http://127.0.0.1:14580/Claroline2/web/app_dev.php';
 
     // ResourceType Constant
     const FILE = 1;

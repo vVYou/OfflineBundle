@@ -99,7 +99,24 @@ class TransferManager
         *   Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
         */
         //TODO Header = array vide ??? peut etre que j'oublie de declarer le content que je pousse derriere
-        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.$user->getId(), array(), './synchronize_up/'.$user->getId().'/sync.zip' );        
+        
+        //$inside_zip = '';
+        //$ds = DIRECTORY_SEPARATOR; 
+        //$filePointer = fopen('synchronize_up'.$ds.$user->getId().$ds.'sync.zip', 'r');
+       /* if(! ($filePointer = fopen('sync.zip', 'r'))){
+            echo 'echec de l\'ouverture du fichier';
+        }else{
+            while(!feof($filePointer)){
+                //$inside_zip .=fgets($filePointer);
+                echo fgets($filePointer);
+            }
+            fclose($filePointer);
+            echo '<br/>***********************<br/>'.$inside_zip.'<br/>***********************<br/>';
+        }
+        
+        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), $inside_zip);        
+        */
+        $reponse = $browser->get(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId());//, array(), './synchronize_up/'.$user->getId().'/sync.zip' );        
         $content = $reponse->getContent();
         
         echo $browser->getLastRequest().'<br/>';
@@ -114,6 +131,30 @@ class TransferManager
         fclose($zipFile);
         //TODO Controller erreur a la fermeture
         echo 'TRANSFER PASS !';
+    }
+    
+    /*
+    * @param User $user
+    */
+    public function transferZip(User $user)
+    {
+        $zip_content ='';
+        $zip_file = fopen('sync.zip', 'r');
+        echo 'yes I open the file <br/>';
+        //TODO Controller l'ouverture
+        /*
+        while(!feof($zip_file))
+        {
+            $zip_content .= fgets($zip_file);
+        }*/
+        
+        echo '<br/>***********************<br/>'.fgets($zip_file).'<br/>***********************<br/>';
+        echo '<br/>***********************<br/>'.fgets($zip_file).'<br/>***********************<br/>';
+        echo '<br/>***********************<br/>'.fgets($zip_file).'<br/>***********************<br/>';
+        
+        fclose($zip_file);
+        
+        echo 'TRANSFER PASS <br/>';
     }
   
 }

@@ -20,6 +20,9 @@ use Claroline\CoreBundle\Entity\ResourceNode;
 use Claroline\CoreBundle\Controller\FileController;
 use \DateTime;
 use \ZipArchive;
+use \Buzz\Browser;
+use \Buzz\Client\Curl;
+use \Buzz\Client\FileGetContents;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -151,6 +154,7 @@ class OfflineController extends Controller
         $transfer = true;
         if($user == $authUser->getId()){
             $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
+           // $test = $this->get('claroline.manager.transfer_manager')->transferZip($authUser);
         }else{
             $transfer = false;
         }
@@ -168,13 +172,12 @@ class OfflineController extends Controller
     *       name="claro_sync_get_zip",
     *   )
     *
-    *   @EXT\Method("POST")    
-    *   @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
+    *   @EXT\Method("GET")    
     *
     *   @param User $user
     *   @return Response
     */
-    public function getZipAction($user, User $authUser){
+    public function getZipAction($user){
     /*
     *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
     *   la methode recevra avec la requete le zip de l'utilisateur offline
@@ -182,17 +185,46 @@ class OfflineController extends Controller
     *   Ensuite le traiter
     *   Generer le zip descendant et le retourner dans la stream reponse
     */
-        echo 'user : '.$user;
-        echo '  Auth user : '.$authUser->getId();
+     //   echo 'user : '.$user;
+     //   echo '  Auth user : '.$authUser->getId();
         
-        $request = $this->getRequest();
+      //  $request = $this->getRequest();
         //TODO Decouper le travail de la requete dans une action de manager
-        echo ' <br/>'.'CECI est la requete !!!! <br/>'.' <br/> '.$request.' <br/>';
-        $content = $request->getContent();
+      //  $content = $request->getContent();
+      //  echo '<br/> CONTENT = '.$content.'<br/><br/>-------------------------------------';
+        
+        //TODO verifier le fichier entrant
+        
+        /*
+        $client = new Curl();
+        $client->setTimeout(45);
+        $browser = new Browser($client);
+        
+        $reponse = $browser->get($content);        
+        $zip_content = $reponse->getContent();
+        echo '---------------------------------------------<br/>'.$zip_content.'<br/>-----------------------------<br/>';
+        */
+        
+        /*
+        $zipFile = fopen('./synchronize_up/'.$user.'/sync.zip', 'w+');
+        $write = fwrite($zipFile, $zip_content);
+        if(!$write){
+        //SHOULD RETURN ERROR
+            echo 'An ERROR happen re-writing zip file at reception<br/>';
+        }
+        if (!fclose($zipFile)){
+            echo "probleme dans le close file <br/>";
+        }
+        */
+        //rename($content, './synchronize_up/'.$user.'/sync.zip');
+        /*
         $zipFile = fopen('./synchronize_up/'.$user.'/sync.zip', 'w+');
         $write = fwrite($zipFile, $content);
-        
+        fclose($zipFile);
+        */
         //TODO verfier securite? => dans FileController il fait un checkAccess....
+        
+        //echo "--------------------------------------------------------------------";
         $response = new StreamedResponse();
        // $var = $user;
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback

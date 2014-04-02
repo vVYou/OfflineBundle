@@ -114,13 +114,11 @@ class Manager
         
         $hashname_zip = $this->ut->generateGuid(); 
         
-        $manifestName = SyncConstant::MANIFEST.'_'.$hashname_zip.'.xml';
+        $manifestName = SyncConstant::MANIFEST.'_'.$user->getId().'.xml';
         $manifest = fopen($manifestName, 'w');
         fputs($manifest,'<manifest>');
         $this->writeManifestDescription($manifest, $user, $syncTime);
         //echo get_resource_type($manifest).'<br/>';
-        
-
  
         if($archive->open('sync_'.$hashname_zip.'.zip', ZipArchive::CREATE) === true)
         {

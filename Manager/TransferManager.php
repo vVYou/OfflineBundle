@@ -14,6 +14,7 @@ namespace Claroline\OfflineBundle\Manager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
+use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\SyncConstant;
 //use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -50,6 +51,7 @@ class TransferManager
     private $userSynchronizedRepo;
     private $resourceManager;
     private $router;
+    private $ut;
     
     /**
      * Constructor.
@@ -59,7 +61,8 @@ class TransferManager
      *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
      *     "translator"     = @DI\Inject("translator"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "router"         = @DI\Inject("router")
+     *     "router"         = @DI\Inject("router"),
+     *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
     public function __construct(
@@ -67,7 +70,8 @@ class TransferManager
         PagerFactory $pagerFactory,
         TranslatorInterface $translator,
         ResourceManager $resourceManager,
-        UrlGeneratorInterface $router
+        UrlGeneratorInterface $router,
+        ClaroUtilities $ut
     )
     {
         $this->om = $om;
@@ -76,6 +80,7 @@ class TransferManager
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
         $this->router = $router;
+        $this->ut = $ut;
     }
     
     
@@ -122,7 +127,7 @@ class TransferManager
         
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), $inside_zip);        
         */
-        $filename = './synchronize_up/'.$user->getId().'/sync.zip';
+        $filename = './synchronize_up/'.$user->getId().'/sync_F8673788-EB93-4F78-85C3-4C7ACAB1802F.zip';
         $handle = fopen($filename, 'r');
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), fread($handle, filesize($filename)) );        
         
@@ -130,10 +135,12 @@ class TransferManager
         //$reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), './synchronize_up/'.$user->getId().'/sync.zip' );    
         $content = $reponse->getContent();
         
-        echo $browser->getLastRequest().'<br/>';
+       // echo $browser->getLastRequest().'<br/>';
         
+        $hashname = $this->ut->generateGuid();
+        $zip_path = './synchronize_down/'.$user->getId().'/sync_'.$hashname.'.zip';
         //TODO Check ouverture du fichier
-        $zipFile = fopen('./synchronize_down/'.$user->getId().'/sync.zip', 'w+');
+        $zipFile = fopen($zip_path, 'w+');
         $write = fwrite($zipFile, $content);
         if(!$write){
         //SHOULD RETURN ERROR
@@ -141,7 +148,9 @@ class TransferManager
         }
         fclose($zipFile);
         //TODO Controller erreur a la fermeture
-        echo 'TRANSFER PASS !';
+        //echo 'TRANSFER PASS !';
+        
+        return $zip_path;
     }
     
     /*

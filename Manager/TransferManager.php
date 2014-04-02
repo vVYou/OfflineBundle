@@ -88,53 +88,28 @@ class TransferManager
     *   @param User $user
     */
     public function getSyncZip(User $user)    
-    {
-    /*
-    *   Objectif de la methode :
-    *   appeler le serveur distant en lui demandant d'envoyer son zip de synchro
-    *   via cette requete, injecter mon zip de synchro local dedans
-    *   enregistrer le zip recu en retour pour le traiter en local
-    */
+    {   /*
+        *   Objectif de la methode :
+        *   appeler le serveur distant en lui demandant d'envoyer son zip de synchro
+        *   via cette requete post, injecter mon zip de synchro local dedans
+        *   enregistrer le zip recu en retour pour le traiter en local
+        */
     
-    // ATTENTION, droits d'ecriture de fichier
+        // ATTENTION, droits d'ecriture de fichier
+        
+        //Declaration du client HTML Buzz
         $client = new Curl();
         $client->setTimeout(45);
         $browser = new Browser($client);
         
-        //TODO Constante pour l'URL du site, ce sera plus propre
+        //Browser post signature                public function post($url, $headers = array(), $content = '')
+        //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
         
-        //$reponse = $browser->get(SyncConstant::PLATEFORM_URL.$user->getId());        
-        
-        /*  Browser post signature
-        *   public function post($url, $headers = array(), $content = '')
-        *   Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
-        */
-        //TODO Header = array vide ??? peut etre que j'oublie de declarer le content que je pousse derriere
-        
-        //$inside_zip = '';
-        //$ds = DIRECTORY_SEPARATOR; 
-        //$filePointer = fopen('synchronize_up'.$ds.$user->getId().$ds.'sync.zip', 'r');
-       /* if(! ($filePointer = fopen('sync.zip', 'r'))){
-            echo 'echec de l\'ouverture du fichier';
-        }else{
-            while(!feof($filePointer)){
-                //$inside_zip .=fgets($filePointer);
-                echo fgets($filePointer);
-            }
-            fclose($filePointer);
-            echo '<br/>***********************<br/>'.$inside_zip.'<br/>***********************<br/>';
-        }
-        
-        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), $inside_zip);        
-        */
+        //TODO dynamique zip file name - constante repertoire sync_up et sync_down
         $filename = './synchronize_up/'.$user->getId().'/sync_F8673788-EB93-4F78-85C3-4C7ACAB1802F.zip';
         $handle = fopen($filename, 'r');
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), fread($handle, filesize($filename)) );        
-        
-        
-        //$reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), './synchronize_up/'.$user->getId().'/sync.zip' );    
         $content = $reponse->getContent();
-        
        // echo $browser->getLastRequest().'<br/>';
         
         $hashname = $this->ut->generateGuid();

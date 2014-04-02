@@ -99,7 +99,7 @@ class OfflineController extends Controller
         //$userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
          
         //$zip = $this->get('claroline.manager.loading_manager')->loadXML('manifest_test_3.xml');
-                
+        /*        
         $em = $this->getDoctrine()->getManager();
         $lol = $em->getEventManager();
         $tmp = array();
@@ -108,7 +108,7 @@ class OfflineController extends Controller
         foreach($tmp as $listener)
         {
             echo 'Listener found';
-        }
+        }*/
         /*
         $dispatcher = $this->get('event_dispatcher');
         $tmp = array();
@@ -120,9 +120,9 @@ class OfflineController extends Controller
         */
        // $em = this->getDoctrine->
         
-        $bool = $dispatcher->hasListeners('Gedmo\Timestampable');
+        //$bool = $dispatcher->hasListeners('Gedmo\Timestampable');
         
-        echo 'Bool : '.$bool.'<br/>';
+        //echo 'Bool : '.$bool.'<br/>';
         
         $zip = $this->get('claroline.manager.loading_manager')->loadZip('sync_097EC883-B9D8-4998-9A47-966791971A87.zip');
          

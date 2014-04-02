@@ -20,6 +20,9 @@ use Claroline\CoreBundle\Entity\ResourceNode;
 use Claroline\CoreBundle\Controller\FileController;
 use \DateTime;
 use \ZipArchive;
+use \Buzz\Browser;
+use \Buzz\Client\Curl;
+use \Buzz\Client\FileGetContents;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -173,11 +176,10 @@ class OfflineController extends Controller
     */
     public function transferAction($user, User $authUser)
     {
-        //echo 'User URL = '.$user.'<br/>';
-        //echo "USER ID = ".$authUser->getId().'<br/>';
         $transfer = true;
         if($user == $authUser->getId()){
             $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
+            //$test = $this->get('claroline.manager.transfer_manager')->transferZip($authUser);
         }else{
             $transfer = false;
         }
@@ -194,22 +196,74 @@ class OfflineController extends Controller
     *       "/sync/getzip/{user}",
     *       name="claro_sync_get_zip",
     *   )
-    
-    *   @EXT\Method("GET")
+    *
+    *   @EXT\Method("POST")    
     *
     *   @param User $user
     *   @return Response
     */
-    public function getZipAction(User $user){
-    
+    public function getZipAction($user){
+    /*
+    *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
+    *   la methode recevra avec la requete le zip de l'utilisateur offline
+    *   Il faut donc commencer par recevoir le zip du offline
+    *   Ensuite le traiter
+    *   Generer le zip descendant et le retourner dans la stream reponse
+    */
+     //   echo 'user : '.$user;
+     //   echo '  Auth user : '.$authUser->getId();
+        
+        $request = $this->getRequest();
+        //TODO Decouper le travail de la requete dans une action de manager
+        $content = $request->getContent();
+        
+      //  $file = fopen('request.txt', 'w+');
+     //   fwrite($file, '<br/> CONTENT = '.$content.'<br/>-------------------------------------<br/>');
+    //    fwrite($file, '<br /> getBaseURL = '.$request->getBaseUrl().'<br/>');
+    //    fwrite($file, '<br /> getUser = '.$request->getUser().'<br/>');
+    //    fwrite($file, '<br /> getPassword = '.$request->getPassword().'<br/>');
+   //     fwrite($file, '<br /> getMimeType = '.$request->getMimeType('zip').'<br/>');
+     //   fwrite($file, 'Hello');
+      //  fclose($file);
+        //TODO verifier le fichier entrant
+        
+        /*
+        $client = new Curl();
+        $client->setTimeout(45);
+        $browser = new Browser($client);
+        
+        $reponse = $browser->get($content);        
+        $zip_content = $reponse->getContent();
+        echo '---------------------------------------------<br/>'.$zip_content.'<br/>-----------------------------<br/>';
+        */
+        
+        /*
+        $zipFile = fopen('./synchronize_up/'.$user.'/sync.zip', 'w+');
+        $write = fwrite($zipFile, $zip_content);
+        if(!$write){
+        //SHOULD RETURN ERROR
+            echo 'An ERROR happen re-writing zip file at reception<br/>';
+        }
+        if (!fclose($zipFile)){
+            echo "probleme dans le close file <br/>";
+        }
+        */
+        //rename($content, './synchronize_up/'.$user.'/sync.zip');
+        
+        $zipFile = fopen('./synchronize_up/'.$user.'/sync.zip', 'w+');
+        $write = fwrite($zipFile, $content);
+        fclose($zipFile);
+        
         //TODO verfier securite? => dans FileController il fait un checkAccess....
+        
+        //echo "--------------------------------------------------------------------";
         $response = new StreamedResponse();
-        $var = null;
+       // $var = $user;
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
         //TODO, protéger plus le zip? Seul le propriétaire devrait avoir accès
         $response->setCallBack(
-            function () use ($var) {
-                readfile('synchronize_down/'.$user->getId().'/sync.zip');
+            function () use ($user) {
+                readfile('synchronize_down/'.$user.'/sync.zip');
             }
         );
         

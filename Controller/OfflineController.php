@@ -91,7 +91,7 @@ class OfflineController extends Controller
     * @param User $user
     * @return Response
     */
-    public function synchronizeAction(User $user)
+    public function loadAction(User $user)
     {
         //$userSynchro = $this->get('claroline.manager.synchronize_manager')->createUserSynchronized($user);
          
@@ -132,8 +132,69 @@ class OfflineController extends Controller
          );
     }
     
+    /**
+    *   Create userSyncrhonized entity
+    *   
+    *   @EXT\Route(
+    *       "/sync/exchange/{user}",
+    *       name="claro_sync_exchange"
+    *   )
+    *
+    * @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:load.html.twig")
+    *
+    * @param User $authUser
+    * @return Response
+    */
+    public function syncAction($user, User $authUser)
+    {
+    /**
+    *
+    *   TODO CLEAN UNUSED FUNCTIONS
+    *   TODO MODIFY return with render different twig donc redirect plutot que le boolean true false
+    *
+    */
+        if($user != $authUser->getId())
+        {
+        
+            $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
+            return array(
+                'user' => $username,
+                'succeed' => false
+            );
+        }
+        else
+        {
+            //CREATE THE SYNC_ZIP
+            $archive = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
+            //TODO rename zip into synchronize_up/user_id/
+            echo 'create zip';
+            
+            //TRANSFERT THE ZIP
+            //TODO change with the archive in place of authUser
+            $response = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
+            
+            echo '<br/>transfered  : '.$response.'<br/>';
+            
+            //LOAD RECEIVED SYNC_ZIP 
+            $this->get('claroline.manager.loading_manager')->loadZip($response, $authUser);
+            
+            echo 'SUCCEED';
+            //TODO UPDATE DB et clean directory
+            
+            
+            $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
+            return array(
+                'user' => $username,
+                'succeed' => true
+             );
+        }
+    }
 
     /**
+    * USELESS NOW !!!!!!!!!!!
+    *
+    *
     *   Seek and show all the modified courses and ressources
     *   
     *   @EXT\Route(
@@ -250,7 +311,7 @@ class OfflineController extends Controller
         */
         //rename($content, './synchronize_up/'.$user.'/sync.zip');
         
-        $zipFile = fopen('./synchronize_up/'.$user.'/sync.zip', 'w+');
+        $zipFile = fopen('./synchronize_up/'.$user.'/sync_F8673788-EB93-4F78-85C3-4C7ACAB1802F.zip', 'w+');
         $write = fwrite($zipFile, $content);
         fclose($zipFile);
         
@@ -263,7 +324,7 @@ class OfflineController extends Controller
         //TODO, protéger plus le zip? Seul le propriétaire devrait avoir accès
         $response->setCallBack(
             function () use ($user) {
-                readfile('synchronize_down/'.$user.'/sync.zip');
+                readfile('synchronize_down/'.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
             }
         );
         

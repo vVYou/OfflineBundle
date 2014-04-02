@@ -101,7 +101,7 @@ class LoadingManager
     *   This method open the zip file, call the loadXML function and 
     *   destroy the zip file while everything is done.
     */
-    public function loadZip($zipPath)
+    public function loadZip($zipPath, User $user)
     {
         $ds = DIRECTORY_SEPARATOR;
         
@@ -115,8 +115,8 @@ class LoadingManager
             $tmpdirectory = $archive->extractTo($this->path);
             
             //Call LoadXML
-            //$this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$zip_hashname.'.xml');
-            $this->loadXML('manifest_test_x.xml'); //Actually used for test.
+            $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
+            //$this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
         }
@@ -312,9 +312,11 @@ class LoadingManager
                 {
                     // La nouvelle ressource est une update de l'ancienne
                    // echo 'I ask to erase a resource'.'<br/>';
-                   
+                   echo'after'.'<br/>';
+                   echo 'name : '.$node->getName().'<br/>';
                     $this->resourceManager->delete($node);
                     $this->createResource($resource, $workspace, null, false);
+                    echo'before';
                 }
                 else 
                 {

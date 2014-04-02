@@ -147,16 +147,14 @@ class OfflineController extends Controller
     * @return Response
     */
     public function syncAction($user, User $authUser)
-    {
-    /**
-    *
-    *   TODO CLEAN UNUSED FUNCTIONS
-    *   TODO MODIFY return with render different twig donc redirect plutot que le boolean true false
-    *
-    */
+    {   /**
+        *   TODO CLEAN UNUSED FUNCTIONS
+        *   TODO MODIFY return with render different twig donc redirect plutot que le boolean true false
+        *
+        */
+        
         if($user != $authUser->getId())
         {
-        
             $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
             return array(
                 'user' => $username,
@@ -167,22 +165,21 @@ class OfflineController extends Controller
         {
             //CREATE THE SYNC_ZIP
             $archive = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
-            //TODO rename zip into synchronize_up/user_id/
-            echo 'create zip';
             
             //TRANSFERT THE ZIP
-            //TODO change with the archive in place of authUser
-            $response = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
-            
-            echo '<br/>transfered  : '.$response.'<br/>';
+            $response = $this->get('claroline.manager.transfer_manager')->transferZip($archive, $authUser);
             
             //LOAD RECEIVED SYNC_ZIP 
             $this->get('claroline.manager.loading_manager')->loadZip($response, $authUser);
             
-            echo 'SUCCEED';
-            //TODO UPDATE DB et clean directory
+            //echo 'SUCCEED';
+            //TODO update synchronize date
             
+            //clean directory
+            unlink($archive);
+            unlink($response);
             
+            //Format the view
             $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
             return array(
                 'user' => $username,
@@ -222,6 +219,8 @@ class OfflineController extends Controller
     }
     
     /**
+    *   UNUSED !!!!!!
+    *
     *  Transfer a file (sync archive) from a computer to another
     *   
     *   @EXT\Route(

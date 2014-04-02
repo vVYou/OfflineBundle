@@ -87,7 +87,7 @@ class TransferManager
     /*
     *   @param User $user
     */
-    public function getSyncZip(User $user)    
+    public function transferZip($toTransfer, User $user)    
     {   /*
         *   Objectif de la methode :
         *   appeler le serveur distant en lui demandant d'envoyer son zip de synchro
@@ -106,14 +106,14 @@ class TransferManager
         //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
         
         //TODO dynamique zip file name - constante repertoire sync_up et sync_down
-        $filename = './synchronize_up/'.$user->getId().'/sync_F8673788-EB93-4F78-85C3-4C7ACAB1802F.zip';
-        $handle = fopen($filename, 'r');
-        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), fread($handle, filesize($filename)) );        
+        
+        $handle = fopen($toTransfer, 'r');
+        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), fread($handle, filesize($toTransfer)) );        
         $content = $reponse->getContent();
        // echo $browser->getLastRequest().'<br/>';
         
         $hashname = $this->ut->generateGuid();
-        $zip_path = './synchronize_down/'.$user->getId().'/sync_'.$hashname.'.zip';
+        $zip_path = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$hashname.'.zip';
         //TODO Check ouverture du fichier
         $zipFile = fopen($zip_path, 'w+');
         $write = fwrite($zipFile, $content);
@@ -131,7 +131,7 @@ class TransferManager
     /*
     * @param User $user
     */
-    public function transferZip(User $user)
+    public function getSyncZip(User $user)
     {
         $client = new Client();
        // echo 'tiemout<br/>';

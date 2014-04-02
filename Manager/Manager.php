@@ -110,7 +110,7 @@ class Manager
         $syncTime = time();
         
         $userRes = array();
-        $typeList = array('file', 'directory', 'text'); // ! PAS OPTIMAL !
+        $typeList = array('file', 'directory', 'text'); //TODO ! PAS OPTIMAL !
         $typeArray = $this->buildTypeArray($typeList);
         $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
         
@@ -122,8 +122,11 @@ class Manager
         $this->writeManifestDescription($manifest, $user, $syncTime);
         //echo get_resource_type($manifest).'<br/>';
  
-        if($archive->open('sync_'.$hashname_zip.'.zip', ZipArchive::CREATE) === true)
+        $fileName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$hashname_zip.'.zip';
+        if($archive->open($fileName, ZipArchive::CREATE) === true)
         {
+        //echo 'THIS Is THE ARCHIVE NAME : '.$archive->filename ;
+        
         fputs($manifest,'
     <plateform>');
     
@@ -146,11 +149,12 @@ class Manager
         fclose($manifest);
         
         $archive->addFile($manifestName);
+        $archivePath = $archive->filename;
         $archive->close();
-        
         // Erase the manifest from the current folder.
         unlink($manifestName);
-        return $archive;
+        
+        return $archivePath;
     }
     
     private function buildTypeArray(array $typeList)

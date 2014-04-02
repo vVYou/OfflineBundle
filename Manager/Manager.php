@@ -279,7 +279,7 @@ class Manager
         {
             case SyncConstant::FILE :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
-                echo 'My res class : '.get_class($my_res).'<br/>';
+                //echo 'My res class : '.get_class($my_res).'<br/>';
                 //$creation_time = $resToAdd->getCreationDate()->getTimestamp();  
                 //$modification_time = $resToAdd->getModificationDate()->getTimestamp();                
                 

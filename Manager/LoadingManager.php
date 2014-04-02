@@ -25,6 +25,7 @@ use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Resource\Directory;
 use Claroline\CoreBundle\Entity\Resource\Text;
+use Claroline\CoreBundle\Entity\Resource\Revision;
 use Claroline\OfflineBundle\SyncConstant;
 use Symfony\Component\HttpFoundation\Request;
 use Claroline\CoreBundle\Library\Workspace\Configuration;
@@ -46,6 +47,7 @@ class LoadingManager
     private $translator;
     private $userSynchronizedRepo;
     private $resourceNodeRepo;
+    private $revisionRepo;
     private $resourceManager;
     private $workspaceManager;
     private $templateDir;
@@ -85,6 +87,7 @@ class LoadingManager
         $this->pagerFactory = $pagerFactory;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+        $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
         $this->translator = $translator;
         $this->wsManager = $wsManager;
         $this->resourceManager = $resourceManager;
@@ -359,7 +362,7 @@ class LoadingManager
         *   Ensuite utiliser geteventmanager puis removeeventsubscriber pour enlever 
         *   ce listener.
         */
-        $dispatcher = $this->get('event_dispatcher');
+       // $dispatcher = $this->get('event_dispatcher');
         echo 'I ask to create a resource'.'<br/>';
         
         /*
@@ -421,7 +424,13 @@ class LoadingManager
                 break;
                 
             case SyncConstant::TEXT :
+            
                 $newResource = new Text();
+                $revision = new Revision();
+                $revision->setContent($resource->getAttribute('content'));
+                $revision->setUser($this->user);
+                $revision->setText($newResource);
+                $this->om->persist($revision);                         
                 break;       
         }      
         

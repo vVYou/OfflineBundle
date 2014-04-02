@@ -44,6 +44,7 @@ class Manager
     private $pagerFactory;
     private $translator;
     private $userSynchronizedRepo;
+    private $revisionRepo;
     private $resourceManager;
     private $ut;
 
@@ -69,6 +70,7 @@ class Manager
         $this->om = $om;
         $this->pagerFactory = $pagerFactory;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
+        $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
@@ -316,7 +318,9 @@ class Manager
                 }
                 break;
             case SyncConstant::TEXT :
-                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);                   
+                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);  
+
+                $revision = $this->revisionRepo->findOneBy(array('text_id' => $my_res->getId()));
                 //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
                 //$modification_time = $resToAdd->getModificationDate()->getTimestamp();
                 
@@ -328,6 +332,7 @@ class Manager
                     version="'.$my_res->getVersion().'"
                     hashname_node="'.$resToAdd->getNodeHashName().'"
                     hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
+                    content="'.$revision->getContent().'"
                     creation_date="'.$creation_time.'"
                     modification_date="'.$modification_time.'">
                     </resource>

@@ -263,65 +263,31 @@ class OfflineController extends Controller
     *   @param User $user
     *   @return Response
     */
-    public function getZipAction($user){
-    /*
-    *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
-    *   la methode recevra avec la requete le zip de l'utilisateur offline
-    *   Il faut donc commencer par recevoir le zip du offline
-    *   Ensuite le traiter
-    *   Generer le zip descendant et le retourner dans la stream reponse
-    */
-     //   echo 'user : '.$user;
-     //   echo '  Auth user : '.$authUser->getId();
+    public function getZipAction($user)
+    {/*
+        *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
+        *   la methode recevra avec la requete le zip de l'utilisateur offline
+        *   Il faut donc commencer par recevoir le zip du offline
+        *   Ensuite le traiter
+        *   Generer le zip descendant et le retourner dans la stream reponse
+        */
         
         $request = $this->getRequest();
         //TODO Decouper le travail de la requete dans une action de manager
         $content = $request->getContent();
+        //TODO Verifier le fichier entrant
         
-      //  $file = fopen('request.txt', 'w+');
-     //   fwrite($file, '<br/> CONTENT = '.$content.'<br/>-------------------------------------<br/>');
-    //    fwrite($file, '<br /> getBaseURL = '.$request->getBaseUrl().'<br/>');
-    //    fwrite($file, '<br /> getUser = '.$request->getUser().'<br/>');
-    //    fwrite($file, '<br /> getPassword = '.$request->getPassword().'<br/>');
-   //     fwrite($file, '<br /> getMimeType = '.$request->getMimeType('zip').'<br/>');
-     //   fwrite($file, 'Hello');
-      //  fclose($file);
-        //TODO verifier le fichier entrant
-        
-        /*
-        $client = new Curl();
-        $client->setTimeout(45);
-        $browser = new Browser($client);
-        
-        $reponse = $browser->get($content);        
-        $zip_content = $reponse->getContent();
-        echo '---------------------------------------------<br/>'.$zip_content.'<br/>-----------------------------<br/>';
-        */
-        
-        /*
-        $zipFile = fopen('./synchronize_up/'.$user.'/sync.zip', 'w+');
-        $write = fwrite($zipFile, $zip_content);
-        if(!$write){
-        //SHOULD RETURN ERROR
-            echo 'An ERROR happen re-writing zip file at reception<br/>';
-        }
-        if (!fclose($zipFile)){
-            echo "probleme dans le close file <br/>";
-        }
-        */
-        //rename($content, './synchronize_up/'.$user.'/sync.zip');
-        
+        //TODO Gestion dynamique du nom du fichier arrivant
         $zipFile = fopen('./synchronize_up/'.$user.'/sync_F8673788-EB93-4F78-85C3-4C7ACAB1802F.zip', 'w+');
         $write = fwrite($zipFile, $content);
         fclose($zipFile);
         
         //TODO verfier securite? => dans FileController il fait un checkAccess....
-        
-        //echo "--------------------------------------------------------------------";
+        //TODO gestion dynamique du fichier retourne
+
         $response = new StreamedResponse();
-       // $var = $user;
+        //$var = $user;
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
-        //TODO, protéger plus le zip? Seul le propriétaire devrait avoir accès
         $response->setCallBack(
             function () use ($user) {
                 readfile('synchronize_down/'.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');

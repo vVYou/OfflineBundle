@@ -347,9 +347,7 @@ class LoadingManager
     */
     
     private function createResource($resource, $workspace, $node, $doublon)
-    {
-    
-        /* 
+    {   /* 
         *   Attention, les dates de modifications sont erronees en DB.
         *   A chaque creation de ressources, le champ next_id de la ressource precedentes
         *   est modifie et donc sa modification_date egalement

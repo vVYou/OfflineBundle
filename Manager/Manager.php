@@ -95,7 +95,25 @@ class Manager
 
         return $userSynchronized;
     }
-
+    
+    /*
+     * @param \Claroline\CoreBundle\Entity\User $user
+     */
+    public function updateUserSynchronized(User $user)
+    {
+        $userSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $this->om->startFlushSuite();
+        
+        echo 'Class of use Sync : '.get_class($userSync[0]).'<br/>';
+        $now = new DateTime();
+        echo 'DATETIME : '.$now->format('Y-m-d H:i:sP')."<br/>";
+        $userSync[0]->setLastSynchronization($now);
+        
+        $this->om->persist($userSync[0]);
+        $this->om->endFlushSuite();
+    }
+    
+    
     /**
      * Create a the archive based on the user     
      * Attention, if the archive file created is empty, it will not write zip file on disk !

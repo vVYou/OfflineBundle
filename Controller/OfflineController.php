@@ -66,11 +66,13 @@ class OfflineController extends Controller
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         
         if ($userSynchroDate) {
+        //TODO Liens vers la route de synchronisation
             return $this->render('ClarolineOfflineBundle:Offline:sync.html.twig', array(
                 'user' => $username,
                 'user_sync_date' => $userSynchroDate[0]->getLastSynchronization()
             ) );
         }else{
+        //TODO Methode d'installation
             return $this->render('ClarolineOfflineBundle:Offline:first_sync.html.twig', array(
                 'user' => $username
             ) );
@@ -150,7 +152,6 @@ class OfflineController extends Controller
     {   /**
         *   TODO CLEAN UNUSED FUNCTIONS
         *   TODO MODIFY return with render different twig donc redirect plutot que le boolean true false
-        *
         */
         
         if($user != $authUser->getId())
@@ -173,7 +174,9 @@ class OfflineController extends Controller
             $this->get('claroline.manager.loading_manager')->loadZip($response, $authUser);
             
             //echo 'SUCCEED';
-            //TODO update synchronize date
+            
+            //UPDATE SYNCHRONIZE DATE
+            $userSynchro = $this->get('claroline.manager.synchronize_manager')->updateUserSynchronized($authUser);
             
             //clean directory
             unlink($archive);

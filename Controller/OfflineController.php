@@ -169,6 +169,7 @@ class OfflineController extends Controller
             
             //TRANSFERT THE ZIP
             $response = $this->get('claroline.manager.transfer_manager')->transferZip($archive, $authUser);
+            echo 'I received  : '.$response.'<br/>';
             
             //LOAD RECEIVED SYNC_ZIP 
             $this->get('claroline.manager.loading_manager')->loadZip($response, $authUser);
@@ -262,11 +263,10 @@ class OfflineController extends Controller
     *
     *   @EXT\Method("POST")    
     *
-    *   @param User $user
     *   @return Response
     */
     public function getZipAction($user)
-    {/*
+    {   /*
         *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
         *   la methode recevra avec la requete le zip de l'utilisateur offline
         *   Il faut donc commencer par recevoir le zip du offline
@@ -274,16 +274,17 @@ class OfflineController extends Controller
         *   Generer le zip descendant et le retourner dans la stream reponse
         */
         
-        $request = $this->getRequest();
+      //  $request = $this->getRequest();
         //TODO Decouper le travail de la requete dans une action de manager
-        $content = $request->getContent();
+      //  $content = $request->getContent();
         //TODO Verifier le fichier entrant
         
         //TODO Gestion dynamique du nom du fichier arrivant
+        /*
         $zipFile = fopen('./synchronize_up/'.$user.'/sync_F8673788-EB93-4F78-85C3-4C7ACAB1802F.zip', 'w+');
         $write = fwrite($zipFile, $content);
         fclose($zipFile);
-        
+        */
         //TODO verfier securite? => dans FileController il fait un checkAccess....
         //TODO gestion dynamique du fichier retourne
 
@@ -292,7 +293,7 @@ class OfflineController extends Controller
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
         $response->setCallBack(
             function () use ($user) {
-                readfile('synchronize_down/'.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
+                readfile('./synchronize_down/'.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
             }
         );
         

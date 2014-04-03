@@ -99,7 +99,7 @@ class TransferManager
         
         //Declaration du client HTML Buzz
         $client = new Curl();
-        $client->setTimeout(45);
+        $client->setTimeout(60);
         $browser = new Browser($client);
         
         //Browser post signature                public function post($url, $headers = array(), $content = '')
@@ -108,7 +108,9 @@ class TransferManager
         //TODO dynamique zip file name - constante repertoire sync_up et sync_down
         
         $handle = fopen($toTransfer, 'r');
+        echo 'ca part <br/>';
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), fread($handle, filesize($toTransfer)) );        
+        echo 'ca revient<br/>';
         $content = $reponse->getContent();
        // echo $browser->getLastRequest().'<br/>';
         
@@ -129,6 +131,9 @@ class TransferManager
     }
     
     /*
+    *
+    *   GUZZLE example, did not work for know, but we hope to have it soon, it will be better
+    *
     * @param User $user
     */
     public function getSyncZip(User $user)
@@ -138,7 +143,7 @@ class TransferManager
         $response = $client->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), [
             'body' => [
                 'field_name' => 'abc',
-                'file_filed' => fopen('./synchronize_up/'.$user->getId().'/sync.zip', 'r')
+                'file_filed' => fopen(SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync.zip', 'r')
             ],
             'timeout' => 45
         ]);
@@ -154,4 +159,18 @@ class TransferManager
         echo 'TRANSFER PASS 2 <br/>';
     }
   
+  
+    public function processSyncRequest($request, $user)
+    {
+        $content = $request->getContent();
+        //TODO Verifier le fichier entrant
+        //TODO Gestion dynamique du nom du fichier arrivant
+        
+        $hashname = $this->ut->generateGuid();
+        $zipFile = fopen(SyncConstant::SYNCHRO_UP_DIR.$user.'/sync_'.$hashname.'.zip', 'w+');
+        $write = fwrite($zipFile, $content);
+        $zipName = $zipFile->filename;
+        fclose($zipFile);
+        return $zipName;
+    }
 }

@@ -18,6 +18,7 @@ use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\ResourceNode;
 use Claroline\CoreBundle\Controller\FileController;
+use Claroline\OfflineBundle\SyncConstant;
 use \DateTime;
 use \ZipArchive;
 use \Buzz\Browser;
@@ -276,17 +277,24 @@ class OfflineController extends Controller
         
         $request = $this->getRequest();
         //TODO verifier l'authentification
-        $zip_path = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
-        
+        //Catch the sync zip sent via POST request
+        $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
         //TODO verfier securite? => dans FileController il fait un checkAccess....
-        //TODO gestion dynamique du fichier retourne
-
+        
+        //TODO GET AUTH USER BASED ON ID
+        //Load the archive
+        //$this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
+        
+        //Compute the answer
+        //$toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
+        
+        //Send back the online sync zip
         $response = new StreamedResponse();
-        //$var = $user;
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
         $response->setCallBack(
             function () use ($user) {
-                readfile('./synchronize_down/'.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
+                readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
+                //readfile($toSend);
             }
         );
         

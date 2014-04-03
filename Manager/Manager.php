@@ -138,7 +138,7 @@ class Manager
         $this->writeManifestDescription($manifest, $user, $syncTime);
         //echo get_resource_type($manifest).'<br/>';
  
-        $fileName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$hashname_zip.'.zip';
+        $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$hashname_zip.'.zip';
         if($archive->open($fileName, ZipArchive::CREATE) === true)
         {
         //echo 'THIS Is THE ARCHIVE NAME : '.$archive->filename ;

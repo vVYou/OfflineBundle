@@ -265,7 +265,7 @@ class OfflineController extends Controller
     *
     *   @return Response
     */
-    public function getZipAction($user)
+     public function getZipAction($user)
     {   /*
         *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
         *   la methode recevra avec la requete le zip de l'utilisateur offline
@@ -274,17 +274,10 @@ class OfflineController extends Controller
         *   Generer le zip descendant et le retourner dans la stream reponse
         */
         
-      //  $request = $this->getRequest();
-        //TODO Decouper le travail de la requete dans une action de manager
-      //  $content = $request->getContent();
-        //TODO Verifier le fichier entrant
+        $request = $this->getRequest();
+        //TODO verifier l'authentification
+        $zip_path = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
         
-        //TODO Gestion dynamique du nom du fichier arrivant
-        /*
-        $zipFile = fopen('./synchronize_up/'.$user.'/sync_F8673788-EB93-4F78-85C3-4C7ACAB1802F.zip', 'w+');
-        $write = fwrite($zipFile, $content);
-        fclose($zipFile);
-        */
         //TODO verfier securite? => dans FileController il fait un checkAccess....
         //TODO gestion dynamique du fichier retourne
 
@@ -298,6 +291,5 @@ class OfflineController extends Controller
         );
         
         return $response;
-
     }
 }

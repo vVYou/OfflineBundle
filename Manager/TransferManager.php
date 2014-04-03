@@ -108,9 +108,7 @@ class TransferManager
         //TODO dynamique zip file name - constante repertoire sync_up et sync_down
         
         $handle = fopen($toTransfer, 'r');
-        echo 'ca part <br/>';
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), fread($handle, filesize($toTransfer)) );        
-        echo 'ca revient<br/>';
         $content = $reponse->getContent();
        // echo $browser->getLastRequest().'<br/>';
         
@@ -160,16 +158,14 @@ class TransferManager
     }
   
   
-    public function processSyncRequest($request, $user)
+     public function processSyncRequest($request, $user)
     {
-        $content = $request->getContent();
         //TODO Verifier le fichier entrant
-        //TODO Gestion dynamique du nom du fichier arrivant
-        
+        $content = $request->getContent();
         $hashname = $this->ut->generateGuid();
-        $zipFile = fopen(SyncConstant::SYNCHRO_UP_DIR.$user.'/sync_'.$hashname.'.zip', 'w+');
+        $zipName = SyncConstant::SYNCHRO_UP_DIR.$user.'/sync_'.$hashname.'.zip';
+        $zipFile = fopen($zipName, 'w+');
         $write = fwrite($zipFile, $content);
-        $zipName = $zipFile->filename;
         fclose($zipFile);
         return $zipName;
     }

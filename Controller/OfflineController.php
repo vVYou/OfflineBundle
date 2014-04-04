@@ -167,6 +167,7 @@ class OfflineController extends Controller
         {
             //CREATE THE SYNC_ZIP
             $archive = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
+            echo 'I send : '.$archive.'<br/>';
             
             //TRANSFERT THE ZIP
             $response = $this->get('claroline.manager.transfer_manager')->transferZip($archive, $authUser);
@@ -281,7 +282,10 @@ class OfflineController extends Controller
         $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
         //TODO verfier securite? => dans FileController il fait un checkAccess....
         
-        //TODO GET AUTH USER BASED ON ID
+        $em = $this->getDoctrine()->getManager();
+        $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
+        $authUser = $arrayRepo[0];
+        
         //Load the archive
         //$this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
         

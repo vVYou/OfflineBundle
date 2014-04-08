@@ -26,6 +26,8 @@ use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Resource\Directory;
 use Claroline\CoreBundle\Entity\Resource\Text;
 use Claroline\CoreBundle\Entity\Resource\Revision;
+use Claroline\ForumBundle\Entity\Message;
+use Claroline\ForumBundle\Manager\Manager;
 use Claroline\OfflineBundle\SyncConstant;
 use Symfony\Component\HttpFoundation\Request;
 use Claroline\CoreBundle\Library\Workspace\Configuration;
@@ -35,6 +37,11 @@ use \ZipArchive;
 use \DOMDocument;
 use \DOMElement;
 use \DateTime;
+use Claroline\CoreBundle\Library\Security\Utilities;
+use Claroline\CoreBundle\Library\Security\TokenUpdater;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Security\Core\SecurityContextInterface;
 
 /**
  * @DI\Service("claroline.manager.loading_manager")
@@ -48,13 +55,19 @@ class LoadingManager
     private $userSynchronizedRepo;
     private $resourceNodeRepo;
     private $revisionRepo;
+    private $subjectRepo;
+    private $messageRepo;
+    private $forumRepo;
     private $resourceManager;
     private $workspaceManager;
+    private $forumManager;
     private $templateDir;
     private $user;
     private $ut;
     private $dispatcher;
     private $path;
+    private $security;
+    private $tokenUpdater;
 
     /**
      * Constructor.
@@ -66,9 +79,12 @@ class LoadingManager
      *     "wsManager"      = @DI\Inject("claroline.manager.workspace_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
      *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
+     *     "forumManager"   = @DI\Inject("claroline.manager.forum_manager"),
      *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc"),
-     *     "dispatcher"      = @DI\Inject("claroline.event.event_dispatcher")
+     *     "dispatcher"      = @DI\Inject("claroline.event.event_dispatcher"),
+     *     "security"           = @DI\Inject("security.context"),
+     *     "tokenUpdater"       = @DI\Inject("claroline.security.token_updater")
      * })
      */
     public function __construct(
@@ -78,9 +94,12 @@ class LoadingManager
         WorkspaceManager $wsManager,
         ResourceManager $resourceManager,
         WorkspaceManager $workspaceManager,
+        Manager $forumManager,
         $templateDir,
         ClaroUtilities $ut,
-        StrictDispatcher $dispatcher
+        StrictDispatcher $dispatcher,
+        SecurityContextInterface $security,
+        TokenUpdater $tokenUpdater
     )
     {
         $this->om = $om;
@@ -88,13 +107,20 @@ class LoadingManager
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
+        $this->subjectRepo = $om->getRepository('ClarolineForumBundle:Subject');
+        $this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
+        $this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
         $this->translator = $translator;
         $this->wsManager = $wsManager;
         $this->resourceManager = $resourceManager;
         $this->workspaceManager = $workspaceManager;
+        $this->forumManager = $forumManager;
         $this->templateDir = $templateDir;
         $this->ut = $ut;
         $this->dispatcher = $dispatcher;
+        $this->security = $security;
+        $this->tokenUpdater = $tokenUpdater;
+        
     }
     
     /*
@@ -185,10 +211,11 @@ class LoadingManager
             if($item->nodeName == 'workspace')
             {
                 /**
-                *   Check if a workspace with the given code already exist.
+                *   Check if a workspace with the given guid already exists.
                 *   - if it doesn't exist then it will be created 
                 *   - then proceed to the resources (no matter if we have to create the workspace previously)
                 */
+                
                 //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
                 $workspace = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findOneBy(array('guid' => $item->getAttribute('guid')));
                 
@@ -196,13 +223,14 @@ class LoadingManager
                 if(count($workspace) >= 1)
                 {
                     echo 'Mon Workspace : '.$workspace->getGuid().'<br/>';
-                    /*  When a workspace with the same guid is found, we can update him if it's required.
-                    *   First, we need to check if : modification_date_offline > modification_date_online.
-                    *       - If it is, we need to check if : modification_date_online <= user_synchronisation_date
-                    *           - If it is, we just need to update the workspace
-                    *           - If it's not, that means that the workspace has been manipulated offline AND online.
-                    *       - If it's not, we don't need to go further.
+                    
+                    /*  
+                    *   When a workspace with the same guid is found, we can update him if it's required.
+                    *   We need to check if : modification_date_offline > modification_date_online.
+                    *       - If it is, the workspace can be update with the changes described in the XML.
+                    *       - If it's not, it means that the 'online' version of the workspace is up-to-date.
                     */
+                    
                     //echo 'I need to update my workspace!'.'<br/>';
                     $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
                     // TODO Mettre à jour la date de modification et le nom du directory
@@ -212,11 +240,11 @@ class LoadingManager
                     
                     if($modif_date > $node_modif_date)
                     {
-                       // echo 'Need to update!'.'<br/>';
+                       // The properties of the workspace has been changed and need to be update.
                     }
                     else
                     {
-                       // echo 'No need to update!'.'<br/>';
+                       // The 'online' version of the workspace is up-to-date.
                     }
                 }
                 
@@ -260,6 +288,11 @@ class LoadingManager
                     $this->createResource($res, $workspace, null, false);
                 } 
             }
+            if($res->nodeName == 'message')
+            {
+                // TODO : Gerer l'update de message
+                $this->createMessage($res);
+            }
         }
     }
     
@@ -270,6 +303,10 @@ class LoadingManager
     private function updateResource($resource, $node, $workspace)
     {
         echo 'I need to update my resource!'.'<br/>';
+        
+        /*
+        *   Load the required informations from the XML file.
+        */
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modif_date = $resource->getAttribute('modification_date');
         $creation_date = $resource->getAttribute('creation_date'); //USELESS?
@@ -299,12 +336,13 @@ class LoadingManager
             default :
                 echo 'It s a file or a text!'.'<br/>';
                 
-                /*  When a resource with the same hashname is found, we can update him if it's required.
+                /*  
+                *   When a resource with the same hashname is found, we can update him if it's required.
                 *   First, we need to check if : modification_date_online <= user_synchronisation_date.
                 *       - If it is, we know that the resource can be erased because it's now obsolete.
                 *       - If it's not, we check if the modification_date of both resources (in database and in the xml) are
                 *       different. 
-                *           - If it is we need to create 'doublon' to preserve both resource
+                *           - If it is we need to create 'doublon' to preserve both resources
                 *           - If it's not we suppose that there are the same (connexion lost, ...)
                 */
 
@@ -425,7 +463,7 @@ class LoadingManager
             
                 $newResource = new Text();
                 $revision = new Revision();
-                $revision->setContent($resource->getAttribute('content'));
+                $revision->setContent('<p>'.$resource->getAttribute('content').'</p>');
                 $revision->setUser($this->user);
                 $revision->setText($newResource);
                 $this->om->persist($revision);                         
@@ -495,9 +533,10 @@ class LoadingManager
         $config->setDisplayable($workspace->getAttribute('displayable'));
         $config->setSelfRegistration($workspace->getAttribute('selfregistration'));
         $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
-        //$user = $this->security->getToken()->getUser();
+        $user = $this->security->getToken()->getUser();
+        
         $this->workspaceManager->create($config, $user);
-        //$this->tokenUpdater->update($this->security->getToken());
+        $this->tokenUpdater->update($this->security->getToken());
         //$route = $this->router->generate('claro_workspace_list');
                
         $my_ws = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findOneBy(array('code' => $workspace->getAttribute('code')));
@@ -515,6 +554,25 @@ class LoadingManager
         
         return $my_ws;
 
+    }
+    
+    /*
+    *   Create a new Forum message based on the XML file in the Archive.
+    */
+    private function createMessage($message)
+    {
+        echo 'Message created'.'<br/>';
+        $creation_date = new DateTime();
+        $creation_date->setTimestamp($message->getAttribute('creation_date'));
+        
+        $subject = $this->subjectRepo->findOneBy(array('id' => $message->getAttribute('subject_id')));
+        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $message->getAttribute('creator_id')));
+        $msg = new Message();
+        $msg->setContent('<p>'.$message->getAttribute('content').'</p>'.'<br/>'.'<strong>Message create offline : '.$creation_date->format('d/m/Y H:i:s').'</strong>');
+        $msg->setSubject($subject);
+        $msg->setCreator($creator);
+        
+        $this->forumManager->createMessage($msg);
     }
     
     /*

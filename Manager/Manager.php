@@ -45,6 +45,10 @@ class Manager
     private $translator;
     private $userSynchronizedRepo;
     private $revisionRepo;
+    private $subjectRepo;
+    private $messageRepo;
+    private $forumRepo;
+    private $categoryRepo;
     private $resourceManager;
     private $ut;
 
@@ -71,6 +75,10 @@ class Manager
         $this->pagerFactory = $pagerFactory;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
+        $this->subjectRepo = $om->getRepository('ClarolineForumBundle:Subject');
+        $this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
+        $this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
+        $this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
@@ -128,7 +136,7 @@ class Manager
         $syncTime = time();
         
         $userRes = array();
-        $typeList = array('file', 'directory', 'text'); //TODO ! PAS OPTIMAL !
+        $typeList = array('file', 'directory', 'text', 'claroline_forum'); //TODO ! PAS OPTIMAL !
         $typeArray = $this->buildTypeArray($typeList);
         $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
         
@@ -170,7 +178,7 @@ class Manager
         $archivePath = $archive->filename;
         $archive->close();
         // Erase the manifest from the current folder.
-        unlink($manifestName);
+        //unlink($manifestName);
         
         return $archivePath;
     }
@@ -194,20 +202,83 @@ class Manager
             foreach($typeArray as $resType)
             {
                 $ressourcesToSync = array();
+                $forum_content = array();
                 //$em_res = $this->getDoctrine()->getManager();
                 $userRes = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
                 if(count($userRes) >= 1)
                 {
-                    $path = '';
+                    if($resType->getId() == SyncConstant::FORUM)
+                    {
+                        /*
+                        *   Check, if the resource is a forum, is there are new messages, subjects or category created offline.
+                        */
+                        $forum_content = $this->checkNewContent($userRes, $user);                
+                        $this->addForumToArchive($manifest, $forum_content);
+                    }
+                    
+                    $path = ''; // USELESS?
                     $ressourcesToSync = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
                     //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
+
                     $this->addResourcesToArchive($ressourcesToSync, $archive, $manifest, $user, $path);
                     //echo "<br/>".count($ressourcesToSync)."<br/>";
+                    
                 }
             }
             fputs($manifest, '
         </workspace>');
         }
+    }
+    
+    /*
+    *   Check all the messages, subjects and categories of the forums
+    *   and return the one that have been created.
+    */
+    private function checkNewContent(array $userRes, User $user)
+    {
+        $date_tmp = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $date_sync = $date_tmp[0]->getLastSynchronization()->getTimestamp();
+        
+        $elem_to_sync = array();
+        foreach($userRes as $node_forum)
+        {
+            echo 'Un forum'.'<br/>';
+            $current_forum = $this->forumRepo->findOneBy(array('resourceNode' => $node_forum));
+            $categories = $this->categoryRepo->findBy(array('forum' => $current_forum));
+            foreach($categories as $category)
+            {
+                /*
+                *   TODO :  Profiter de ce passage pour voir si la category a ete mise a jour
+                *           ou si elle est nouvelle. 
+                */
+                echo 'Une categorie'.'<br/>';
+                $subjects = $this->subjectRepo->findBy(array('category' => $category));
+                foreach($subjects as $subject)
+                {
+                    /*
+                    *   TODO :  Profiter de ce passage pour voir si le sujet a ete mis a jour
+                    *           ou si il est nouveau. 
+                    */
+                    echo 'Un sujet'.'<br/>';
+                    $messages = $this->messageRepo->findBySubject($subject);
+                    foreach($messages as $message)
+                    {
+                        /*
+                        *   TODO :  Gerer les messages update.
+                        */
+                        echo 'Un message'.'<br/>';
+                        if($message->getCreationDate()->getTimestamp() > $date_sync)
+                        {
+                            echo 'Le message est nouveau'.'<br/>';
+                            $elem_to_sync[] = $message;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return $elem_to_sync;
+    
     }
     
     /*
@@ -248,6 +319,27 @@ class Manager
         
     }
     
+    /*
+    *   Add the new messages in the Archive.
+    */
+    private function addForumToArchive($manifest, $forum_content)
+    {
+        foreach($forum_content as $element)
+        {
+            //$class_name = getQualifiedClassName($element);
+            echo 'Bonjour'.'<br/>';
+            echo get_class($element).'<br/>';
+            echo get_class($element).'<br/>';
+            $class_name = ''.get_class($element);
+            switch($class_name)
+            {
+                case "Claroline\ForumBundle\Entity\Message" :
+                    $this->addMessageToManifest($manifest, $element);
+                    break;
+            }
+
+        }
+    }
     
     /**
      * Create a the archive based on the user     
@@ -262,6 +354,12 @@ class Manager
             $this->addResourceToZip($archive, $element, $user, $archive, $manifest, $path);
         }
     }
+    
+    /*
+    *   Add the ressource inside a file in the Archive file.
+    *   
+    *   03/04/2014 : Interesting ONLY for the file at this time.
+    */
     
     private function addResourceToZip(ZipArchive $archive, $resToAdd, $user, $archive, $manifest, $path)
     {
@@ -291,6 +389,10 @@ class Manager
     *   Here figure all methods used to manipulate the xml file.
     */
     
+    /*
+    *   Add a specific resource to the Manifest. 
+    *   The informations written in the Manifest will depend of the type of the file.
+    */
     private function addResourceToManifest($manifest, $resToAdd)
     {
         $type = $resToAdd->getResourceType()->getId();
@@ -341,11 +443,11 @@ class Manager
                 break;
             case SyncConstant::TEXT :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);  
-
-                $revision = $this->revisionRepo->findOneBy(array('text_id' => $my_res->getId()));
+                echo get_class($my_res);
+                $revision = $this->revisionRepo->findOneBy(array('text' => $my_res));
                 //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
                 //$modification_time = $resToAdd->getModificationDate()->getTimestamp();
-                
+                echo get_class($revision);
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
                     name="'.$resToAdd->getName().'"  
@@ -361,8 +463,30 @@ class Manager
                     ');
                 break;
         }
-    }    
+    }
     
+    /*
+    *   Add a specific Category, Subject or Message in the Manifest.
+    */
+    private function addMessageToManifest($manifest, $content)
+    {
+        echo 'Edition du manifeste pour ajouter un message'.'<br/>';
+        $creation_time = $content->getCreationDate()->getTimestamp();
+    
+                fputs($manifest, '
+                    <message class="'.get_class($content).'"
+                    id="'.$content->getId().'"
+                    subject_id="'.$content->getSubject()->getId().'"  
+                    creator_id="'.$content->getCreator()->getId().'"
+                    content="'.$content->getContent().'"
+                    creation_date="'.$creation_time.'">
+                    </message>
+                    ');
+    }
+    
+    /*
+    *   Add informations of a specific workspace in the manifest.
+    */
     private function addWorkspaceToManifest($manifest, $workspace)
     {
         $my_res_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($workspace);
@@ -387,6 +511,9 @@ class Manager
         ');
     }
     
+    /*
+    *   Create the description of the manifest.
+    */
     private function writeManifestDescription($manifest, User $user, $syncTime)
     {
         $dateSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);

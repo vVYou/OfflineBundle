@@ -126,7 +126,7 @@ class OfflineController extends Controller
         
         //echo 'Bool : '.$bool.'<br/>';
         
-        $zip = $this->get('claroline.manager.loading_manager')->loadZip('sync_097EC883-B9D8-4998-9A47-966791971A87.zip');
+        $zip = $this->get('claroline.manager.loading_manager')->loadZip('sync_097EC883-B9D8-4998-9A47-966791971A87.zip', $user);
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         return array(
@@ -213,7 +213,7 @@ class OfflineController extends Controller
         $test = $this->get('claroline.manager.synchronize_manager')->createSyncZip($user);
         $username = $user->getFirstName() . ' ' . $user->getLastName(); 
         echo 'Congratulations '.$username.'! '."<br/>".'You are now synchronized!';
-           
+        echo ''.$test;   
         return array(
             'user' => $username,
             //'user_courses' => $test['user_courses'],

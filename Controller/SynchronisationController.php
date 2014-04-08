@@ -12,6 +12,7 @@ use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\OfflineBundle\SyncConstant;
 use \DateTime;
 use \ZipArchive;
 
@@ -36,7 +37,7 @@ class SynchronisationController extends Controller
         *   Generer le zip descendant et le retourner dans la stream reponse
         */
         
-        echo "I'm in";
+        echo "I'm in <br/>";
         
         $request = $this->getRequest();
         //TODO verifier l'authentification
@@ -44,9 +45,13 @@ class SynchronisationController extends Controller
         $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
         //TODO verfier securite? => dans FileController il fait un checkAccess....
         
+        echo "j ai eu la requete <br/>";
+
         $em = $this->getDoctrine()->getManager();
         $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
         $authUser = $arrayRepo[0];
+
+        echo "J ai eu l'user<br/>";
         
         //Load the archive
         //$this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
@@ -54,6 +59,8 @@ class SynchronisationController extends Controller
         //Compute the answer
         //$toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
         
+        echo "je prepare la reponse<br/>";
+
         //Send back the online sync zip
         $response = new StreamedResponse();
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
@@ -64,6 +71,8 @@ class SynchronisationController extends Controller
             }
         );
         
+        echo "j'envoie la reponse<br/>";
+
         return $response;
     }
 }

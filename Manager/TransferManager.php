@@ -99,7 +99,7 @@ class TransferManager
         
         //Declaration du client HTML Buzz
         $client = new Curl();
-        $client->setTimeout(45);
+        $client->setTimeout(60);
         $browser = new Browser($client);
         
         //Browser post signature                public function post($url, $headers = array(), $content = '')
@@ -113,7 +113,7 @@ class TransferManager
        // echo $browser->getLastRequest().'<br/>';
         
         $hashname = $this->ut->generateGuid();
-        $zip_path = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$hashname.'.zip';
+        $zip_path = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$hashname.'.zip';
         //TODO Check ouverture du fichier
         $zipFile = fopen($zip_path, 'w+');
         $write = fwrite($zipFile, $content);
@@ -129,6 +129,9 @@ class TransferManager
     }
     
     /*
+    *
+    *   GUZZLE example, did not work for know, but we hope to have it soon, it will be better
+    *
     * @param User $user
     */
     public function getSyncZip(User $user)
@@ -138,7 +141,7 @@ class TransferManager
         $response = $client->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), [
             'body' => [
                 'field_name' => 'abc',
-                'file_filed' => fopen('./synchronize_up/'.$user->getId().'/sync.zip', 'r')
+                'file_filed' => fopen(SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync.zip', 'r')
             ],
             'timeout' => 45
         ]);
@@ -154,4 +157,16 @@ class TransferManager
         echo 'TRANSFER PASS 2 <br/>';
     }
   
+  
+     public function processSyncRequest($request, $user)
+    {
+        //TODO Verifier le fichier entrant
+        $content = $request->getContent();
+        $hashname = $this->ut->generateGuid();
+        $zipName = SyncConstant::SYNCHRO_UP_DIR.$user.'/sync_'.$hashname.'.zip';
+        $zipFile = fopen($zipName, 'w+');
+        $write = fwrite($zipFile, $content);
+        fclose($zipFile);
+        return $zipName;
+    }
 }

@@ -112,9 +112,7 @@ class Manager
         $userSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
         $this->om->startFlushSuite();
         
-        echo 'Class of use Sync : '.get_class($userSync[0]).'<br/>';
         $now = new DateTime();
-        echo 'DATETIME : '.$now->format('Y-m-d H:i:sP')."<br/>";
         $userSync[0]->setLastSynchronization($now);
         
         $this->om->persist($userSync[0]);
@@ -148,7 +146,7 @@ class Manager
         $this->writeManifestDescription($manifest, $user, $syncTime);
         //echo get_resource_type($manifest).'<br/>';
  
-        $fileName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$hashname_zip.'.zip';
+        $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$hashname_zip.'.zip';
         if($archive->open($fileName, ZipArchive::CREATE) === true)
         {
         //echo 'THIS Is THE ARCHIVE NAME : '.$archive->filename ;

@@ -182,8 +182,8 @@ class OfflineController extends Controller
             $userSynchro = $this->get('claroline.manager.synchronize_manager')->updateUserSynchronized($authUser);
             
             //clean directory
-            unlink($archive);
-            unlink($response);
+            //unlink($archive);
+            //unlink($response);
             
             //Format the view
             $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
@@ -257,51 +257,5 @@ class OfflineController extends Controller
         );
     }
     
-    /**
-    *   @EXT\Route(
-    *       "/sync/getzip/{user}",
-    *       name="claro_sync_get_zip",
-    *   )
-    *
-    *   @EXT\Method("POST")    
-    *
-    *   @return Response
-    */
-     public function getZipAction($user)
-    {   /*
-        *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
-        *   la methode recevra avec la requete le zip de l'utilisateur offline
-        *   Il faut donc commencer par recevoir le zip du offline
-        *   Ensuite le traiter
-        *   Generer le zip descendant et le retourner dans la stream reponse
-        */
-        
-        $request = $this->getRequest();
-        //TODO verifier l'authentification
-        //Catch the sync zip sent via POST request
-        $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
-        //TODO verfier securite? => dans FileController il fait un checkAccess....
-        
-        $em = $this->getDoctrine()->getManager();
-        $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
-        $authUser = $arrayRepo[0];
-        
-        //Load the archive
-        //$this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
-        
-        //Compute the answer
-        //$toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
-        
-        //Send back the online sync zip
-        $response = new StreamedResponse();
-        //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
-        $response->setCallBack(
-            function () use ($user) {
-                readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
-                //readfile($toSend);
-            }
-        );
-        
-        return $response;
-    }
+   
 }

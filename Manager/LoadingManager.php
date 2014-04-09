@@ -55,6 +55,7 @@ class LoadingManager
     private $userSynchronizedRepo;
     private $resourceNodeRepo;
     private $revisionRepo;
+    private $categoryRepo;
     private $subjectRepo;
     private $messageRepo;
     private $forumRepo;
@@ -107,6 +108,7 @@ class LoadingManager
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
+        $this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
         $this->subjectRepo = $om->getRepository('ClarolineForumBundle:Subject');
         $this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
         $this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
@@ -143,8 +145,8 @@ class LoadingManager
             $tmpdirectory = $archive->extractTo($this->path);
             
             //Call LoadXML
-            $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
-            //$this->loadXML('manifest_test_x.xml'); //Actually used for test.
+            //$this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
+            $this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
         }
@@ -277,6 +279,9 @@ class LoadingManager
             $res = $resourceList->item($i);
             if($res->nodeName == 'resource')
             {
+                /*
+                *   Check, when a resource is visited, if it needs to be updated or created.
+                */
                 $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $res->getAttribute('hashname_node')));
                 
                 if(count($node) >= 1)
@@ -290,10 +295,12 @@ class LoadingManager
                     $this->createResource($res, $workspace, null, false);
                 } 
             }
-            if($res->nodeName == 'message')
+            if($res->nodeName == 'forum')
             {
-                // TODO : Gerer l'update de message
-                $this->createMessage($res);
+                /*
+                *   Check the content of a forum described in the XML file.
+                */
+                $this->checkContent($res);
             }
         }
     }
@@ -559,22 +566,189 @@ class LoadingManager
     }
     
     /*
+    *   Check the content of a forum described in the XML file and 
+    *   either create or update this content.
+    */
+    private function checkContent($content)
+    {   
+        $content_type = $content->getAttribute('class');
+        switch($content_type)
+        {
+            case SyncConstant::CATE :
+                $category = $this->categoryRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
+                if($category == null)
+                {
+                    $this->createCategory($content);
+                }
+                else
+                {
+                    $this->updateCategory($content, $category);
+                }
+                
+                // Update of the Dates
+                // $category = $this->categoryRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
+                // $this->updateDate($category, $content);
+                break;
+                
+            case SyncConstant::SUB :
+                $subject = $this->subjectRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
+                if($subject == null)
+                {
+                    $this->createSubject($content);
+                }
+                else
+                {
+                    $this->updateSubject($content, $subject);
+                }
+                
+                // Update of the Dates
+                // $subject = $this->subjectRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
+                // $this->updateDate($subject, $content);
+                break;
+                
+            case SyncConstant::MSG :
+                $message = $this->messageRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
+                if($message == null)
+                {
+                    $this->createMessage($content);
+                }
+                else
+                {
+                    $this->updateMessage($content, $message);
+                }               
+                        
+                // Update of the Dates
+                // $message = $this->messageRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
+                // $this->updateDate($message, $content);                              
+                break;
+        }
+        
+    }
+
+    /*
+    *   Create a new Forum Category based on the XML file in the Archive.
+    */
+    private function createCategory($category)
+    {
+        echo 'Category created'.'<br/>';
+        
+        $node_forum = $this->resourceRepo->findOneBy(array('hashName' => $category->getAttribute('forum_node')));
+        $forum = $this->resourceManager->getResourceFromNode($node_forum);
+        
+        $category_name = $category->getAttribute('name');
+        
+        $this->forumManager->createCategory($forum, $category_name, true, $category->getAttribute('hashname'));
+    }
+    
+    /*
+    *   Update a Forum Category based on the XML file in the Archive.
+    */
+    private function updateCategory($xmlCategory, $category)
+    {
+        $xmlModificationDate = $xmlCategory->getAttribute('update_date');
+        $onlineModificationDate = $category->getModificationDate()->getTimestamp();
+        if($xmlModificationDate > $onlineModificationDate)
+        {
+            $this->forumManager->editCategory($category, $category->getName(), $xmlCategory->getAttribute('name'));
+        }
+        else{
+            echo 'Je ne fais rien pour cette category'.'<br/>';
+        }
+    }
+    
+    /*
+    *   Create a new Forum Subject based on the XML file in the Archive.
+    */
+    private function createSubject($subject)
+    {
+        echo 'Subject created'.'<br/>';
+        
+        $category = $this->categoryRepo->findOneBy(array('hashName' => $subject->getAttribute('category')));
+        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $message->getAttribute('creator_id')));
+        $sub = new Subject();
+        $sub->setTitle($subject->getAttribute('name'));
+        $sub->setCategory($category);
+        $sub->setCreator($creator);
+        $sub->setIsSticked($subject->getAttribute('sticked'));
+        
+        $this->forumManager->createSubject($sub, $subject->getAttribute('hashname'));
+    }
+    
+    /*
+    *   Update a Forum Subject based on the XML file in the Archive.
+    */
+    private function updateSubject($xmlSubject, $subject)
+    {
+        $xmlModificationDate = $xmlSubject->getAttribute('update_date');
+        $onlineModificationDate = $subject->getUpdate()->getTimestamp();
+        if($xmlModificationDate > $onlineModificationDate)
+        {
+            $this->forumManager->editSubject($subject, $subject->getTitle(), $xmlSubject->getAttribute('name'));
+            $subject->setIsSticked($xmlSubject->getAttribute('sticked'));
+        }
+        else{
+            echo 'Je ne fais rien pour ce subject'.'<br/>';
+        }
+    }
+    
+    /*
     *   Create a new Forum message based on the XML file in the Archive.
     */
     private function createMessage($message)
     {
-        echo 'Message created'.'<br/>';
         $creation_date = new DateTime();
         $creation_date->setTimestamp($message->getAttribute('creation_date'));
+        // Message Creation      
+        echo 'Message created'.'<br/>';
         
-        $subject = $this->subjectRepo->findOneBy(array('id' => $message->getAttribute('subject_id')));
+        $subject = $this->subjectRepo->findOneBy(array('hashName' => $message->getAttribute('subject')));
         $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $message->getAttribute('creator_id')));
         $msg = new Message();
-        $msg->setContent('<p>'.$message->getAttribute('content').'</p>'.'<br/>'.'<strong>Message create offline : '.$creation_date->format('d/m/Y H:i:s').'</strong>');
+        $msg->setContent('<p>'.$message->getAttribute('content').'</p>'.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');
         $msg->setSubject($subject);
         $msg->setCreator($creator);
         
-        $this->forumManager->createMessage($msg);
+        $this->forumManager->createMessage($msg, $message->getAttribute('hashname'));       
+        
+    }
+    
+    /*
+    *   Update a Forum message based on the XML file in the Archive.
+    */
+    private function updateMessage($xmlMessage, $message)
+    {
+        $xmlModificationDate = $xmlMessage->getAttribute('update_date');
+        $onlineModificationDate = $message->getUpdate()->getTimestamp();
+        if($xmlModificationDate > $onlineModificationDate)
+        {
+            $this->forumManager->editMessage($message, $message->getContent(), $xmlMessage->getAttribute('content'));
+        }
+        else{
+            echo 'Je ne fais rien pour ce msg'.'<br/>';
+        }
+    }
+    
+    /*
+    *   Update the creation and modification/update dates of a category, subject or message.
+    */
+    private function updateDate($forumContent, $content)
+    {
+        $creation_date = new DateTime();
+        $creation_date->setTimestamp($content->getAttribute('creation_date'));
+        $modification_date = new DateTime();
+        $modification_date->setTimestamp($content->getAttribute('update_date'));
+        $this->om->startFlushSuite();
+        $forumContent->setCreationDate($creation_date);
+        if($content->getAttribute('class') == SyncConstant::CATE)
+        {
+            $forumContent->setModificationDate($modification_date);
+        }
+        else
+        {
+            $forumContent->setUpdate($modification_date);
+        }
+        $this->om->persist($forumContent);
+        $this->om->endFlushSuite();  
     }
     
     /*

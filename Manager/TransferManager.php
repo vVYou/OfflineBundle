@@ -111,6 +111,7 @@ class TransferManager
         $handle = fopen($toTransfer, 'r');
         $iSendThis = fread($handle, filesize($toTransfer));
         //echo "I send this : <br/>".$iSendThis."<br/>".
+
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $iSendThis );        
         $content = $reponse->getContent();
         //echo $browser->getLastRequest().'<br/>';
@@ -163,7 +164,7 @@ class TransferManager
     }
   
   
-     public function processSyncRequest($request, $user)
+    public function processSyncRequest($request, $user)
     {
         //TODO Verifier le fichier entrant
         $content = $request->getContent();
@@ -173,5 +174,18 @@ class TransferManager
         $write = fwrite($zipFile, $content);
         fclose($zipFile);
         return $zipName;
+    }
+
+    public function confirmRequest($user)
+    {
+        $client = new Curl();
+        $client->setTimeout(60);
+        $browser = new Browser($client);
+
+        $reponse = $browser->get(SyncConstant::PLATEFORM_URL.'/transfer/confirm/'.$user->getId()); 
+        if ($reponse)       
+        {
+            echo "HE CONFIRM RECEIVE !<br/>";
+        }
     }
 }

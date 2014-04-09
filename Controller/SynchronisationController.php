@@ -17,7 +17,8 @@ use \DateTime;
 use \ZipArchive;
 
 class SynchronisationController extends Controller
-{
+{    
+
     /**
     *   @EXT\Route(
     *       "/transfer/getzip/{user}",
@@ -28,7 +29,7 @@ class SynchronisationController extends Controller
     *
     *   @return Response
     */
-     public function getZipAction($user)
+    public function getZipAction($user)
     {   /*
         *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
         *   la methode recevra avec la requete le zip de l'utilisateur offline
@@ -37,21 +38,18 @@ class SynchronisationController extends Controller
         *   Generer le zip descendant et le retourner dans la stream reponse
         */
         
-        //echo "I'm in <br/>";
-        
         $request = $this->getRequest();
         //TODO verifier l'authentification
+        
         //Catch the sync zip sent via POST request
         $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
-        //TODO verfier securite? => dans FileController il fait un checkAccess....
         
-        //echo "j ai eu la requete <br/>";
+        //TODO verfier securite? => dans FileController il fait un checkAccess....
 
+        //Identify User
         $em = $this->getDoctrine()->getManager();
         $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
         $authUser = $arrayRepo[0];
-
-        //echo "J ai eu l'user<br/>";
         
         //Load the archive
         $this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
@@ -60,7 +58,8 @@ class SynchronisationController extends Controller
         $toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
         
         // echo "je prepare la reponse".$toSend."<br/>";
-        $userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
+        //$userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
+        $this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
 
         //Send back the online sync zip
         $response = new StreamedResponse();
@@ -72,7 +71,28 @@ class SynchronisationController extends Controller
                 readfile($toSend);
             }
         );
-        //echo "j'envoie la reponse<br/>";
+
         return $response;
+    }
+
+    /**
+    *   @EXT\Route(
+    *       "/transfer/confirm/{user}",
+    *       name="claro_confirm_sync",
+    *   )
+    *
+    *   @EXT\Method("GET")    
+    *
+    *   @return Response
+    */
+    public function confirmAction($user)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
+        $authUser = $arrayRepo[0];
+
+        //TODO verifier authentification !!!
+        $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
+        return true;
     }
 }

@@ -74,4 +74,20 @@ class UserSyncManager
         $this->om->persist($userSync[0]);
         $this->om->endFlushSuite();
     }
+
+    /*
+     * @param \Claroline\CoreBundle\Entity\User $user
+     */
+    public function updateSentTime(User $user)
+    {
+        $userSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $this->om->startFlushSuite();
+        
+        $now = new DateTime();
+        $userSync[0]->setSentTime($now);
+        
+        $this->om->persist($userSync[0]);
+        $this->om->endFlushSuite();
+    }
+
 }

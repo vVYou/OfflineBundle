@@ -171,6 +171,7 @@ class OfflineController extends Controller
             echo 'I send : '.$archive.'<br/>';
             
             //TRANSFERT THE ZIP
+            $this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
             $response = $this->get('claroline.manager.transfer_manager')->transferZip($archive, $authUser);
             echo 'I received  : '.$response.'<br/>';
             
@@ -180,7 +181,10 @@ class OfflineController extends Controller
             //echo 'SUCCEED';
             
             //UPDATE SYNCHRONIZE DATE
-            $userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
+            $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
+
+            //CONFIRM UPDATE TO ONLINE
+            $this->get('claroline.manager.transfer_manager')->confirmRequest($authUser);
             
             //clean directory
             //unlink($archive);

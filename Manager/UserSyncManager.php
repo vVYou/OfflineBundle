@@ -5,10 +5,11 @@ namespace Claroline\OfflineBundle\Manager;
 
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Persistence\ObjectManager;
+use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
+use Claroline\OfflineBundle\SyncConstant;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
-use Claroline\OfflineBundle\SyncConstant;
 use \DateTime;
 
 /**

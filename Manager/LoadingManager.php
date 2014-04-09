@@ -147,15 +147,34 @@ class LoadingManager
             //$this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
+            $this->rrmdir($this->path);
         }
         else
         {
             //Make a pop-up rather than a exception maybe.
             throw new \Exception('Impossible to load the zip file');
         }
-        
-        //Destroy the Zip
-        
+    }
+
+    /*
+    *   Code inspired of :
+    *   http://stackoverflow.com/questions/9760526/php-remove-not-empty-folder
+    */
+    public function rrmdir($dir){
+        if (is_dir($dir)){
+            $objects = scandir($dir);
+            foreach($objects as $object){
+                if($object != "." && $object != ".."){
+                    if(filetype($dir."/".$object) == "dir"){
+                        rmdir($dir."/".$object);
+                    }else{
+                        unlink($dir."/".$object);
+                    }
+                }
+            }
+            reset($objects);
+            rmdir($dir);
+        }
     }
     
     /**

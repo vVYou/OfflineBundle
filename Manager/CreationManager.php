@@ -334,13 +334,13 @@ class CreationManager
             $class_name = ''.get_class($element);
             switch($class_name)
             {
-                case "Claroline\ForumBundle\Entity\Category" :
+                case SyncConstant::CATE :
                     $this->addCategoryToManifest($manifest, $element);
                     break;
-                case "Claroline\ForumBundle\Entity\Subject" :
+                case SyncConstant::SUB :
                     $this->addSubjectToManifest($manifest, $element);
                     break;
-                case "Claroline\ForumBundle\Entity\Message" :
+                case SyncConstant::MSG :
                     $this->addMessageToManifest($manifest, $element);
                     break;
             }
@@ -478,17 +478,19 @@ class CreationManager
     private function addCategoryToManifest($manifest, $content)
     {
         echo 'Edition du manifeste pour ajouter une category'.'<br/>';
+        $creation_time = $content->getCreationDate()->getTimestamp();
         $modification_time = $content->getModificationDate()->getTimestamp();
         $node_forum = $content->getForum()->getResourceNode();
     
                 fputs($manifest, '
-                    <category class="'.get_class($content).'"
+                    <forum class="'.get_class($content).'"
                     id="'.$content->getId().'"
                     name="'.$content->getName().'"
                     hashname="'.$content->getHashName().'"
-                    forum_node="'.$node_forum->getNodeHashName().'"  
-                    date="'.$modification_time.'">
-                    </category>
+                    forum_node="'.$node_forum->getNodeHashName().'" 
+                    creation_date="'.$creation_time.'"                    
+                    update_date="'.$modification_time.'">
+                    </forum>
                     ');
     }
 
@@ -503,15 +505,15 @@ class CreationManager
         $category = $content->getCategory()->getHashName();
     
                 fputs($manifest, '
-                    <subject class="'.get_class($content).'"
+                    <forum class="'.get_class($content).'"
                     name="'.$content->getTitle().'"
                     hashname="'.$content->getHashName().'"
                     category="'.$category.'"  
                     creator_id="'.$content->getCreator()->getId().'"
                     creation_date="'.$creation_time.'"
-                    date="'.$update_time.'"
+                    update_date="'.$update_time.'"
                     sticked="'.$content->isSticked().'">
-                    </subject>
+                    </forum>
                     ');
     }
     
@@ -526,7 +528,7 @@ class CreationManager
         $subject = $content->getSubject()->getHashName();
     
                 fputs($manifest, '
-                    <message class="'.get_class($content).'"
+                    <forum class="'.get_class($content).'"
                     id="'.$content->getId().'"
                     subject="'.$subject.'"  
                     hashname="'.$content->getHashName().'"
@@ -534,7 +536,7 @@ class CreationManager
                     content="'.$content->getContent().'"
                     creation_date="'.$creation_time.'"
                     update_date="'.$update_time.'">
-                    </message>
+                    </forum>
                     ');
     }
     

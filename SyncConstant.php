@@ -21,4 +21,9 @@ class SyncConstant
     const DIRZIP = './extractedZip';
     const MANIFEST = 'manifest';
     const ZIPFILEDIR = '/files/';
+    
+    //Forum Content Type Constant
+    const CATE = "Claroline\ForumBundle\Entity\Category";
+    const SUB = "Claroline\ForumBundle\Entity\Subject";
+    const MSG = "Claroline\ForumBundle\Entity\Message";
 }

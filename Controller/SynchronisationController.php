@@ -12,6 +12,7 @@ use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\OfflineBundle\SyncConstant;
 use \DateTime;
 use \ZipArchive;
 
@@ -19,7 +20,7 @@ class SynchronisationController extends Controller
 {
     /**
     *   @EXT\Route(
-    *       "/sync/getzip/{user}",
+    *       "/transfer/getzip/{user}",
     *       name="claro_sync_get_zip",
     *   )
     *
@@ -27,7 +28,7 @@ class SynchronisationController extends Controller
     *
     *   @return Response
     */
-    public function getZipAction($user)
+     public function getZipAction($user)
     {   /*
         *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
         *   la methode recevra avec la requete le zip de l'utilisateur offline
@@ -36,30 +37,42 @@ class SynchronisationController extends Controller
         *   Generer le zip descendant et le retourner dans la stream reponse
         */
         
-      //  $request = $this->getRequest();
-        //TODO Decouper le travail de la requete dans une action de manager
-      //  $content = $request->getContent();
-        //TODO Verifier le fichier entrant
+        //echo "I'm in <br/>";
         
-        //TODO Gestion dynamique du nom du fichier arrivant
-        /*
-        $zipFile = fopen('./synchronize_up/'.$user.'/sync_F8673788-EB93-4F78-85C3-4C7ACAB1802F.zip', 'w+');
-        $write = fwrite($zipFile, $content);
-        fclose($zipFile);
-        */
+        $request = $this->getRequest();
+        //TODO verifier l'authentification
+        //Catch the sync zip sent via POST request
+        $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
         //TODO verfier securite? => dans FileController il fait un checkAccess....
-        //TODO gestion dynamique du fichier retourne
+        
+        //echo "j ai eu la requete <br/>";
 
+        $em = $this->getDoctrine()->getManager();
+        $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
+        $authUser = $arrayRepo[0];
+
+        //echo "J ai eu l'user<br/>";
+        
+        //Load the archive
+        $this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
+        
+        //Compute the answer
+        $toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
+        
+        // echo "je prepare la reponse".$toSend."<br/>";
+        $userSynchro = $this->get('claroline.manager.synchronize_manager')->updateUserSynchronized($authUser);
+
+        //Send back the online sync zip
         $response = new StreamedResponse();
-        //$var = $user;
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
         $response->setCallBack(
-            function () use ($user) {
-                readfile('./synchronize_down/'.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
+            //function () use ($user) {
+                //readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
+            function () use ($toSend) {                
+                readfile($toSend);
             }
         );
-        
+        //echo "j'envoie la reponse<br/>";
         return $response;
-
     }
 }

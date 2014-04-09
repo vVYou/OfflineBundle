@@ -38,7 +38,7 @@ use \DateTime;
 //CONST TEXT = 3;
 //CONST FORUM = 9;
 
-class Manager
+class CreationManager
 {
     private $om;
     private $pagerFactory;
@@ -242,7 +242,7 @@ class Manager
         $elem_to_sync = array();
         foreach($userRes as $node_forum)
         {
-            echo 'Un forum'.'<br/>';
+            //echo 'Un forum'.'<br/>';
             $current_forum = $this->forumRepo->findOneBy(array('resourceNode' => $node_forum));
             $categories = $this->categoryRepo->findBy(array('forum' => $current_forum));
             $elem_to_sync = $this->checkCategory($categories, $elem_to_sync, $date_sync);           
@@ -370,9 +370,9 @@ class Manager
         foreach($forum_content as $element)
         {
             //$class_name = getQualifiedClassName($element);
-            echo 'Bonjour'.'<br/>';
-            echo get_class($element).'<br/>';
-            echo get_class($element).'<br/>';
+            //echo 'Bonjour'.'<br/>';
+            //echo get_class($element).'<br/>';
+            //echo get_class($element).'<br/>';
             $class_name = ''.get_class($element);
             switch($class_name)
             {
@@ -492,11 +492,11 @@ class Manager
                 break;
             case SyncConstant::TEXT :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);  
-                echo get_class($my_res);
+                //echo get_class($my_res);
                 $revision = $this->revisionRepo->findOneBy(array('text' => $my_res));
                 //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
                 //$modification_time = $resToAdd->getModificationDate()->getTimestamp();
-                echo get_class($revision);
+                //echo get_class($revision);
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
                     name="'.$resToAdd->getName().'"  
@@ -562,7 +562,7 @@ class Manager
     */
     private function addMessageToManifest($manifest, $content)
     {
-        echo 'Edition du manifeste pour ajouter un message'.'<br/>';
+        //echo 'Edition du manifeste pour ajouter un message'.'<br/>';
         $creation_time = $content->getCreationDate()->getTimestamp();
         $update_time = $content->getUpdate()->getTimestamp();
         $subject = $content->getSubject()->getHashName();

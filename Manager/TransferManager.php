@@ -106,11 +106,14 @@ class TransferManager
         //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
         
         //TODO dynamique zip file name - constante repertoire sync_up et sync_down
+        //TODO dynamique route pour plateforme 2 ???
         
         $handle = fopen($toTransfer, 'r');
-        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), array(), fread($handle, filesize($toTransfer)) );        
+        $iSendThis = fread($handle, filesize($toTransfer));
+        //echo "I send this : <br/>".$iSendThis."<br/>".
+        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $iSendThis );        
         $content = $reponse->getContent();
-       // echo $browser->getLastRequest().'<br/>';
+        //echo $browser->getLastRequest().'<br/>';
         
         $hashname = $this->ut->generateGuid();
         $zip_path = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$hashname.'.zip';
@@ -121,8 +124,10 @@ class TransferManager
         //SHOULD RETURN ERROR
             echo 'An ERROR happen re-writing zip file at reception<br/>';
         }
-        fclose($zipFile);
-        //TODO Controller erreur a la fermeture
+        if (!fclose($zipFile)){
+            //TODO SHOULD be an exception
+            echo 'An ERROR happened closing archive file at reception<br/>';
+        }
         //echo 'TRANSFER PASS !';
         
         return $zip_path;

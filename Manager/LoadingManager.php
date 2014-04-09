@@ -129,7 +129,8 @@ class LoadingManager
     */
     public function loadZip($zipPath, User $user)
     {
-        $ds = DIRECTORY_SEPARATOR;
+         //REMOVED DS because error !!! utiliser uniquement /
+        //$ds = DIRECTORY_SEPARATOR;
         
         //Extract the Zip
         $archive = new ZipArchive();
@@ -137,7 +138,8 @@ class LoadingManager
         {
             //Extract the Hashname of the ZIP from the path (length of hashname = 32 char).
             $zip_hashname = substr($zipPath, strlen($zipPath)-40, 36);
-            $this->path = SyncConstant::DIRZIP.$ds.$zip_hashname.$ds;
+            $this->path = SyncConstant::DIRZIP.'/'.$zip_hashname.'/';
+            echo 'J extrait dans ce path : '.$this->path.'<br/>';
             $tmpdirectory = $archive->extractTo($this->path);
             
             //Call LoadXML

@@ -205,14 +205,6 @@ class CreationManager
                 $userRes = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
                 if(count($userRes) >= 1)
                 {
-                    if($resType->getId() == SyncConstant::FORUM)
-                    {
-                        /*
-                        *   Check, if the resource is a forum, is there are new messages, subjects or category created offline.
-                        */
-                        $forum_content = $this->checkNewContent($userRes, $user);                
-                        $this->addForumToArchive($manifest, $forum_content);
-                    }
                     
                     $path = ''; // USELESS?
                     $ressourcesToSync = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
@@ -220,6 +212,16 @@ class CreationManager
 
                     $this->addResourcesToArchive($ressourcesToSync, $archive, $manifest, $user, $path);
                     //echo "<br/>".count($ressourcesToSync)."<br/>";
+                    
+                    if($resType->getId() == SyncConstant::FORUM)
+                    {
+                        /*
+                        *   Check, if the resource is a forum, is there are new messages, subjects or category created offline.
+                        */
+                        $forum_content = $this->checkNewContent($userRes, $user); 
+                        echo count($forum_content);
+                        $this->addForumToArchive($manifest, $forum_content);
+                    }
                     
                 }
             }
@@ -243,40 +245,83 @@ class CreationManager
             //echo 'Un forum'.'<br/>';
             $current_forum = $this->forumRepo->findOneBy(array('resourceNode' => $node_forum));
             $categories = $this->categoryRepo->findBy(array('forum' => $current_forum));
-            foreach($categories as $category)
-            {
-                /*
-                *   TODO :  Profiter de ce passage pour voir si la category a ete mise a jour
-                *           ou si elle est nouvelle. 
-                */
-                //echo 'Une categorie'.'<br/>';
-                $subjects = $this->subjectRepo->findBy(array('category' => $category));
-                foreach($subjects as $subject)
-                {
-                    /*
-                    *   TODO :  Profiter de ce passage pour voir si le sujet a ete mis a jour
-                    *           ou si il est nouveau. 
-                    */
-                    //echo 'Un sujet'.'<br/>';
-                    $messages = $this->messageRepo->findBySubject($subject);
-                    foreach($messages as $message)
-                    {
-                        /*
-                        *   TODO :  Gerer les messages update.
-                        */
-                        //echo 'Un message'.'<br/>';
-                        if($message->getCreationDate()->getTimestamp() > $date_sync)
-                        {
-                            //echo 'Le message est nouveau'.'<br/>';
-                            $elem_to_sync[] = $message;
-                        }
-                    }
-                }
-            }
+            $elem_to_sync = $this->checkCategory($categories, $elem_to_sync, $date_sync);           
         }
         
         return $elem_to_sync;
     
+    }
+    
+    /*
+    *   Check all category of a list and see if they are new or updated.
+    */
+    private function checkCategory($categories, $elem_to_sync, $date_sync)
+    {
+        foreach($categories as $category)
+        {
+            /*
+            *   TODO :  Profiter de ce passage pour voir si la category a ete mise a jour
+            *           ou si elle est nouvelle. 
+            */
+            
+            if($category->getModificationDate()->getTimestamp() > $date_sync)
+            {
+                echo 'Une categorie'.'<br/>';
+                 $elem_to_sync[] = $category;
+            }
+            $subjects = $this->subjectRepo->findBy(array('category' => $category));
+            $elem_to_sync = $this->checkSubject($subjects, $elem_to_sync, $date_sync);
+        }
+        
+        return $elem_to_sync;
+
+    }
+
+    /*
+    *   Check all subject of a list and see if they are new or updated.
+    */
+    private function checkSubject($subjects, $elem_to_sync, $date_sync)
+    {
+        foreach($subjects as $subject)
+        {
+            /*
+            *   TODO :  Profiter de ce passage pour voir si le sujet a ete mis a jour
+            *           ou si il est nouveau. 
+            */
+            if($subject->getUpdate()->getTimestamp() > $date_sync)
+            {
+                echo 'Un sujet'.'<br/>';
+                 $elem_to_sync[] = $subject;
+            }
+            
+            $messages = $this->messageRepo->findBySubject($subject);
+            $elem_to_sync = $this->checkMessage($messages, $elem_to_sync, $date_sync);
+        }
+        
+        return $elem_to_sync;
+
+    }
+
+    /*
+    *   Check all message of a list and see if they are new or updated.
+    */
+    private function checkMessage($messages, $elem_to_sync, $date_sync)
+    {
+        foreach($messages as $message)
+        {
+            /*
+            *   TODO :  Gerer les messages update.
+            */
+            echo 'Un message'.'<br/>';
+            if($message->getUpdate()->getTimestamp() > $date_sync)
+            {
+                echo 'Le message est nouveau'.'<br/>';
+                $elem_to_sync[] = $message;
+            }
+        }
+        
+        return $elem_to_sync;
+
     }
     
     /*
@@ -318,7 +363,7 @@ class CreationManager
     }
     
     /*
-    *   Add the new messages in the Archive.
+    *   Add the content of the forum in the Archive.
     */
     private function addForumToArchive($manifest, $forum_content)
     {
@@ -331,6 +376,12 @@ class CreationManager
             $class_name = ''.get_class($element);
             switch($class_name)
             {
+                case "Claroline\ForumBundle\Entity\Category" :
+                    $this->addCategoryToManifest($manifest, $element);
+                    break;
+                case "Claroline\ForumBundle\Entity\Subject" :
+                    $this->addSubjectToManifest($manifest, $element);
+                    break;
                 case "Claroline\ForumBundle\Entity\Message" :
                     $this->addMessageToManifest($manifest, $element);
                     break;
@@ -462,22 +513,69 @@ class CreationManager
                 break;
         }
     }
+
+    /*
+    *   Add a specific Category in the Manifest.
+    */
+    private function addCategoryToManifest($manifest, $content)
+    {
+        echo 'Edition du manifeste pour ajouter une category'.'<br/>';
+        $modification_time = $content->getModificationDate()->getTimestamp();
+        $node_forum = $content->getForum()->getResourceNode();
+    
+                fputs($manifest, '
+                    <category class="'.get_class($content).'"
+                    id="'.$content->getId().'"
+                    name="'.$content->getName().'"
+                    hashname="'.$content->getHashName().'"
+                    forum_node="'.$node_forum->getNodeHashName().'"  
+                    date="'.$modification_time.'">
+                    </category>
+                    ');
+    }
+
+    /*
+    *   Add a specific Subject in the Manifest.
+    */
+    private function addSubjectToManifest($manifest, $content)
+    {
+        echo 'Edition du manifeste pour ajouter un sujet'.'<br/>';
+        $creation_time = $content->getCreationDate()->getTimestamp();
+        $update_time = $content->getUpdate()->getTimestamp();
+        $category = $content->getCategory()->getHashName();
+    
+                fputs($manifest, '
+                    <subject class="'.get_class($content).'"
+                    name="'.$content->getTitle().'"
+                    hashname="'.$content->getHashName().'"
+                    category="'.$category.'"  
+                    creator_id="'.$content->getCreator()->getId().'"
+                    creation_date="'.$creation_time.'"
+                    date="'.$update_time.'"
+                    sticked="'.$content->isSticked().'">
+                    </subject>
+                    ');
+    }
     
     /*
-    *   Add a specific Category, Subject or Message in the Manifest.
+    *   Add a specific Message in the Manifest.
     */
     private function addMessageToManifest($manifest, $content)
     {
         //echo 'Edition du manifeste pour ajouter un message'.'<br/>';
         $creation_time = $content->getCreationDate()->getTimestamp();
+        $update_time = $content->getUpdate()->getTimestamp();
+        $subject = $content->getSubject()->getHashName();
     
                 fputs($manifest, '
                     <message class="'.get_class($content).'"
                     id="'.$content->getId().'"
-                    subject_id="'.$content->getSubject()->getId().'"  
+                    subject="'.$subject.'"  
+                    hashname="'.$content->getHashName().'"
                     creator_id="'.$content->getCreator()->getId().'"
                     content="'.$content->getContent().'"
-                    creation_date="'.$creation_time.'">
+                    creation_date="'.$creation_time.'"
+                    update_date="'.$update_time.'">
                     </message>
                     ');
     }

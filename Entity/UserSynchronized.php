@@ -30,7 +30,7 @@ class UserSynchronized extends AbstractRoleSubject
         targetEntity="Claroline\CoreBundle\Entity\User",
         cascade={"persist"}
        )
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=false, unique=true)
      */
     protected $user;
 
@@ -41,6 +41,16 @@ class UserSynchronized extends AbstractRoleSubject
      * @Gedmo\Timestampable(on="create")
      */
     protected $lastSynchronization;
+
+    /**
+     * @var \DateTime
+     *
+     * @ORM\Column(name="sent_time", type="datetime")
+     * @Gedmo\Timestampable(on="create")
+     */
+    protected $sentTime;
+
+
 
     public function __construct(User $user)
     {
@@ -79,5 +89,22 @@ class UserSynchronized extends AbstractRoleSubject
     public function setLastSynchronization(\DateTime $date)
     {
         $this-> lastSynchronization = $date;
+    }    
+    
+    /**
+     * @return \DateTime
+     */
+    public function getSentTime()
+    {
+        return $this->sentTime;
+    }
+    
+    /**
+     *
+     * @param \DateTime $date
+     */
+    public function setSentTime(\DateTime $date)
+    {
+        $this-> sentTime = $date;
     }
 }

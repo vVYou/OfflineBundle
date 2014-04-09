@@ -515,7 +515,7 @@ class LoadingManager
         echo 'ModificationDate of XML Before : '.$modification_date->format('d/m/Y H:i:s').'<br/>';
         
         // Update of the creation and modification date of the resource. 
-       // $this->changeDate($newResourceNode,$creation_date,$modification_date);
+        $this->changeDate($newResourceNode,$creation_date,$modification_date);
 
     }
     

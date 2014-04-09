@@ -32,12 +32,6 @@ use \DateTime;
 /**
  * @DI\Service("claroline.manager.synchronize_manager")
  */
- 
-//CONST FILE = 1;
-//CONST DIR = 2;
-//CONST TEXT = 3;
-//CONST FORUM = 9;
-
 class CreationManager
 {
     private $om;
@@ -83,42 +77,6 @@ class CreationManager
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
     }
-    
-    /**
-     * Create a userSynchronized.
-     * Its ID and the date of creation.
-     *
-     * @param \Claroline\CoreBundle\Entity\User $user
-     *
-     * @return \Claroline\OfflineBundle\Entity\UserSynchronized
-     */
-    public function createUserSynchronized(User $user)
-    {
-        $this->om->startFlushSuite();
-        
-        $userSynchronized = new userSynchronized($user);
-        
-        $this->om->persist($userSynchronized);
-        $this->om->endFlushSuite();
-
-        return $userSynchronized;
-    }
-    
-    /*
-     * @param \Claroline\CoreBundle\Entity\User $user
-     */
-    public function updateUserSynchronized(User $user)
-    {
-        $userSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-        $this->om->startFlushSuite();
-        
-        $now = new DateTime();
-        $userSync[0]->setLastSynchronization($now);
-        
-        $this->om->persist($userSync[0]);
-        $this->om->endFlushSuite();
-    }
-    
     
     /**
      * Create a the archive based on the user     

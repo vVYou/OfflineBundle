@@ -62,6 +62,7 @@ class OfflineController extends Controller
     public function helloAction(User $user)
     {
         $em = $this->getDoctrine()->getManager();
+        //TODO Should use manager ?
         $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
@@ -96,7 +97,7 @@ class OfflineController extends Controller
     */
     public function loadAction(User $user)
     {
-        //$userSynchro = $this->get('claroline.manager.synchronize_manager')->createUserSynchronized($user);
+        //$userSynchro = $this->get('claroline.manager.user_sync_manager')->createUserSynchronized($user);
          
         //$em = $this->getDoctrine()->getManager();
         //$userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
@@ -179,7 +180,7 @@ class OfflineController extends Controller
             //echo 'SUCCEED';
             
             //UPDATE SYNCHRONIZE DATE
-            $userSynchro = $this->get('claroline.manager.synchronize_manager')->updateUserSynchronized($authUser);
+            $userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
             
             //clean directory
             //unlink($archive);

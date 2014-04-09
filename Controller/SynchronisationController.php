@@ -60,7 +60,7 @@ class SynchronisationController extends Controller
         $toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
         
         // echo "je prepare la reponse".$toSend."<br/>";
-        $userSynchro = $this->get('claroline.manager.synchronize_manager')->updateUserSynchronized($authUser);
+        $userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
 
         //Send back the online sync zip
         $response = new StreamedResponse();

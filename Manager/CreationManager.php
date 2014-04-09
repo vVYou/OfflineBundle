@@ -38,7 +38,7 @@ use \DateTime;
 //CONST TEXT = 3;
 //CONST FORUM = 9;
 
-class Manager
+class CreationManager
 {
     private $om;
     private $pagerFactory;
@@ -240,7 +240,7 @@ class Manager
         $elem_to_sync = array();
         foreach($userRes as $node_forum)
         {
-            echo 'Un forum'.'<br/>';
+            //echo 'Un forum'.'<br/>';
             $current_forum = $this->forumRepo->findOneBy(array('resourceNode' => $node_forum));
             $categories = $this->categoryRepo->findBy(array('forum' => $current_forum));
             foreach($categories as $category)
@@ -249,7 +249,7 @@ class Manager
                 *   TODO :  Profiter de ce passage pour voir si la category a ete mise a jour
                 *           ou si elle est nouvelle. 
                 */
-                echo 'Une categorie'.'<br/>';
+                //echo 'Une categorie'.'<br/>';
                 $subjects = $this->subjectRepo->findBy(array('category' => $category));
                 foreach($subjects as $subject)
                 {
@@ -257,17 +257,17 @@ class Manager
                     *   TODO :  Profiter de ce passage pour voir si le sujet a ete mis a jour
                     *           ou si il est nouveau. 
                     */
-                    echo 'Un sujet'.'<br/>';
+                    //echo 'Un sujet'.'<br/>';
                     $messages = $this->messageRepo->findBySubject($subject);
                     foreach($messages as $message)
                     {
                         /*
                         *   TODO :  Gerer les messages update.
                         */
-                        echo 'Un message'.'<br/>';
+                        //echo 'Un message'.'<br/>';
                         if($message->getCreationDate()->getTimestamp() > $date_sync)
                         {
-                            echo 'Le message est nouveau'.'<br/>';
+                            //echo 'Le message est nouveau'.'<br/>';
                             $elem_to_sync[] = $message;
                         }
                     }
@@ -325,9 +325,9 @@ class Manager
         foreach($forum_content as $element)
         {
             //$class_name = getQualifiedClassName($element);
-            echo 'Bonjour'.'<br/>';
-            echo get_class($element).'<br/>';
-            echo get_class($element).'<br/>';
+            //echo 'Bonjour'.'<br/>';
+            //echo get_class($element).'<br/>';
+            //echo get_class($element).'<br/>';
             $class_name = ''.get_class($element);
             switch($class_name)
             {
@@ -441,11 +441,11 @@ class Manager
                 break;
             case SyncConstant::TEXT :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);  
-                echo get_class($my_res);
+                //echo get_class($my_res);
                 $revision = $this->revisionRepo->findOneBy(array('text' => $my_res));
                 //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
                 //$modification_time = $resToAdd->getModificationDate()->getTimestamp();
-                echo get_class($revision);
+                //echo get_class($revision);
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
                     name="'.$resToAdd->getName().'"  
@@ -468,7 +468,7 @@ class Manager
     */
     private function addMessageToManifest($manifest, $content)
     {
-        echo 'Edition du manifeste pour ajouter un message'.'<br/>';
+        //echo 'Edition du manifeste pour ajouter un message'.'<br/>';
         $creation_time = $content->getCreationDate()->getTimestamp();
     
                 fputs($manifest, '

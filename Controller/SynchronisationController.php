@@ -37,7 +37,7 @@ class SynchronisationController extends Controller
         *   Generer le zip descendant et le retourner dans la stream reponse
         */
         
-        echo "I'm in <br/>";
+        //echo "I'm in <br/>";
         
         $request = $this->getRequest();
         //TODO verifier l'authentification
@@ -45,34 +45,34 @@ class SynchronisationController extends Controller
         $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
         //TODO verfier securite? => dans FileController il fait un checkAccess....
         
-        echo "j ai eu la requete <br/>";
+        //echo "j ai eu la requete <br/>";
 
         $em = $this->getDoctrine()->getManager();
         $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
         $authUser = $arrayRepo[0];
 
-        echo "J ai eu l'user<br/>";
+        //echo "J ai eu l'user<br/>";
         
         //Load the archive
-        //$this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
+        $this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
         
         //Compute the answer
-        //$toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
+        $toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
         
-        echo "je prepare la reponse<br/>";
+        // echo "je prepare la reponse".$toSend."<br/>";
+        $userSynchro = $this->get('claroline.manager.synchronize_manager')->updateUserSynchronized($authUser);
 
         //Send back the online sync zip
         $response = new StreamedResponse();
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
         $response->setCallBack(
-            function () use ($user) {
-                readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
-                //readfile($toSend);
+            //function () use ($user) {
+                //readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
+            function () use ($toSend) {                
+                readfile($toSend);
             }
         );
-        
-        echo "j'envoie la reponse<br/>";
-
+        //echo "j'envoie la reponse<br/>";
         return $response;
     }
 }

@@ -9,8 +9,7 @@
     }
     ],
     "require": {
-        "claroline/core-bundle": "~2.9",
-        "kriswallsmith/buzz": "dev-master"
+        "claroline/core-bundle": "~2.9"
     },
     "autoload": {
         "psr-0": { "Claroline\\OfflineBundle": "" }

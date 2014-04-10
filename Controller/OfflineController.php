@@ -261,6 +261,5 @@ class OfflineController extends Controller
             'transfer' => $transfer
         );
     }
-    
    
 }

@@ -12,20 +12,22 @@
 namespace Claroline\OfflineBundle\Manager;
 
 use Claroline\CoreBundle\Entity\User;
-use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\CoreBundle\Pager\PagerFactory;
-use Claroline\OfflineBundle\Entity\UserSynchronized;
-//use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Translation\TranslatorInterface;
-use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use JMS\DiExtraBundle\Annotation as DI;
-use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
-use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\Resource\ResourceType;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
-use Claroline\OfflineBundle\SyncConstant;
+use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
+use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Manager\WorkspaceManager;
+use Claroline\CoreBundle\Pager\PagerFactory;
+use Claroline\CoreBundle\Persistence\ObjectManager;
+use Claroline\CoreBundle\Repository\WorkspaceRepository;
+use Claroline\OfflineBundle\Entity\UserSynchronized;
+use Claroline\OfflineBundle\SyncConstant;
+use JMS\DiExtraBundle\Annotation as DI;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+//use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Translation\TranslatorInterface;
 use \ZipArchive;
 use \DateTime;
 
@@ -44,6 +46,7 @@ class CreationManager
     private $forumRepo;
     private $categoryRepo;
     private $resourceManager;
+    private $workspaceRepo;
     private $ut;
 
     /**
@@ -73,6 +76,7 @@ class CreationManager
         $this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
         $this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
         $this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
+        $this->workspaceRepo = $om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
@@ -85,7 +89,6 @@ class CreationManager
      * @param \Claroline\CoreBundle\Entity\User $user
      *
      */
-    
      public function createSyncZip(User $user)
     {
         $archive = new ZipArchive(); 
@@ -105,21 +108,15 @@ class CreationManager
         //echo get_resource_type($manifest).'<br/>';
  
         $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$hashname_zip.'.zip';
+        
         if($archive->open($fileName, ZipArchive::CREATE) === true)
         {
-        //echo 'THIS Is THE ARCHIVE NAME : '.$archive->filename ;
-        
         fputs($manifest,'
     <plateform>');
     
            $this->fillSyncZip($userWS, $manifest, $typeArray, $user, $archive);
         fputs($manifest,'
     </plateform>');
-           
-            /*return array(
-                'user_courses' => $userWS,
-                'user_res' => $userRes
-            );*/
         }
         else
         {
@@ -134,10 +131,34 @@ class CreationManager
         $archivePath = $archive->filename;
         $archive->close();
         // Erase the manifest from the current folder.
-        //unlink($manifestName);
+        unlink($manifestName);
         
         return $archivePath;
     }
+
+
+    public function writeWorspaceList(User $user)
+    {
+        $workspaces = $this->workspaceRepo->findWorkspacesWithSelfRegistration($user);
+        //private function addWorkspaceToManifest($manifest, $workspace)
+        $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/all_workspaces.xml';
+        $allWorkspaces = fopen($fileName, "w+");
+        fputs($allWorkspaces, "<workspace_list>");
+
+        foreach($workspaces as $workspace)
+        {
+            $this->addWorkspaceToManifest($allWorkspaces, $workspace);
+            fputs($allWorkspaces, '
+        </workspace>');
+        }
+
+        fputs($allWorkspaces, "
+</workspace_list>");
+        fclose($allWorkspaces);
+        //echo "filename : ".$fileName.'<br/>';
+        return $fileName;
+    }
+
     
     private function buildTypeArray(array $typeList)
     {
@@ -150,6 +171,7 @@ class CreationManager
         return $typeArrayTmp;
     }
     
+
     private function fillSyncZip($userWS, $manifest, $typeArray, $user, $archive)
     {
         foreach($userWS as $element)
@@ -188,6 +210,7 @@ class CreationManager
         }
     }
     
+
     /*
     *   Check all the messages, subjects and categories of the forums
     *   and return the one that have been created.
@@ -210,6 +233,7 @@ class CreationManager
     
     }
     
+
     /*
     *   Check all category of a list and see if they are new or updated.
     */
@@ -234,6 +258,7 @@ class CreationManager
         return $elem_to_sync;
 
     }
+
 
     /*
     *   Check all subject of a list and see if they are new or updated.
@@ -260,6 +285,7 @@ class CreationManager
 
     }
 
+
     /*
     *   Check all message of a list and see if they are new or updated.
     */
@@ -279,9 +305,9 @@ class CreationManager
         }
         
         return $elem_to_sync;
-
     }
     
+
     /*
     *   Filter all the resources based on the user's last synchronization and
     *   check which one need to be sent.
@@ -320,6 +346,7 @@ class CreationManager
         
     }
     
+
     /*
     *   Add the content of the forum in the Archive.
     */
@@ -348,6 +375,7 @@ class CreationManager
         }
     }
     
+
     /**
      * Create a the archive based on the user     
      * Attention, if the archive file created is empty, it will not write zip file on disk !
@@ -362,12 +390,12 @@ class CreationManager
         }
     }
     
+
     /*
     *   Add the ressource inside a file in the Archive file.
     *   
     *   03/04/2014 : Interesting ONLY for the file at this time.
     */
-    
     private function addResourceToZip(ZipArchive $archive, $resToAdd, $user, $archive, $manifest, $path)
     {
         switch($resToAdd->getResourceType()->getId())
@@ -392,10 +420,12 @@ class CreationManager
         }
     }
 
-    /*
-    *   Here figure all methods used to manipulate the xml file.
-    */
+
+    /*******************************************************
+    *   Here figure all methods used to manipulate the xml file. *
+    *********************************************************/
     
+
     /*
     *   Add a specific resource to the Manifest. 
     *   The informations written in the Manifest will depend of the type of the file.
@@ -478,6 +508,7 @@ class CreationManager
         }
     }
 
+
     /*
     *   Add a specific Category in the Manifest.
     */
@@ -499,6 +530,7 @@ class CreationManager
                     </forum>
                     ');
     }
+
 
     /*
     *   Add a specific Subject in the Manifest.
@@ -523,6 +555,7 @@ class CreationManager
                     ');
     }
     
+
     /*
     *   Add a specific Message in the Manifest.
     */
@@ -546,6 +579,7 @@ class CreationManager
                     ');
     }
     
+
     /*
     *   Add informations of a specific workspace in the manifest.
     */
@@ -573,6 +607,7 @@ class CreationManager
         ');
     }
     
+
     /*
     *   Create the description of the manifest.
     */

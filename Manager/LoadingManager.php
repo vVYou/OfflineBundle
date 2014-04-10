@@ -731,6 +731,8 @@ class LoadingManager
                 $this->forumManager->editCategory($category, $dbName, $xmlName);
             }
         }
+        
+        echo 'Category already in DB!'.'<br/>';
     }
     
     /*
@@ -768,6 +770,8 @@ class LoadingManager
                 $subject->setIsSticked($xmlSubject->getAttribute('sticked'));
             }
         }
+        
+        echo 'Subject already in DB!'.'<br/>';
     }
     
     /*
@@ -796,7 +800,7 @@ class LoadingManager
     */
     private function updateMessage($xmlMessage, $message)
     {
-        $xmlContent = $xmlMessage->getAttribute('content');
+        $xmlContent = '<p>'.$xmlMessage->getAttribute('content').'</p>';
         $dbContent = $message->getContent();
         $xmlModificationDate = $xmlMessage->getAttribute('update_date');
         $dbModificationDate = $message->getUpdate()->getTimestamp();
@@ -807,6 +811,8 @@ class LoadingManager
                 $this->forumManager->editMessage($message, $dbContent, $xmlContent);
             }
         }
+        
+        echo 'Message already in DB!'.'<br/>';
             
     }
     

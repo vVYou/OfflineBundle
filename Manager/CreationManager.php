@@ -18,9 +18,9 @@ use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\WorkspaceManager;
-use Claroline\CoreBundle\Manager\WorkspaceTagManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\CoreBundle\Persistence\ObjectManager;
+use Claroline\CoreBundle\Repository\WorkspaceRepository;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\SyncConstant;
 use JMS\DiExtraBundle\Annotation as DI;
@@ -46,7 +46,7 @@ class CreationManager
     private $forumRepo;
     private $categoryRepo;
     private $resourceManager;
-    private $tagManager;
+    private $workspaceRepo;
     private $ut;
 
     /**
@@ -57,7 +57,6 @@ class CreationManager
      *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
      *     "translator"     = @DI\Inject("translator"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "tagManager"     = @DI\Inject("claroline.manager.workspace_tag_manager"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
@@ -66,7 +65,6 @@ class CreationManager
         PagerFactory $pagerFactory,
         TranslatorInterface $translator,
         ResourceManager $resourceManager,
-        WorkspaceTagManager $tagManager,
         ClaroUtilities $ut
     )
     {
@@ -78,9 +76,9 @@ class CreationManager
         $this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
         $this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
         $this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
+        $this->workspaceRepo = $om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
-        $this->tagManager = $tagManager;
         $this->ut = $ut;
     }
     
@@ -141,7 +139,23 @@ class CreationManager
 
     public function writeWorspaceList(User $user)
     {
-        //$this->tagManager->getDatasForSelfRegistrationWorkspaceList($user);
+        $workspaces = $this->workspaceRepo->findWorkspacesWithSelfRegistration($user);
+        //private function addWorkspaceToManifest($manifest, $workspace)
+        $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/all_workspaces.xml';
+        $allWorkspaces = fopen($fileName, "w+");
+        fputs($allWorkspaces, "<workspace_list>");
+        foreach($workspaces as $workspace)
+        {
+            echo 'elemen in foreach : '.get_class($workspace).'<br/>';
+            $this->addWorkspaceToManifest($allWorkspaces, $workspace);
+            fputs($allWorkspaces, '
+        </workspace>');
+        }
+        fputs($allWorkspaces, "
+    </workspace_list>");
+        fclose($allWorkspaces);
+        //echo "filename : ".$fileName.'<br/>';
+        return $fileName;
     }
 
     

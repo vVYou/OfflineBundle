@@ -261,37 +261,5 @@ class OfflineController extends Controller
             'transfer' => $transfer
         );
     }
-
-
-    /**
-    *  Include workspace into zip
-    *   
-    *   @EXT\Route(
-    *       "/sync/workspace/{user}",
-    *       name="claro_sync_transfer"
-    *   )
-    *
-    * @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
-    * @EXT\Template("ClarolineOfflineBundle:Offline:transfer.html.twig")
-    *
-    * @param User $user
-    * @return Reponse
-    */
-    public function workspaceAction($user, User $authUser)
-    {
-        $transfer = true;
-        //echo "AUTH USER ID : ".$authUser->getId().'<br/>';
-        if($user == $authUser->getId()){
-            $this->get('claroline.manager.synchronize_manager')->writeWorspaceList($authUser);
-        }else{
-            $transfer = false;
-        }
-        
-        $username = $authUser->getFirstName() . ' ' . $authUser->getLastName(); 
-        return array(
-            'user' => $username,
-            'transfer' => $transfer
-        );
-    }
    
 }

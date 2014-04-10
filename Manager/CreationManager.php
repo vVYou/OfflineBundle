@@ -144,15 +144,16 @@ class CreationManager
         $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/all_workspaces.xml';
         $allWorkspaces = fopen($fileName, "w+");
         fputs($allWorkspaces, "<workspace_list>");
+
         foreach($workspaces as $workspace)
         {
-            echo 'elemen in foreach : '.get_class($workspace).'<br/>';
             $this->addWorkspaceToManifest($allWorkspaces, $workspace);
             fputs($allWorkspaces, '
         </workspace>');
         }
+
         fputs($allWorkspaces, "
-    </workspace_list>");
+</workspace_list>");
         fclose($allWorkspaces);
         //echo "filename : ".$fileName.'<br/>';
         return $fileName;

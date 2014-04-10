@@ -20,6 +20,13 @@ class SynchronisationController extends Controller
 {    
     // TODO Security voir workspace controller.
 
+    private function getUserFromID($user)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
+        return $arrayRepo[0];
+    }
+
     /**
     *   @EXT\Route(
     *       "/transfer/getzip/{user}",
@@ -48,9 +55,10 @@ class SynchronisationController extends Controller
         //TODO verfier securite? => dans FileController il fait un checkAccess....
 
         //Identify User
-        $em = $this->getDoctrine()->getManager();
+       /* $em = $this->getDoctrine()->getManager();
         $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
-        $authUser = $arrayRepo[0];
+        $authUser = $arrayRepo[0];*/
+        $authUser = $this->getUserFromID($user);
         
         //Load the archive
         $this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
@@ -83,17 +91,46 @@ class SynchronisationController extends Controller
     *   )
     *
     *   @EXT\Method("GET")    
-    *
-    *   @return Response
     */
     public function confirmAction($user)
     {
-        $em = $this->getDoctrine()->getManager();
+        /*$em = $this->getDoctrine()->getManager();
         $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
-        $authUser = $arrayRepo[0];
+        $authUser = $arrayRepo[0];*/
+        $authUser = $this->getUserFromID($user);
 
-        //TODO verifier authentification !!!
+        //TODO verifier authentification !!!  => SHOULD return false if fails
         $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
         return true;
+    }
+
+    /**
+    *  Transfert workspace list
+    *   
+    *   @EXT\Route(
+    *       "/transfer/workspace/{user}",
+    *       name="claro_sync_transfer"
+    *   )
+    *
+    * @EXT\Method("GET")
+    *
+    * @return Response
+    */
+    public function workspaceAction($user)
+    {
+        //TODO Authentification User
+        $authUser = $this->getUserFromID($user);
+        $toSend = $this->get('claroline.manager.synchronize_manager')->writeWorspaceList($authUser);
+        
+        //Send back the online sync zip
+        $response = new StreamedResponse();
+        //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
+        $response->setCallBack(
+            function () use ($toSend) {                
+                readfile($toSend);
+            }
+        );
+
+        return $response;
     }
 }

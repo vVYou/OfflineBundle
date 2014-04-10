@@ -148,6 +148,24 @@ class LoadingManager
             $this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
+            $this->rrmdir($this->path);
+            
+            
+            //TODO : Utile seulement pour les tests.
+            foreach($this->syncInfoArray as $syncInfo)
+            {
+                $add = $syncInfo->getAdd();
+                foreach($add as $elem)
+                {
+                    echo $elem.'<br/>';
+                }
+                
+                $doublon = $syncInfo->getDoublon();
+                foreach($doublon as $doub)
+                {
+                    echo $doub.'<br/>';
+                }
+            }
         }
         else
         {
@@ -155,26 +173,28 @@ class LoadingManager
             throw new \Exception('Impossible to load the zip file');
         }
         
-        //Destroy the Zip
-        
-        //Return the array of informations
-        
-        foreach($this->syncInfoArray as $syncInfo)
-        {
-            $add = $syncInfo->getAdd();
-            foreach($add as $elem)
-            {
-                echo $elem.'<br/>';
-            }
-            
-            $doublon = $syncInfo->getDoublon();
-            foreach($doublon as $doub)
-            {
-                echo $doub.'<br/>';
-            }
-        }
         return $this->syncInfoArray;
-        
+    }
+
+    /*
+    *   Code inspired of :
+    *   http://stackoverflow.com/questions/9760526/php-remove-not-empty-folder
+    */
+    public function rrmdir($dir){
+        if (is_dir($dir)){
+            $objects = scandir($dir);
+            foreach($objects as $object){
+                if($object != "." && $object != ".."){
+                    if(filetype($dir."/".$object) == "dir"){
+                        rmdir($dir."/".$object);
+                    }else{
+                        unlink($dir."/".$object);
+                    }
+                }
+            }
+            reset($objects);
+            rmdir($dir);
+        }
     }
     
     /**

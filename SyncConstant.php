@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * This class contains all Constants used 
+ * in the synchronisation process.
+ */
+ 
 namespace Claroline\OfflineBundle;
 
 

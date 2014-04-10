@@ -18,6 +18,7 @@ use \ZipArchive;
 
 class SynchronisationController extends Controller
 {    
+    // TODO Security voir workspace controller.
 
     /**
     *   @EXT\Route(

@@ -11,13 +11,13 @@ namespace Claroline\OfflineBundle;
 class SyncInfo
 {
     private $workspace;
-    private $add;
+    private $create;
     private $update;
     private $doublon;
     
     public function __construct()
     {
-        $this->add = array();
+        $this->create = array();
         $this->update = array();
         $this->doublon = array();
     }
@@ -32,9 +32,9 @@ class SyncInfo
         $this->workspace = $ws;
     }
     
-    public function addToAdd($resource)
+    public function addToCreate($resource)
     {
-        $this->add[] = $resource;
+        $this->create[] = $resource;
     }
     
     public function addToUpdate($resource)
@@ -47,9 +47,9 @@ class SyncInfo
         $this->doublon[] = $resource;
     }
     
-    public function getAdd()
+    public function getCreate()
     {
-        return $this->add;
+        return $this->create;
     }
     
     public function getUpdate()

@@ -152,20 +152,30 @@ class LoadingManager
             
             
             //TODO : Utile seulement pour les tests.
-            foreach($this->syncInfoArray as $syncInfo)
-            {
-                $add = $syncInfo->getAdd();
-                foreach($add as $elem)
-                {
-                    echo $elem.'<br/>';
-                }
+            // foreach($this->syncInfoArray as $syncInfo)
+            // {
+                // echo 'For the workspace : '.$syncInfo->getWorkspace().'<br/>';
+                // $add = $syncInfo->getCreate();
+                // foreach($add as $elem)
+                // {
+                    // echo 'Create'.'<br/>';
+                    // echo $elem.'<br/>';
+                // }
                 
-                $doublon = $syncInfo->getDoublon();
-                foreach($doublon as $doub)
-                {
-                    echo $doub.'<br/>';
-                }
-            }
+                // $update = $syncInfo->getUpdate();
+                // foreach($update as $up)
+                // {
+                    // echo 'Update'.'<br/>';
+                    // echo $up.'<br/>';
+                // }
+                
+                // $doublon = $syncInfo->getDoublon();
+                // foreach($doublon as $doub)
+                // {
+                    // echo 'Doublon'.'<br/>';
+                    // echo $doub.'<br/>';
+                // }
+            // }
         }
         else
         {
@@ -332,7 +342,7 @@ class LoadingManager
                 {
                     //echo 'Faut creer!'.'<br/>';
                     $this->createResource($res, $workspace);
-                    $wsInfo->addToAdd($res->getAttribute('name'));
+                    $wsInfo->addToCreate($res->getAttribute('name'));
                 } 
             }
             if($res->nodeName == 'forum')

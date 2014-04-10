@@ -409,10 +409,7 @@ class CreationManager
         switch($type)
         {
             case SyncConstant::FILE :
-                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
-                //echo 'My res class : '.get_class($my_res).'<br/>';
-                //$creation_time = $resToAdd->getCreationDate()->getTimestamp();  
-                //$modification_time = $resToAdd->getModificationDate()->getTimestamp();                
+                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);           
                 
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
@@ -429,12 +426,10 @@ class CreationManager
                     ');
                 break;
             case SyncConstant::DIR :
-                // TOREMOVE SI BUG! ATTENTION LES WORKSPACES SONT AUSSI DES DIRECTORY GARE AU DOUBLE CHECK
+                
+                // Check if the directory is not a Workspace
                 if($resToAdd->getParent() != NULL)
-                {
-                    //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
-                    //$modification_time = $resToAdd->getModificationDate()->getTimestamp();                    
-                    
+                {                       
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
                     name="'.$resToAdd->getName().'"  
@@ -450,11 +445,8 @@ class CreationManager
                 break;
             case SyncConstant::TEXT :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);  
-                //echo get_class($my_res);
                 $revision = $this->revisionRepo->findOneBy(array('text' => $my_res));
-                //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
-                //$modification_time = $resToAdd->getModificationDate()->getTimestamp();
-                //echo get_class($revision);
+
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
                     name="'.$resToAdd->getName().'"  
@@ -464,6 +456,20 @@ class CreationManager
                     hashname_node="'.$resToAdd->getNodeHashName().'"
                     hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
                     content="'.$revision->getContent().'"
+                    creation_date="'.$creation_time.'"
+                    modification_date="'.$modification_time.'">
+                    </resource>
+                    ');
+                break;
+            case SyncConstant::FORUM : 
+                
+                fputs($manifest, '
+                    <resource type="'.$resToAdd->getResourceType()->getName().'"
+                    name="'.$resToAdd->getName().'"  
+                    mimetype="'.$resToAdd->getMimeType().'"
+                    creator="'.$resToAdd->getCreator()->getId().'"
+                    hashname_node="'.$resToAdd->getNodeHashName().'"
+                    hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
                     creation_date="'.$creation_time.'"
                     modification_date="'.$modification_time.'">
                     </resource>

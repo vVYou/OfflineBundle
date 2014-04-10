@@ -27,6 +27,9 @@ use Claroline\CoreBundle\Library\Security\TokenUpdater;
 use Claroline\CoreBundle\Event\StrictDispatcher;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
+use Claroline\ForumBundle\Entity\Forum;
+use Claroline\ForumBundle\Entity\Category;
+use Claroline\ForumBundle\Entity\Subject;
 use Claroline\ForumBundle\Entity\Message;
 use Claroline\OfflineBundle\SyncConstant;
 use Claroline\OfflineBundle\SyncInfo;
@@ -148,7 +151,7 @@ class LoadingManager
             $this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
-            $this->rrmdir($this->path);
+            //$this->rrmdir($this->path);
             
             
             //TODO : Utile seulement pour les tests.
@@ -381,18 +384,19 @@ class LoadingManager
                 {
                     // TODO Mettre à jour la date de modification et le nom du directory
                     // Only Rename?
-                    //  echo 'Mon directory est renomme'.'<br/>';
                     $this->resourceManager->rename($node, $resource->getAttribute('name'));
                     $wsInfo->addToUpdate($resource->getAttribute('name'));
-                }
-                else
-                {
-                   // echo 'No need to update'.'<br/>';
                 }
                 break;
             case SyncConstant::FORUM :
                 echo 'It s a forum!'.'<br/>';
-                // trouver le forum-category-sujet-message et ajouter/
+                if($node_modif_date < $modif_date)
+                {
+                    // TODO Mettre à jour la date de modification et le nom du directory
+                    // Only Rename?
+                    $this->resourceManager->rename($node, $resource->getAttribute('name'));
+                    $wsInfo->addToUpdate($resource->getAttribute('name'));
+                }
                 break;
             default :
                 echo 'It s a file or a text!'.'<br/>';
@@ -494,7 +498,12 @@ class LoadingManager
                 $revision->setUser($this->user);
                 $revision->setText($newResource);
                 $this->om->persist($revision);                         
-                break;       
+                break;  
+
+            case SyncConstant::FORUM :
+            
+                $newResource = new Forum();
+                break;
         }       
             
         $newResource->setName($resource->getAttribute('name'));
@@ -707,7 +716,7 @@ class LoadingManager
     {
         echo 'Category created'.'<br/>';
         
-        $node_forum = $this->resourceRepo->findOneBy(array('hashName' => $category->getAttribute('forum_node')));
+        $node_forum = $this->resourceNodeRepo->findOneBy(array('hashName' => $category->getAttribute('forum_node')));
         $forum = $this->resourceManager->getResourceFromNode($node_forum);
         
         $category_name = $category->getAttribute('name');
@@ -743,7 +752,7 @@ class LoadingManager
         echo 'Subject created'.'<br/>';
         
         $category = $this->categoryRepo->findOneBy(array('hashName' => $subject->getAttribute('category')));
-        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $message->getAttribute('creator_id')));
+        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $subject->getAttribute('creator_id')));
         $sub = new Subject();
         $sub->setTitle($subject->getAttribute('name'));
         $sub->setCategory($category);

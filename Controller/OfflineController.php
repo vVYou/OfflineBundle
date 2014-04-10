@@ -187,8 +187,8 @@ class OfflineController extends Controller
             $this->get('claroline.manager.transfer_manager')->confirmRequest($authUser);
             
             //clean directory
-            //unlink($archive);
-            //unlink($response);
+            unlink($archive);
+            unlink($response);
             
             //Format the view
             $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
@@ -261,5 +261,28 @@ class OfflineController extends Controller
             'transfer' => $transfer
         );
     }
-   
+
+
+
+    /**
+    *   @EXT\Route(
+    *       "/sync/loadWorkspaces",
+    *       name="claro_sync_load"
+    *   )
+    *
+    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:load.html.twig")
+    *
+    * @param User $user
+    * @return Response
+    */
+    public function loadWorkspacesAction(User $user)
+    {       
+        $zip = $this->get('claroline.manager.loading_manager')->loadPublicWorkspaceList(SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/all_workspaces.xml');
+         
+        $username = $user->getFirstName() . ' ' . $user->getLastName();
+        return array(
+            'user' => $username
+         );
+    }
 }

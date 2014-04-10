@@ -144,12 +144,12 @@ class LoadingManager
             $tmpdirectory = $archive->extractTo($this->path);
             
             //Call LoadXML
-            //$this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
-            $this->loadXML('manifest_test_x.xml'); //Actually used for test.
+            $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
+            //$this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
             $this->rrmdir($this->path);
-            
+            echo 'DIR deleted <br/>';
             
             //TODO : Utile seulement pour les tests.
             // foreach($this->syncInfoArray as $syncInfo)
@@ -186,6 +186,13 @@ class LoadingManager
         return $this->syncInfoArray;
     }
 
+    public function loadPublicWorkspaceList($allWorkspace)
+    {
+        $xmlDocument = new DOMDocument();
+        $xmlDocument->load($allWorkspace);
+        $this->importPlateform($xmlDocument->getElementsByTagName('workspace_list'));      
+    }
+
     /*
     *   Code inspired of :
     *   http://stackoverflow.com/questions/9760526/php-remove-not-empty-folder
@@ -195,7 +202,8 @@ class LoadingManager
             $objects = scandir($dir);
             foreach($objects as $object){
                 if($object != "." && $object != ".."){
-                    if(filetype($dir."/".$object) == "dir"){
+                    if(is_dir($dir."/".$object)){
+                    //if(filetype($dir."/".$object) == "dir"){
                         rmdir($dir."/".$object);
                     }else{
                         unlink($dir."/".$object);

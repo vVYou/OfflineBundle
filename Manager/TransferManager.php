@@ -115,6 +115,7 @@ class TransferManager
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $iSendThis );        
         $content = $reponse->getContent();
         //echo $browser->getLastRequest().'<br/>';
+        //echo 'CONTENT : <br/>'.$content.'<br/>';
         
         $hashname = $this->ut->generateGuid();
         $zip_path = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$hashname.'.zip';

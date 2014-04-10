@@ -494,7 +494,7 @@ class LoadingManager
             
                 $newResource = new Text();
                 $revision = new Revision();
-                $revision->setContent('<p>'.$resource->getAttribute('content').'</p>');
+                $revision->setContent($this->extractCData($resource));
                 $revision->setUser($this->user);
                 $revision->setText($newResource);
                 $this->om->persist($revision);                         
@@ -575,7 +575,7 @@ class LoadingManager
             
                 $newResource = new Text();
                 $revision = new Revision();
-                $revision->setContent('<p>'.$resource->getAttribute('content').'</p>');
+                $revision->setContent($this->extractCData($resource));
                 $revision->setUser($this->user);
                 $revision->setText($newResource);
                 $this->om->persist($revision);                         
@@ -795,12 +795,13 @@ class LoadingManager
         
         $subject = $this->subjectRepo->findOneBy(array('hashName' => $message->getAttribute('subject')));
         $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $message->getAttribute('creator_id')));
+        $content = $this->extractCData($message);
         $msg = new Message();
-        $msg->setContent('<p>'.$message->getAttribute('content').'</p>'.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');
+        $msg->setContent($content.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');
         $msg->setSubject($subject);
         $msg->setCreator($creator);
         
-        $this->forumManager->createMessage($msg, $message->getAttribute('hashname'));       
+        $this->forumManager->createMessage($msg, $message->getAttribute('hashname'));     
         
     }
     
@@ -809,7 +810,7 @@ class LoadingManager
     */
     private function updateMessage($xmlMessage, $message)
     {
-        $xmlContent = '<p>'.$xmlMessage->getAttribute('content').'</p>';
+        $xmlContent = $this->extractCData($xmlMessage);
         $dbContent = $message->getContent();
         $xmlModificationDate = $xmlMessage->getAttribute('update_date');
         $dbModificationDate = $message->getUpdate()->getTimestamp();
@@ -879,6 +880,24 @@ class LoadingManager
         echo 'ModificationDate of New Node After : '.$node->getModificationDate()->format('d/m/Y H:i:s').'<br/>';
         echo 'ModificationDate of XML After : '.$modification_date->format('d/m/Y H:i:s').'<br/>';
         
+    }
+    
+    private function extractCData($data)
+    {      
+        foreach($data->childNodes as $child)
+        {
+            if($child->nodeName == 'content')
+            {
+                foreach($child->childNodes as $contentsection)
+                {
+                    if($contentsection->nodeType == XML_CDATA_SECTION_NODE)
+                    {
+                        // $msg->setContent($child->textContent.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');  
+                        return $child->textContent;
+                    }
+                }
+            } 
+        }
     }
     
 }

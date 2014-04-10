@@ -131,7 +131,7 @@ class CreationManager
         $archivePath = $archive->filename;
         $archive->close();
         // Erase the manifest from the current folder.
-        unlink($manifestName);
+        // unlink($manifestName);
         
         return $archivePath;
     }
@@ -354,8 +354,9 @@ class CreationManager
     {
         foreach($forum_content as $element)
         {
+            
             //$class_name = getQualifiedClassName($element);
-            //echo 'Bonjour'.'<br/>';
+            // echo 'Bonjour'.'<br/>';
             //echo get_class($element).'<br/>';
             //echo get_class($element).'<br/>';
             $class_name = ''.get_class($element);
@@ -421,9 +422,9 @@ class CreationManager
     }
 
 
-    /*******************************************************
+    /************************************************************
     *   Here figure all methods used to manipulate the xml file. *
-    *********************************************************/
+    *************************************************************/
     
 
     /*
@@ -485,9 +486,9 @@ class CreationManager
                     version="'.$my_res->getVersion().'"
                     hashname_node="'.$resToAdd->getNodeHashName().'"
                     hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
-                    content="'.$revision->getContent().'"
                     creation_date="'.$creation_time.'"
                     modification_date="'.$modification_time.'">
+                        <content><![CDATA['.$revision->getContent().']]></content>
                     </resource>
                     ');
                 break;
@@ -572,9 +573,9 @@ class CreationManager
                     subject="'.$subject.'"  
                     hashname="'.$content->getHashName().'"
                     creator_id="'.$content->getCreator()->getId().'"
-                    content="'.$content->getContent().'"
                     creation_date="'.$creation_time.'"
                     update_date="'.$update_time.'">
+                        <content><![CDATA['.$content->getContent().']]></content>
                     </forum>
                     ');
     }

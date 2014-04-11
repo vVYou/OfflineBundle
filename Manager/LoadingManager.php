@@ -625,7 +625,7 @@ class LoadingManager
         echo 'Je cree mon Workspace!'.'<br/>';
         $creation_date = new DateTime();
         $modification_date = new DateTime();
-        
+        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $workspace->getAttribute('creator')));
         $ds = DIRECTORY_SEPARATOR;
 
         $type = Configuration::TYPE_SIMPLE;
@@ -641,7 +641,7 @@ class LoadingManager
         $config->setGuid($workspace->getAttribute('guid'));
         $user = $this->security->getToken()->getUser();
         
-        $this->workspaceManager->create($config, $user);   
+        $this->workspaceManager->create($config, $creator);   
         $this->tokenUpdater->update($this->security->getToken());
         //$route = $this->router->generate('claro_workspace_list');
                
@@ -652,8 +652,7 @@ class LoadingManager
         $creation_date->setTimestamp($workspace->getAttribute('creation_date'));
         $modification_date->setTimestamp($workspace->getAttribute('modification_date'));      
         
-        //$my_ws->setGuid($workspace->getAttribute('guid'));
-        //$NodeWorkspace->setCreator($user);
+        $NodeWorkspace->setCreator($creator);
         $NodeWorkspace->setCreationDate($creation_date);
         $NodeWorkspace->setModificationDate($modification_date);
         $NodeWorkspace->setNodeHashName($workspace->getAttribute('hashname_node'));

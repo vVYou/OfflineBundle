@@ -433,7 +433,6 @@ class CreationManager
     /************************************************************
     *   Here figure all methods used to manipulate the xml file. *
     *************************************************************/
-    
 
     /*
     *   Add a specific resource to the Manifest. 

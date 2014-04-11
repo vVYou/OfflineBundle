@@ -638,12 +638,9 @@ class LoadingManager
         $config->setDisplayable($workspace->getAttribute('displayable'));
         $config->setSelfRegistration($workspace->getAttribute('selfregistration'));
         $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
+        $config->setGuid($workspace->getAttribute('guid'));
         $user = $this->security->getToken()->getUser();
         
-        /*if($manager)
-        {
-            $this->workspaceManager->create($config, $user);   
-        }*/
         $this->workspaceManager->create($config, $user);   
         $this->tokenUpdater->update($this->security->getToken());
         //$route = $this->router->generate('claro_workspace_list');
@@ -655,7 +652,7 @@ class LoadingManager
         $creation_date->setTimestamp($workspace->getAttribute('creation_date'));
         $modification_date->setTimestamp($workspace->getAttribute('modification_date'));      
         
-        $my_ws->setGuid($workspace->getAttribute('guid'));
+        //$my_ws->setGuid($workspace->getAttribute('guid'));
         //$NodeWorkspace->setCreator($user);
         $NodeWorkspace->setCreationDate($creation_date);
         $NodeWorkspace->setModificationDate($modification_date);

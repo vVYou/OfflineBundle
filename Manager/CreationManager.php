@@ -135,7 +135,7 @@ class CreationManager
         $archivePath = $archive->filename;
         $archive->close();
         // Erase the manifest from the current folder.
-        unlink($manifestName);
+        // unlink($manifestName);
         
         return $archivePath;
     }
@@ -362,8 +362,9 @@ class CreationManager
     {
         foreach($forum_content as $element)
         {
+            
             //$class_name = getQualifiedClassName($element);
-            //echo 'Bonjour'.'<br/>';
+            // echo 'Bonjour'.'<br/>';
             //echo get_class($element).'<br/>';
             //echo get_class($element).'<br/>';
             $class_name = ''.get_class($element);
@@ -429,9 +430,9 @@ class CreationManager
     }
 
 
-    /*******************************************************
+    /************************************************************
     *   Here figure all methods used to manipulate the xml file. *
-    *********************************************************/
+    *************************************************************/
     
 
     /*
@@ -447,10 +448,7 @@ class CreationManager
         switch($type)
         {
             case SyncConstant::FILE :
-                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
-                //echo 'My res class : '.get_class($my_res).'<br/>';
-                //$creation_time = $resToAdd->getCreationDate()->getTimestamp();  
-                //$modification_time = $resToAdd->getModificationDate()->getTimestamp();                
+                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);           
                 
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
@@ -467,12 +465,10 @@ class CreationManager
                     ');
                 break;
             case SyncConstant::DIR :
-                // TOREMOVE SI BUG! ATTENTION LES WORKSPACES SONT AUSSI DES DIRECTORY GARE AU DOUBLE CHECK
+                
+                // Check if the directory is not a Workspace
                 if($resToAdd->getParent() != NULL)
-                {
-                    //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
-                    //$modification_time = $resToAdd->getModificationDate()->getTimestamp();                    
-                    
+                {                       
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
                     name="'.$resToAdd->getName().'"  
@@ -488,11 +484,8 @@ class CreationManager
                 break;
             case SyncConstant::TEXT :
                 $my_res = $this->resourceManager->getResourceFromNode($resToAdd);  
-                //echo get_class($my_res);
                 $revision = $this->revisionRepo->findOneBy(array('text' => $my_res));
-                //$creation_time = $resToAdd->getCreationDate()->getTimestamp();
-                //$modification_time = $resToAdd->getModificationDate()->getTimestamp();
-                //echo get_class($revision);
+
                 fputs($manifest, '
                     <resource type="'.$resToAdd->getResourceType()->getName().'"
                     name="'.$resToAdd->getName().'"  
@@ -501,7 +494,21 @@ class CreationManager
                     version="'.$my_res->getVersion().'"
                     hashname_node="'.$resToAdd->getNodeHashName().'"
                     hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
-                    content="'.$revision->getContent().'"
+                    creation_date="'.$creation_time.'"
+                    modification_date="'.$modification_time.'">
+                        <content><![CDATA['.$revision->getContent().']]></content>
+                    </resource>
+                    ');
+                break;
+            case SyncConstant::FORUM : 
+                
+                fputs($manifest, '
+                    <resource type="'.$resToAdd->getResourceType()->getName().'"
+                    name="'.$resToAdd->getName().'"  
+                    mimetype="'.$resToAdd->getMimeType().'"
+                    creator="'.$resToAdd->getCreator()->getId().'"
+                    hashname_node="'.$resToAdd->getNodeHashName().'"
+                    hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
                     creation_date="'.$creation_time.'"
                     modification_date="'.$modification_time.'">
                     </resource>
@@ -574,9 +581,9 @@ class CreationManager
                     subject="'.$subject.'"  
                     hashname="'.$content->getHashName().'"
                     creator_id="'.$content->getCreator()->getId().'"
-                    content="'.$content->getContent().'"
                     creation_date="'.$creation_time.'"
                     update_date="'.$update_time.'">
+                        <content><![CDATA['.$content->getContent().']]></content>
                     </forum>
                     ');
     }

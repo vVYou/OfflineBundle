@@ -27,6 +27,9 @@ use Claroline\CoreBundle\Library\Security\TokenUpdater;
 use Claroline\CoreBundle\Event\StrictDispatcher;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
+use Claroline\ForumBundle\Entity\Forum;
+use Claroline\ForumBundle\Entity\Category;
+use Claroline\ForumBundle\Entity\Subject;
 use Claroline\ForumBundle\Entity\Message;
 use Claroline\OfflineBundle\SyncConstant;
 use Claroline\OfflineBundle\SyncInfo;
@@ -149,8 +152,7 @@ class LoadingManager
             
             //Destroy Directory
             //$this->rrmdir($this->path);
-            //TODO a revoir, Crash Oo
-            echo 'DIR deleted <br/>';
+            //echo 'DIR deleted <br/>';
             
             //TODO : Utile seulement pour les tests.
             // foreach($this->syncInfoArray as $syncInfo)
@@ -394,18 +396,19 @@ class LoadingManager
                 {
                     // TODO Mettre à jour la date de modification et le nom du directory
                     // Only Rename?
-                    //  echo 'Mon directory est renomme'.'<br/>';
                     $this->resourceManager->rename($node, $resource->getAttribute('name'));
                     $wsInfo->addToUpdate($resource->getAttribute('name'));
-                }
-                else
-                {
-                   // echo 'No need to update'.'<br/>';
                 }
                 break;
             case SyncConstant::FORUM :
                 echo 'It s a forum!'.'<br/>';
-                // trouver le forum-category-sujet-message et ajouter/
+                if($node_modif_date < $modif_date)
+                {
+                    // TODO Mettre à jour la date de modification et le nom du directory
+                    // Only Rename?
+                    $this->resourceManager->rename($node, $resource->getAttribute('name'));
+                    $wsInfo->addToUpdate($resource->getAttribute('name'));
+                }
                 break;
             default :
                 echo 'It s a file or a text!'.'<br/>';
@@ -503,11 +506,16 @@ class LoadingManager
             
                 $newResource = new Text();
                 $revision = new Revision();
-                $revision->setContent('<p>'.$resource->getAttribute('content').'</p>');
+                $revision->setContent($this->extractCData($resource));
                 $revision->setUser($this->user);
                 $revision->setText($newResource);
                 $this->om->persist($revision);                         
-                break;       
+                break;  
+
+            case SyncConstant::FORUM :
+            
+                $newResource = new Forum();
+                break;
         }       
             
         $newResource->setName($resource->getAttribute('name'));
@@ -579,7 +587,7 @@ class LoadingManager
             
                 $newResource = new Text();
                 $revision = new Revision();
-                $revision->setContent('<p>'.$resource->getAttribute('content').'</p>');
+                $revision->setContent($this->extractCData($resource));
                 $revision->setUser($this->user);
                 $revision->setText($newResource);
                 $this->om->persist($revision);                         
@@ -725,7 +733,7 @@ class LoadingManager
     {
         echo 'Category created'.'<br/>';
         
-        $node_forum = $this->resourceRepo->findOneBy(array('hashName' => $category->getAttribute('forum_node')));
+        $node_forum = $this->resourceNodeRepo->findOneBy(array('hashName' => $category->getAttribute('forum_node')));
         $forum = $this->resourceManager->getResourceFromNode($node_forum);
         
         $category_name = $category->getAttribute('name');
@@ -761,7 +769,7 @@ class LoadingManager
         echo 'Subject created'.'<br/>';
         
         $category = $this->categoryRepo->findOneBy(array('hashName' => $subject->getAttribute('category')));
-        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $message->getAttribute('creator_id')));
+        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $subject->getAttribute('creator_id')));
         $sub = new Subject();
         $sub->setTitle($subject->getAttribute('name'));
         $sub->setCategory($category);
@@ -804,12 +812,13 @@ class LoadingManager
         
         $subject = $this->subjectRepo->findOneBy(array('hashName' => $message->getAttribute('subject')));
         $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $message->getAttribute('creator_id')));
+        $content = $this->extractCData($message);
         $msg = new Message();
-        $msg->setContent('<p>'.$message->getAttribute('content').'</p>'.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');
+        $msg->setContent($content.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');
         $msg->setSubject($subject);
         $msg->setCreator($creator);
         
-        $this->forumManager->createMessage($msg, $message->getAttribute('hashname'));       
+        $this->forumManager->createMessage($msg, $message->getAttribute('hashname'));     
         
     }
     
@@ -818,7 +827,7 @@ class LoadingManager
     */
     private function updateMessage($xmlMessage, $message)
     {
-        $xmlContent = '<p>'.$xmlMessage->getAttribute('content').'</p>';
+        $xmlContent = $this->extractCData($xmlMessage);
         $dbContent = $message->getContent();
         $xmlModificationDate = $xmlMessage->getAttribute('update_date');
         $dbModificationDate = $message->getUpdate()->getTimestamp();
@@ -888,6 +897,24 @@ class LoadingManager
         echo 'ModificationDate of New Node After : '.$node->getModificationDate()->format('d/m/Y H:i:s').'<br/>';
         echo 'ModificationDate of XML After : '.$modification_date->format('d/m/Y H:i:s').'<br/>';
         
+    }
+    
+    private function extractCData($data)
+    {      
+        foreach($data->childNodes as $child)
+        {
+            if($child->nodeName == 'content')
+            {
+                foreach($child->childNodes as $contentsection)
+                {
+                    if($contentsection->nodeType == XML_CDATA_SECTION_NODE)
+                    {
+                        // $msg->setContent($child->textContent.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');  
+                        return $child->textContent;
+                    }
+                }
+            } 
+        }
     }
     
 }

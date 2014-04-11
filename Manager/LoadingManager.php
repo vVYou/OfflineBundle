@@ -148,7 +148,8 @@ class LoadingManager
             //$this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
-            $this->rrmdir($this->path);
+            //$this->rrmdir($this->path);
+            //TODO a revoir, Crash Oo
             echo 'DIR deleted <br/>';
             
             //TODO : Utile seulement pour les tests.
@@ -191,9 +192,13 @@ class LoadingManager
         $xmlDocument = new DOMDocument();
         $xmlDocument->load($allWorkspace);
         $this->importPlateform($xmlDocument->getElementsByTagName('workspace_list'));      
+        //$this->importPlateform($xmlDocument->getElementsByTagName('workspace_list'), false);      
     }
 
     /*
+    *
+    *       TO FIX !!!!!!!
+    *
     *   Code inspired of :
     *   http://stackoverflow.com/questions/9760526/php-remove-not-empty-folder
     */
@@ -260,7 +265,7 @@ class LoadingManager
     *   This method is used to work on the different fields inside the
     *   <platform> tags in the XML file.
     */
-    private function importPlateform($plateform)
+    private function importPlateform($plateform)//, $beWorkspaceManager = true)
     {
         $plateformChilds = $plateform->item(0)->childNodes; // Platform childs = list of workspaces.
         for($i = 0; $i<$plateformChilds->length; $i++)
@@ -312,7 +317,7 @@ class LoadingManager
                   //  echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
                     $workspace_creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $item->getAttribute('creator')));
                     echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
-                    $workspace = $this->createWorkspace($item, $workspace_creator);
+                    $workspace = $this->createWorkspace($item, $workspace_creator);//, $beWorkspaceManager);
                     //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
                 }
                 
@@ -606,8 +611,8 @@ class LoadingManager
     /*
     *   Create and return a new workspace detailed in the XML file.
     */     
-    private function createWorkspace($workspace, $user)
-    {
+    private function createWorkspace($workspace, $user)//, $manager=true)
+    {   
         // Use the create method from WorkspaceManager.
         echo 'Je cree mon Workspace!'.'<br/>';
         $creation_date = new DateTime();
@@ -627,18 +632,23 @@ class LoadingManager
         $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
         $user = $this->security->getToken()->getUser();
         
-        $this->workspaceManager->create($config, $user);
+        /*if($manager)
+        {
+            $this->workspaceManager->create($config, $user);   
+        }*/
+        $this->workspaceManager->create($config, $user);   
         $this->tokenUpdater->update($this->security->getToken());
         //$route = $this->router->generate('claro_workspace_list');
                
         $my_ws = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findOneBy(array('code' => $workspace->getAttribute('code')));
         $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $my_ws));                       
         
+        $this->om->startFlushSuite();
         $creation_date->setTimestamp($workspace->getAttribute('creation_date'));
         $modification_date->setTimestamp($workspace->getAttribute('modification_date'));      
         
-        $this->om->startFlushSuite();
         $my_ws->setGuid($workspace->getAttribute('guid'));
+        //$NodeWorkspace->setCreator($user);
         $NodeWorkspace->setCreationDate($creation_date);
         $NodeWorkspace->setModificationDate($modification_date);
         $NodeWorkspace->setNodeHashName($workspace->getAttribute('hashname_node'));

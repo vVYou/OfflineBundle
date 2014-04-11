@@ -118,7 +118,11 @@ class TransferManager
         //echo 'CONTENT : <br/>'.$content.'<br/>';
         
         $hashname = $this->ut->generateGuid();
-        $zip_path = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$hashname.'.zip';
+        $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/';
+        if(!is_dir($dir)){
+            mkdir($dir);
+        }
+        $zip_path = $dir.'sync_'.$hashname.'.zip';
         //TODO Check ouverture du fichier
         $zipFile = fopen($zip_path, 'w+');
         $write = fwrite($zipFile, $content);

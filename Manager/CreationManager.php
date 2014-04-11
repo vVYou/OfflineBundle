@@ -144,7 +144,6 @@ class CreationManager
     public function writeWorspaceList(User $user)
     {
         $workspaces = $this->workspaceRepo->findWorkspacesWithSelfRegistration($user);
-        //private function addWorkspaceToManifest($manifest, $workspace)
         $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/';
         if(!is_dir($dir)){
             mkdir($dir);

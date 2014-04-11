@@ -193,8 +193,7 @@ class LoadingManager
     {
         $xmlDocument = new DOMDocument();
         $xmlDocument->load($allWorkspace);
-        $this->importPlateform($xmlDocument->getElementsByTagName('workspace_list'));      
-        //$this->importPlateform($xmlDocument->getElementsByTagName('workspace_list'), false);      
+        $this->importPlateform($xmlDocument->getElementsByTagName('workspace_list'));           
     }
 
     /*
@@ -267,7 +266,7 @@ class LoadingManager
     *   This method is used to work on the different fields inside the
     *   <platform> tags in the XML file.
     */
-    private function importPlateform($plateform)//, $beWorkspaceManager = true)
+    private function importPlateform($plateform)
     {
         $plateformChilds = $plateform->item(0)->childNodes; // Platform childs = list of workspaces.
         for($i = 0; $i<$plateformChilds->length; $i++)
@@ -319,7 +318,7 @@ class LoadingManager
                   //  echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
                     $workspace_creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $item->getAttribute('creator')));
                     echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
-                    $workspace = $this->createWorkspace($item, $workspace_creator);//, $beWorkspaceManager);
+                    $workspace = $this->createWorkspace($item, $workspace_creator);
                     //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
                 }
                 
@@ -619,7 +618,7 @@ class LoadingManager
     /*
     *   Create and return a new workspace detailed in the XML file.
     */     
-    private function createWorkspace($workspace, $user)//, $manager=true)
+    private function createWorkspace($workspace, $user)
     {   
         // Use the create method from WorkspaceManager.
         echo 'Je cree mon Workspace!'.'<br/>';

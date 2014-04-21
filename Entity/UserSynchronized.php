@@ -88,7 +88,7 @@ class UserSynchronized extends AbstractRoleSubject
      */
     public function setLastSynchronization(\DateTime $date)
     {
-        $this-> lastSynchronization = $date;
+        $this->lastSynchronization = $date;
     }    
     
     /**
@@ -105,6 +105,6 @@ class UserSynchronized extends AbstractRoleSubject
      */
     public function setSentTime(\DateTime $date)
     {
-        $this-> sentTime = $date;
+        $this->sentTime = $date;
     }
 }

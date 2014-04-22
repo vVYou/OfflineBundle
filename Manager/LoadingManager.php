@@ -56,7 +56,9 @@ class LoadingManager
     private $pagerFactory;
     private $translator;
     private $userSynchronizedRepo;
+    private $workspaceRepo;
     private $resourceNodeRepo;
+    private $userRepo;
     private $revisionRepo;
     private $categoryRepo;
     private $subjectRepo;
@@ -110,7 +112,9 @@ class LoadingManager
         $this->om = $om;
         $this->pagerFactory = $pagerFactory;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
+        $this->workspaceRepo = $om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace');
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+        $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
         $this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
         $this->subjectRepo = $om->getRepository('ClarolineForumBundle:Subject');
@@ -147,11 +151,11 @@ class LoadingManager
             $tmpdirectory = $archive->extractTo($this->path);
             
             //Call LoadXML
-            //$this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
-            $this->loadXML('manifest_test_x.xml'); //Actually used for test.
+            $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
+            // $this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
-            //$this->rrmdir($this->path);
+            $this->rrmdir($this->path);
             
             
             //TODO : Utile seulement pour les tests.
@@ -245,7 +249,7 @@ class LoadingManager
             if($descriptionChilds->item($i)->nodeName == 'user_id')
             {
                 //$this->user = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($descriptionChilds->item($i)->nodeValue);
-                $this->user = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $descriptionChilds->item($i)->nodeValue));
+                $this->user = $this->userRepo->findOneBy(array('id' => $descriptionChilds->item($i)->nodeValue));
                 echo 'My user : '.$this->user->getFirstName().'<br/>';
             }
         }
@@ -271,8 +275,7 @@ class LoadingManager
                 */
                 
                 //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
-                $workspace = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findOneBy(array('guid' => $item->getAttribute('guid')));
-                
+                $workspace = $this->workspaceRepo->findOneBy(array('guid' => $item->getAttribute('guid')));
                 
                 if(count($workspace) >= 1)
                 {
@@ -305,7 +308,7 @@ class LoadingManager
                 else
                 {
                   //  echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
-                    $workspace_creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $item->getAttribute('creator')));
+                    $workspace_creator = $this->userRepo->findOneBy(array('id' => $item->getAttribute('creator')));
                     echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
                     $workspace = $this->createWorkspace($item, $workspace_creator);
                     //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
@@ -462,7 +465,7 @@ class LoadingManager
         $modification_date->setTimestamp($resource->getAttribute('modification_date'));
         
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $resource->getAttribute('creator')));
+        $creator = $this->userRepo->findOneBy(array('id' => $resource->getAttribute('creator')));
         $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
         
         if(count($parent_node) < 1)
@@ -531,7 +534,7 @@ class LoadingManager
         $modification_date->setTimestamp($resource->getAttribute('modification_date'));
         
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $resource->getAttribute('creator')));
+        $creator = $this->userRepo->findOneBy(array('id' => $resource->getAttribute('creator')));
         $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
         
         if(count($parent_node) < 1)
@@ -632,7 +635,7 @@ class LoadingManager
         $this->tokenUpdater->update($this->security->getToken());
         //$route = $this->router->generate('claro_workspace_list');
                
-        $my_ws = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findOneBy(array('code' => $workspace->getAttribute('code')));
+        $my_ws = $this->workspaceRepo->findOneBy(array('code' => $workspace->getAttribute('code')));
         $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $my_ws));                       
         
         $creation_date->setTimestamp($workspace->getAttribute('creation_date'));
@@ -752,7 +755,7 @@ class LoadingManager
         echo 'Subject created'.'<br/>';
         
         $category = $this->categoryRepo->findOneBy(array('hashName' => $subject->getAttribute('category')));
-        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $subject->getAttribute('creator_id')));
+        $creator = $this->userRepo->findOneBy(array('id' => $subject->getAttribute('creator_id')));
         $sub = new Subject();
         $sub->setTitle($subject->getAttribute('name'));
         $sub->setCategory($category);
@@ -794,7 +797,7 @@ class LoadingManager
         echo 'Message created'.'<br/>';
         
         $subject = $this->subjectRepo->findOneBy(array('hashName' => $message->getAttribute('subject')));
-        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $message->getAttribute('creator_id')));
+        $creator = $this->userRepo->findOneBy(array('id' => $message->getAttribute('creator_id')));
         $content = $this->extractCData($message);
         $msg = new Message();
         $msg->setContent($content.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');

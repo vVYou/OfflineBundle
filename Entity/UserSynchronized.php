@@ -15,7 +15,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
  * @ORM\Table(name="claro_user_sync")
  * @DoctrineAssert\UniqueEntity("user")
  */
-class UserSynchronized extends AbstractRoleSubject
+class UserSynchronized
 {
     /**
      * @ORM\Id
@@ -55,7 +55,6 @@ class UserSynchronized extends AbstractRoleSubject
     public function __construct(User $user)
     {
         $this-> user = $user;
-        parent::__construct();
     }
     
     /**

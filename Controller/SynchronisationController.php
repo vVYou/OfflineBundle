@@ -133,4 +133,10 @@ class SynchronisationController extends Controller
 
         return $response;
     }
+
+
+    //TODO Route pour supprimer les fichiers de synchro
+    //TODO Routes pour les echanges de fichier en multiples morceaux
+    //TODO gerer l'authentification partout !
+
 }

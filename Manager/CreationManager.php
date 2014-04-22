@@ -108,8 +108,12 @@ class CreationManager
         fputs($manifest,'<manifest>');
         $this->writeManifestDescription($manifest, $user, $syncTime);
         //echo get_resource_type($manifest).'<br/>';
- 
-        $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$hashname_zip.'.zip';
+        
+        $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/';
+        if(!is_dir($dir)){
+            mrkdir($dir);
+        }
+        $fileName = $dir.'sync_'.$hashname_zip.'.zip';
         
         if($archive->open($fileName, ZipArchive::CREATE) === true)
         {
@@ -142,8 +146,11 @@ class CreationManager
     public function writeWorspaceList(User $user)
     {
         $workspaces = $this->workspaceRepo->findWorkspacesWithSelfRegistration($user);
-        //private function addWorkspaceToManifest($manifest, $workspace)
-        $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/all_workspaces.xml';
+        $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/';
+        if(!is_dir($dir)){
+            mkdir($dir);
+        }
+        $fileName = $dir.'all_workspaces.xml';
         $allWorkspaces = fopen($fileName, "w+");
         fputs($allWorkspaces, "<workspace_list>");
 
@@ -427,7 +434,6 @@ class CreationManager
     /************************************************************
     *   Here figure all methods used to manipulate the xml file. *
     *************************************************************/
-    
 
     /*
     *   Add a specific resource to the Manifest. 

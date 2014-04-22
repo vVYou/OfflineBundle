@@ -152,11 +152,12 @@ class LoadingManager
             
             //Call LoadXML
             $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
-            // $this->loadXML('manifest_test_x.xml'); //Actually used for test.
+
+            //$this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
-            $this->rrmdir($this->path);
-            
+            //$this->rrmdir($this->path);
+            //echo 'DIR deleted <br/>';
             
             //TODO : Utile seulement pour les tests.
             // foreach($this->syncInfoArray as $syncInfo)
@@ -193,7 +194,17 @@ class LoadingManager
         return $this->syncInfoArray;
     }
 
+    public function loadPublicWorkspaceList($allWorkspace)
+    {
+        $xmlDocument = new DOMDocument();
+        $xmlDocument->load($allWorkspace);
+        $this->importPlateform($xmlDocument->getElementsByTagName('workspace_list'));           
+    }
+
     /*
+    *
+    *       TO FIX !!!!!!!
+    *
     *   Code inspired of :
     *   http://stackoverflow.com/questions/9760526/php-remove-not-empty-folder
     */
@@ -202,7 +213,8 @@ class LoadingManager
             $objects = scandir($dir);
             foreach($objects as $object){
                 if($object != "." && $object != ".."){
-                    if(filetype($dir."/".$object) == "dir"){
+                    if(is_dir($dir."/".$object)){
+                    //if(filetype($dir."/".$object) == "dir"){
                         rmdir($dir."/".$object);
                     }else{
                         unlink($dir."/".$object);
@@ -611,12 +623,12 @@ class LoadingManager
     *   Create and return a new workspace detailed in the XML file.
     */     
     private function createWorkspace($workspace, $user)
-    {
+    {   
         // Use the create method from WorkspaceManager.
         echo 'Je cree mon Workspace!'.'<br/>';
         $creation_date = new DateTime();
         $modification_date = new DateTime();
-        
+        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $workspace->getAttribute('creator')));
         $ds = DIRECTORY_SEPARATOR;
 
         $type = Configuration::TYPE_SIMPLE;
@@ -629,20 +641,21 @@ class LoadingManager
         $config->setDisplayable($workspace->getAttribute('displayable'));
         $config->setSelfRegistration($workspace->getAttribute('selfregistration'));
         $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
+        $config->setGuid($workspace->getAttribute('guid'));
         $user = $this->security->getToken()->getUser();
         
-        $this->workspaceManager->create($config, $user);
+        $this->workspaceManager->create($config, $creator);   
         $this->tokenUpdater->update($this->security->getToken());
         //$route = $this->router->generate('claro_workspace_list');
                
         $my_ws = $this->workspaceRepo->findOneBy(array('code' => $workspace->getAttribute('code')));
         $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $my_ws));                       
         
+        $this->om->startFlushSuite();
         $creation_date->setTimestamp($workspace->getAttribute('creation_date'));
         $modification_date->setTimestamp($workspace->getAttribute('modification_date'));      
         
-        $this->om->startFlushSuite();
-        $my_ws->setGuid($workspace->getAttribute('guid'));
+        $NodeWorkspace->setCreator($creator);
         $NodeWorkspace->setCreationDate($creation_date);
         $NodeWorkspace->setModificationDate($modification_date);
         $NodeWorkspace->setNodeHashName($workspace->getAttribute('hashname_node'));

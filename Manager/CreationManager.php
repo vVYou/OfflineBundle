@@ -86,7 +86,7 @@ class CreationManager
     
     /**
      * Create a the archive based on the user     
-     * Attention, if the archive file created is empty, it will not write zip file on disk !
+     * Warning : If the archive file created is empty, it will not write zip file on disk !
      *
      * @param \Claroline\CoreBundle\Entity\User $user
      *
@@ -168,7 +168,9 @@ class CreationManager
         return $fileName;
     }
 
-    
+    /*
+    *   Create an array with the different ResourceType that need to be offline.
+    */
     private function buildTypeArray(array $typeList)
     {
         $typeArrayTmp = array();
@@ -180,7 +182,10 @@ class CreationManager
         return $typeArrayTmp;
     }
     
-
+    /*
+    *   Fill the Zip with the file required for the synchronisation.
+    *   Also, create a manifest containing all the changes done.
+    */
     private function fillSyncZip($userWS, $manifest, $typeArray, $user, $archive)
     {
         foreach($userWS as $element)
@@ -222,7 +227,7 @@ class CreationManager
 
     /*
     *   Check all the messages, subjects and categories of the forums
-    *   and return the one that have been created.
+    *   and return the ones that have been created.
     */
     private function checkNewContent(array $userRes, User $user)
     {
@@ -244,7 +249,7 @@ class CreationManager
     
 
     /*
-    *   Check all category of a list and see if they are new or updated.
+    *   Check all categories of a list and see if they are new or updated.
     */
     private function checkCategory($categories, $elem_to_sync, $date_sync)
     {
@@ -270,7 +275,7 @@ class CreationManager
 
 
     /*
-    *   Check all subject of a list and see if they are new or updated.
+    *   Check all subjects of a list and see if they are new or updated.
     */
     private function checkSubject($subjects, $elem_to_sync, $date_sync)
     {
@@ -594,7 +599,7 @@ class CreationManager
     */
     private function addWorkspaceToManifest($manifest, $workspace)
     {
-        $my_res_node = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findResourceNodeByWorkspace($workspace);
+        $my_res_node = $this->userSynchronizedRepo->findResourceNodeByWorkspace($workspace);
         //echo 'Ma creation_time : '.$my_res_node[0]->getCreationDate()->format('Y-m-d H:i:s').'<br/>';
         //echo 'Ma modification_time : '.$my_res_node[0]->getModificationDate()->format('Y-m-d H:i:s').'<br/>';
         $creation_time = $my_res_node[0]->getCreationDate()->getTimestamp();  

@@ -449,22 +449,7 @@ class LoadingManager
     *   This function create a resource based on the informations given in the XML file.
     */    
     private function createResource($resource, $workspace)
-    {   /* 
-        *   Attention, les dates de modifications sont erronees en DB.
-        *   A chaque creation de ressources, le champ next_id de la ressource precedentes
-        *   est modifie et donc sa modification_date egalement
-        */
-        
-        /*
-        *   Solution possible :
-        *   utiliser l'entity manager avec getlistener pour trouver celui responsable
-        *   de l'update automatique des dates
-        *   Ensuite utiliser geteventmanager puis removeeventsubscriber pour enlever 
-        *   ce listener.
-        */
-       // $dispatcher = $this->get('event_dispatcher');
-        echo 'I ask to create a resource'.'<br/>';
-        
+    {           
         /*
         *   Load the required informations from the XML file.
         */
@@ -594,7 +579,12 @@ class LoadingManager
                 $revision->setUser($this->user);
                 $revision->setText($newResource);
                 $this->om->persist($revision);                         
-                break;       
+                break;   
+
+            case SyncConstant::FORUM :
+            
+                $newResource = new Forum();
+                break;                
         }      
         
         /*
@@ -891,13 +881,12 @@ class LoadingManager
         $this->resourceManager->logChangeSet($node);
         $this->om->flush();
 
-        return $node;
-        
-        echo 'ModificationDate of New Node After : '.$node->getModificationDate()->format('d/m/Y H:i:s').'<br/>';
-        echo 'ModificationDate of XML After : '.$modification_date->format('d/m/Y H:i:s').'<br/>';
-        
+        return $node;       
     }
     
+    /*
+    *   Extract the text contains in the CDATA section of the XML file.
+    */
     private function extractCData($data)
     {      
         foreach($data->childNodes as $child)
@@ -908,7 +897,6 @@ class LoadingManager
                 {
                     if($contentsection->nodeType == XML_CDATA_SECTION_NODE)
                     {
-                        // $msg->setContent($child->textContent.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');  
                         return $child->textContent;
                     }
                 }

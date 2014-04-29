@@ -30,7 +30,7 @@ class UserSynchronized extends AbstractRoleSubject
         targetEntity="Claroline\CoreBundle\Entity\User",
         cascade={"persist"}
        )
-     * @ORM\JoinColumn(nullable=false, unique=true)
+     * @ORM\JoinColumn(nullable=false, unique=true, onDelete="CASCADE")
      */
     protected $user;
 
@@ -51,11 +51,10 @@ class UserSynchronized extends AbstractRoleSubject
     protected $sentTime;
 
 
-
     public function __construct(User $user)
     {
         $this-> user = $user;
-        parent::__construct();
+        parent::__construct();  //TODO DELETE if remove extends AbstractRoleSubject
     }
     
     /**

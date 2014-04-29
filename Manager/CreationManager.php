@@ -40,6 +40,7 @@ class CreationManager
     private $pagerFactory;
     private $translator;
     private $userSynchronizedRepo;
+    private $resourceNodeRepo;
     private $revisionRepo;
     private $subjectRepo;
     private $messageRepo;
@@ -71,6 +72,7 @@ class CreationManager
         $this->om = $om;
         $this->pagerFactory = $pagerFactory;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
+        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
         $this->subjectRepo = $om->getRepository('ClarolineForumBundle:Subject');
         $this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
@@ -97,7 +99,7 @@ class CreationManager
         $userRes = array();
         $typeList = array('file', 'directory', 'text', 'claroline_forum'); //TODO ! PAS OPTIMAL !
         $typeArray = $this->buildTypeArray($typeList);
-        $userWS = $this->om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace')->findByUser($user);
+        $userWS = $this->workspaceRepo->findByUser($user);
         
         $hashname_zip = $this->ut->generateGuid(); 
         
@@ -189,7 +191,7 @@ class CreationManager
                 $ressourcesToSync = array();
                 $forum_content = array();
                 //$em_res = $this->getDoctrine()->getManager();
-                $userRes = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode')->findByWorkspaceAndResourceType($element, $resType);
+                $userRes = $this->resourceNodeRepo->findByWorkspaceAndResourceType($element, $resType);
                 if(count($userRes) >= 1)
                 {
                     
@@ -224,7 +226,7 @@ class CreationManager
     */
     private function checkNewContent(array $userRes, User $user)
     {
-        $date_tmp = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $date_tmp = $this->userSynchronizedRepo->findUserSynchronized($user);
         $date_sync = $date_tmp[0]->getLastSynchronization()->getTimestamp();
         
         $elem_to_sync = array();
@@ -322,7 +324,7 @@ class CreationManager
     private function checkObsolete(array $userRes, User $user)
     {
         //$em = $this->getDoctrine()->getManager();
-        $dateSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $dateSync = $this->userSynchronizedRepo->findUserSynchronized($user);
         $user_tmp = $dateSync[0]->getLastSynchronization();
         $date_user = $user_tmp->getTimestamp();
         $new_res = array();
@@ -620,7 +622,7 @@ class CreationManager
     */
     private function writeManifestDescription($manifest, User $user, $syncTime)
     {
-        $dateSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $dateSync = $this->userSynchronizedRepo->findUserSynchronized($user);
         $user_tmp = $dateSync[0]->getLastSynchronization(); 
         $sync_timestamp = $user_tmp->getTimestamp();
         

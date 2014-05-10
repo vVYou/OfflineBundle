@@ -111,11 +111,18 @@ class TransferManager
         $handle = fopen($toTransfer, 'r');
         $iSendThis = fread($handle, filesize($toTransfer));
         //echo "I send this : <br/>".$iSendThis."<br/>".
+        $_POST['file']=$iSendThis;
+        $_POST['username']=$user->getUsername();
+        $_POST['password'] = "password";
+        echo "I happy to know file ".$_POST['file'].'</br>';
+        echo "And user ".$_POST['username'].'</br>';
+        echo "With this password ".$_POST['password'].'</br>';
 
-        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $iSendThis );        
+        //$reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $iSendThis );        
+        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/test/confirm/'.$user->getId(), array(), $_POST );        
         $content = $reponse->getContent();
         //echo $browser->getLastRequest().'<br/>';
-        //echo 'CONTENT : <br/>'.$content.'<br/>';
+        echo 'CONTENT : <br/>'.$content.'<br/>';
         
         $hashname = $this->ut->generateGuid();
         $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/';
@@ -173,6 +180,8 @@ class TransferManager
     {
         //TODO Verifier le fichier entrant
         $content = $request->getContent();
+        echo "PRINT CONTENT OF REQUEST".$content.'<br/>';
+        
         $hashname = $this->ut->generateGuid();
         $zipName = SyncConstant::SYNCHRO_UP_DIR.$user.'/sync_'.$hashname.'.zip';
         $zipFile = fopen($zipName, 'w+');

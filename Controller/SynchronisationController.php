@@ -11,6 +11,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
+use Claroline\CoreBundle\Library\Security\Authenticator;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\OfflineBundle\SyncConstant;
 use \DateTime;
@@ -18,6 +19,20 @@ use \ZipArchive;
 
 class SynchronisationController extends Controller
 {    
+
+    private $authenticator;
+    
+     /**
+     * @DI\InjectParams({
+     *     "authenticator"  = @DI\Inject("claroline.authenticator")
+     * })
+     */
+    public function __construct(
+        Authenticator $authenticator
+    )
+    {
+        $this->authenticator = $authenticator;
+    }
     // TODO Security voir workspace controller.
 
     private function getUserFromID($user)
@@ -48,6 +63,8 @@ class SynchronisationController extends Controller
         
         $request = $this->getRequest();
         //TODO verifier l'authentification
+        echo "ceci est le tableau post : user ".$_POST['user'].'</br>';
+        echo "ceci est le tableau post : file ".$_POST['file'].'</br>';
         
         //Catch the sync zip sent via POST request
         $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
@@ -84,6 +101,7 @@ class SynchronisationController extends Controller
         return $response;
     }
 
+    
     /**
     *   @EXT\Route(
     *       "/transfer/confirm/{user}",
@@ -139,4 +157,68 @@ class SynchronisationController extends Controller
     //TODO Routes pour les echanges de fichier en multiples morceaux
     //TODO gerer l'authentification partout !
 
+    
+    /**
+    *   @EXT\Route(
+    *       "/transfer/test/confirm/{user}",
+    *       name="claro_sync_test_confirm",
+    *   )
+    *
+    *   @EXT\Method("POST")    
+    *
+    *   @return Response
+    */
+    public function getTestConfirm($user)
+    {        
+        $request = $this->getRequest();
+        echo "ceci est le tableau post : user ".$_POST['username'].'</br>';
+        echo "ceci est le tableau post : file ".$_POST['file'].'</br>';
+        echo "ceci est le tableau post : password ".$_POST['password'].'</br>';
+        
+        $status = $this->authenticator->authenticate($_POST['username'], $_POST['password']) ? 200 : 403;
+        echo "STATUS : ".$status."<br/>";
+        
+        //Catch the sync zip sent via POST request
+        //$uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
+        
+        //TODO verfier securite? => dans FileController il fait un checkAccess....
+
+        //Identify User
+       /* $em = $this->getDoctrine()->getManager();
+        $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
+        $authUser = $arrayRepo[0];*/
+        //$authUser = $this->getUserFromID($user);
+        
+        //Load the archive
+        //$this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
+        
+        //Compute the answer
+        //$toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
+        
+        // echo "je prepare la reponse".$toSend."<br/>";
+        //$userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
+        //$this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
+
+        //Send back the online sync zip
+        $response = new StreamedResponse();
+        //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
+        $response->setCallBack(
+            function () use ($user) {
+                readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_D17FAF3F-9737-4148-A012-71AEA4309A03.zip');
+            // function () use ($toSend) {                
+                // readfile($toSend);
+            }
+        );
+
+        return $response;
+    
+    }
+    
+    
+    /***
+    *         $status = $this->authenticator->authenticate($username, $password) ? 200 : 403;
+        $content = ($status === 403) ?
+            array('message' => $this->translator->trans('login_failure', array(), 'platform')) :
+            array();
+    */
 }

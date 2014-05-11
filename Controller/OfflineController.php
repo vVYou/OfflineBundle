@@ -200,8 +200,6 @@ class OfflineController extends Controller
     }
 
     /**
-    * USELESS NOW !!!!!!!!!!!
-    *
     *
     *   Seek and show all the modified courses and ressources
     *   
@@ -230,13 +228,12 @@ class OfflineController extends Controller
     }
     
     /**
-    *   UNUSED !!!!!!
     *
     *  Transfer a file (sync archive) from a computer to another
     *   
     *   @EXT\Route(
     *       "/sync/transfer/{user}",
-    *       name="claro_sync_transfer"
+    *       name="claro_sync_transfertest"
     *   )
     *
     * @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
@@ -249,8 +246,9 @@ class OfflineController extends Controller
     {
         $transfer = true;
         if($user == $authUser->getId()){
-            $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
-            //$test = $this->get('claroline.manager.transfer_manager')->transferZip($authUser);
+            //$test = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
+            $toTransfer = './synchronize_down/3/sync_D69A6427-582D-4846-9447-6420201CEB54.zip';
+            $test = $this->get('claroline.manager.transfer_manager')->transferZip($toTransfer, $authUser);
         }else{
             $transfer = false;
         }

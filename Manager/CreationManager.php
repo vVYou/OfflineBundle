@@ -29,6 +29,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Translation\TranslatorInterface;
 use \ZipArchive;
+use \DOMDocument;
+use \DOMElement;
 use \DateTime;
 
 /**
@@ -93,46 +95,42 @@ class CreationManager
      */
      public function createSyncZip(User $user)
     {
-        $archive = new ZipArchive(); 
-        $syncTime = time();
-        
-        $userRes = array();
         $typeList = array('file', 'directory', 'text', 'claroline_forum'); //TODO ! PAS OPTIMAL !
+
+        $archive = new ZipArchive();        
+        $domManifest = new DOMDocument('1.0', "UTF-8");
+        $domManifest->formatOutput = true;
+        $manifestName = SyncConstant::MANIFEST.'_'.$user->getId().'.xml';
+        
+        // Manifest section
+        $sectManifest = $domManifest->createElement('manifest');    
+        $domManifest->appendChild($sectManifest);
+        
+        //Description section
+        $this->writeManifestDescription($domManifest, $sectManifest, $user);           
+
+        $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/';
+        // Ca ne fonctionne pas chez moi
+        // if(!is_dir($dir)){
+            // mrkdir($dir);
+        // }
+        $hashname_zip = $this->ut->generateGuid(); 
+        $fileName = $dir.'sync_'.$hashname_zip.'.zip';
+        
         $typeArray = $this->buildTypeArray($typeList);
         $userWS = $this->workspaceRepo->findByUser($user);
         
-        $hashname_zip = $this->ut->generateGuid(); 
-        
-        $manifestName = SyncConstant::MANIFEST.'_'.$user->getId().'.xml';
-        $manifest = fopen($manifestName, 'w');
-        fputs($manifest,'<manifest>');
-        $this->writeManifestDescription($manifest, $user, $syncTime);
-        //echo get_resource_type($manifest).'<br/>';
-        
-        $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/';
-        if(!is_dir($dir)){
-            mrkdir($dir);
-        }
-        $fileName = $dir.'sync_'.$hashname_zip.'.zip';
-        
         if($archive->open($fileName, ZipArchive::CREATE) === true)
-        {
-        fputs($manifest,'
-    <plateform>');
-    
-           $this->fillSyncZip($userWS, $manifest, $typeArray, $user, $archive);
-        fputs($manifest,'
-    </plateform>');
+        {   
+           $this->fillSyncZip($userWS, $domManifest, $sectManifest, $typeArray, $user, $archive);
         }
         else
-        {
-            //echo 'Impossible to open the zip file';
+        {           
             throw new \Exception('Impossible to open the zip file');
         }
-        fputs($manifest,'
-</manifest>');
-        fclose($manifest);
         
+        // fclose($domManifest);
+        $domManifest->save($manifestName);
         $archive->addFile($manifestName);
         $archivePath = $archive->filename;
         $archive->close();
@@ -156,7 +154,7 @@ class CreationManager
 
         foreach($workspaces as $workspace)
         {
-            $this->addWorkspaceToManifest($allWorkspaces, $workspace);
+            $this->addWorkspaceToManifest_($allWorkspaces, $workspace);
             fputs($allWorkspaces, '
         </workspace>');
         }
@@ -186,11 +184,11 @@ class CreationManager
     *   Fill the Zip with the file required for the synchronisation.
     *   Also, create a manifest containing all the changes done.
     */
-    private function fillSyncZip($userWS, $manifest, $typeArray, $user, $archive)
+    private function fillSyncZip($userWS, $domManifest, $sectManifest, $typeArray, $user, $archive)
     {
         foreach($userWS as $element)
         {
-            $this->addWorkspaceToManifest($manifest, $element);
+            $domWorkspace = $this->addWorkspaceToManifest($domManifest, $sectManifest, $element);
             foreach($typeArray as $resType)
             {
                 $ressourcesToSync = array();
@@ -204,7 +202,7 @@ class CreationManager
                     $ressourcesToSync = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
                     //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
 
-                    $this->addResourcesToArchive($ressourcesToSync, $archive, $manifest, $user, $path);
+                    $this->addResourcesToArchive($ressourcesToSync, $archive, $domManifest, $domWorkspace, $user, $path);
                     //echo "<br/>".count($ressourcesToSync)."<br/>";
                     
                     if($resType->getId() == SyncConstant::FORUM)
@@ -214,13 +212,11 @@ class CreationManager
                         */
                         $forum_content = $this->checkNewContent($userRes, $user); 
                         echo count($forum_content);
-                        $this->addForumToArchive($manifest, $forum_content);
+                        $this->addForumToArchive($domManifest, $domWorkspace, $forum_content);
                     }
                     
                 }
             }
-            fputs($manifest, '
-        </workspace>');
         }
     }
     
@@ -364,7 +360,7 @@ class CreationManager
     /*
     *   Add the content of the forum in the Archive.
     */
-    private function addForumToArchive($manifest, $forum_content)
+    private function addForumToArchive($domManifest, $domWorkspace, $forum_content)
     {
         foreach($forum_content as $element)
         {
@@ -374,18 +370,21 @@ class CreationManager
             //echo get_class($element).'<br/>';
             //echo get_class($element).'<br/>';
             $class_name = ''.get_class($element);
-            switch($class_name)
-            {
-                case SyncConstant::CATE :
-                    $this->addCategoryToManifest($manifest, $element);
-                    break;
-                case SyncConstant::SUB :
-                    $this->addSubjectToManifest($manifest, $element);
-                    break;
-                case SyncConstant::MSG :
-                    $this->addMessageToManifest($manifest, $element);
-                    break;
-            }
+            
+            $this->addContentToManifest($domManifest, $domWorkspace, $element);
+            
+            // switch($class_name)
+            // {
+                // case SyncConstant::CATE :
+                    // $this->addCategoryToManifest($domManifest, $domWorkspace, $element);
+                    // break;
+                // case SyncConstant::SUB :
+                    // $this->addSubjectToManifest($domManifest, $domWorkspace, $element);
+                    // break;
+                // case SyncConstant::MSG :
+                    // $this->addMessageToManifest($domManifest, $domWorkspace, $element);
+                    // break;
+            // }
 
         }
     }
@@ -396,12 +395,12 @@ class CreationManager
      * Attention, if the archive file created is empty, it will not write zip file on disk !
      *
      */
-    private function addResourcesToArchive(array $resToAdd, ZipArchive $archive, $manifest, $user, $path)
+    private function addResourcesToArchive(array $resToAdd, ZipArchive $archive, $domManifest, $domWorkspace, $user, $path)
     {
         foreach($resToAdd as $element)
         {
-            $this->addResourceToManifest($manifest, $element);
-            $this->addResourceToZip($archive, $element, $user, $archive, $manifest, $path);
+            $this->addResourceToManifest($domManifest, $domWorkspace, $element);
+            $this->addResourceToZip($archive, $element, $user, $archive, $path);
         }
     }
     
@@ -411,7 +410,7 @@ class CreationManager
     *   
     *   03/04/2014 : Interesting ONLY for the file at this time.
     */
-    private function addResourceToZip(ZipArchive $archive, $resToAdd, $user, $archive, $manifest, $path)
+    private function addResourceToZip(ZipArchive $archive, $resToAdd, $user, $archive, $path)
     {
         switch($resToAdd->getResourceType()->getId())
         {
@@ -442,107 +441,165 @@ class CreationManager
 
     /*
     *   Add a specific resource to the Manifest. 
-    *   The informations written in the Manifest will depend of the type of the file.
+    *   The informations written in the Manifest will depend of resource's type.
     */
-    private function addResourceToManifest($manifest, $resToAdd)
+    private function addResourceToManifest($domManifest, $domWorkspace, $resToAdd)
     {
-        $type = $resToAdd->getResourceType()->getId();
+        $typeNode = $resToAdd->getResourceType()->getId();
         $creation_time = $resToAdd->getCreationDate()->getTimestamp();  
         $modification_time = $resToAdd->getModificationDate()->getTimestamp(); 
         
-        switch($type)
-        {
-            case SyncConstant::FILE :
-                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);           
-                
-                fputs($manifest, '
-                    <resource type="'.$resToAdd->getResourceType()->getName().'"
-                    name="'.$resToAdd->getName().'"  
-                    mimetype="'.$resToAdd->getMimeType().'"
-                    creator="'.$resToAdd->getCreator()->getId().'"
-                    size="'.$my_res->getSize().'"
-                    hashname="'.$my_res->getHashName().'"
-                    hashname_node="'.$resToAdd->getNodeHashName().'"
-                    hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
-                    creation_date="'.$creation_time.'"
-                    modification_date="'.$modification_time.'">
-                    </resource>
-                    ');
-                break;
-            case SyncConstant::DIR :
-                
-                // Check if the directory is not a Workspace
-                if($resToAdd->getParent() != NULL)
-                {                       
-                fputs($manifest, '
-                    <resource type="'.$resToAdd->getResourceType()->getName().'"
-                    name="'.$resToAdd->getName().'"  
-                    mimetype="'.$resToAdd->getMimeType().'"
-                    creator="'.$resToAdd->getCreator()->getId().'"
-                    hashname_node="'.$resToAdd->getNodeHashName().'"
-                    hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
-                    creation_date="'.$creation_time.'"
-                    modification_date="'.$modification_time.'">
-                    </resource>
-                    ');
-                }
-                break;
-            case SyncConstant::TEXT :
-                $my_res = $this->resourceManager->getResourceFromNode($resToAdd);  
-                $revision = $this->revisionRepo->findOneBy(array('text' => $my_res));
-
-                fputs($manifest, '
-                    <resource type="'.$resToAdd->getResourceType()->getName().'"
-                    name="'.$resToAdd->getName().'"  
-                    mimetype="'.$resToAdd->getMimeType().'"
-                    creator="'.$resToAdd->getCreator()->getId().'"
-                    version="'.$my_res->getVersion().'"
-                    hashname_node="'.$resToAdd->getNodeHashName().'"
-                    hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
-                    creation_date="'.$creation_time.'"
-                    modification_date="'.$modification_time.'">
-                        <content><![CDATA['.$revision->getContent().']]></content>
-                    </resource>
-                    ');
-                break;
-            case SyncConstant::FORUM : 
-                
-                fputs($manifest, '
-                    <resource type="'.$resToAdd->getResourceType()->getName().'"
-                    name="'.$resToAdd->getName().'"  
-                    mimetype="'.$resToAdd->getMimeType().'"
-                    creator="'.$resToAdd->getCreator()->getId().'"
-                    hashname_node="'.$resToAdd->getNodeHashName().'"
-                    hashname_parent="'.$resToAdd->getParent()->getNodeHashName().'"
-                    creation_date="'.$creation_time.'"
-                    modification_date="'.$modification_time.'">
-                    </resource>
-                    ');
-                break;
+        if(!($resToAdd->getParent() == NULL & $typeNode == SyncConstant::DIR))
+        {   
+            $domRes = $domManifest->createElement('resource');
+            $domWorkspace->appendChild($domRes);
+            
+            $type = $domManifest->createAttribute('type');
+            $type->value = $resToAdd->getResourceType()->getName();   
+            $domRes->appendChild($type);
+            $name = $domManifest->createAttribute('name');
+            $name->value = $resToAdd->getName();   
+            $domRes->appendChild($name);
+            $mimetype = $domManifest->createAttribute('mimetype');
+            $mimetype->value = $resToAdd->getMimeType();   
+            $domRes->appendChild($mimetype);
+            $creator = $domManifest->createAttribute('creator');
+            $creator->value = $resToAdd->getCreator()->getId(); 
+            $domRes->appendChild($creator);
+            $hashname_node = $domManifest->createAttribute('hashname_node');
+            $hashname_node->value = $resToAdd->getNodeHashName(); 
+            $domRes->appendChild($hashname_node);
+            $hashname_parent = $domManifest->createAttribute('hashname_parent');
+            $hashname_parent->value = $resToAdd->getParent()->getNodeHashName(); 
+            $domRes->appendChild($hashname_parent);
+            $creation_date = $domManifest->createAttribute('creation_date');
+            $creation_date->value = $creation_time; 
+            $domRes->appendChild($creation_date);
+            $modification_date = $domManifest->createAttribute('modification_date');
+            $modification_date->value = $modification_time; 
+            $domRes->appendChild($modification_date);
+            
+            
+            switch($typeNode)
+            {
+                case SyncConstant::FILE :
+                    $my_res = $this->resourceManager->getResourceFromNode($resToAdd);           
+                    $size = $domManifest->createAttribute('size');
+                    $size->value = $my_res->getSize(); 
+                    $domRes->appendChild($size);
+                    $hashname = $domManifest->createAttribute('hashname');
+                    $hashname->value = $my_res->getHashName(); 
+                    $domRes->appendChild($hashname);
+                    break;
+                case SyncConstant::DIR :               
+                    // Check if the directory is not a Workspace
+                    if($resToAdd->getParent() != NULL)
+                    {                       
+                        // Futur resolution goes here
+                    }
+                    break;
+                case SyncConstant::TEXT :
+                    $my_res = $this->resourceManager->getResourceFromNode($resToAdd);  
+                    $revision = $this->revisionRepo->findOneBy(array('text' => $my_res));
+                                    
+                    $version = $domManifest->createAttribute('version');
+                    $version->value = $my_res->getVersion(); 
+                    $domRes->appendChild($version);
+                    
+                    $cdata = $domManifest->createCDATASection($revision->getContent());
+                    $domRes->appendChild($cdata);
+                    
+                    break;
+                case SyncConstant::FORUM :                
+                    // On pourrait gerer le parcours des forums a partir d'ici plutot qu'au tout debut
+                    break;
+            }
         }
     }
 
 
     /*
-    *   Add a specific Category in the Manifest.
+    *   Add a specific Category, Subject or Message to the Manifest.
     */
-    private function addCategoryToManifest($manifest, $content)
+    private function addContentToManifest($domManifest, $domWorkspace, $content)
     {
-        echo 'Edition du manifeste pour ajouter une category'.'<br/>';
+        
         $creation_time = $content->getCreationDate()->getTimestamp();
-        $modification_time = $content->getModificationDate()->getTimestamp();
-        $node_forum = $content->getForum()->getResourceNode();
+        $content_type = get_class($content);
+      
+        $domRes = $domManifest->createElement('forum');
+        $domWorkspace->appendChild($domRes);
+        
+        $class = $domManifest->createAttribute('class');
+        $class->value = $content_type;   
+        $domRes->appendChild($class);
+        $hashname = $domManifest->createAttribute('hashname');
+        $hashname->value = $content->getHashName();   
+        $domRes->appendChild($hashname);
+        $creation_date = $domManifest->createAttribute('creation_date');
+        $creation_date->value = $creation_time ;   
+        $domRes->appendChild($creation_date);
+
+        
+        switch($content_type)
+        {
+            case SyncConstant::CATE :
+                echo 'Edition du manifeste pour ajouter une category'.'<br/>';
+                $modification_time = $content->getModificationDate()->getTimestamp();
+                $node_forum = $content->getForum()->getResourceNode();
+        
+                $update_date = $domManifest->createAttribute('update_date');
+                $update_date->value = $modification_time;   
+                $domRes->appendChild($update_date);
+                $forum_node = $domManifest->createAttribute('forum_node');
+                $forum_node->value = $node_forum->getNodeHashName();   
+                $domRes->appendChild($forum_node);
+                $name = $domManifest->createAttribute('name');
+                $name->value = $content->getName();   
+                $domRes->appendChild($name);
+
+                break;
+            case SyncConstant::SUB :
+                echo 'Edition du manifeste pour ajouter un sujet'.'<br/>';
+                $modification_time = $content->getUpdate()->getTimestamp();
+                $category_hash = $content->getCategory()->getHashName();
+                
+                $update_date = $domManifest->createAttribute('update_date');
+                $update_date->value = $modification_time;   
+                $domRes->appendChild($update_date);
+                $category = $domManifest->createAttribute('category');
+                $category->value = $category_hash;   
+                $domRes->appendChild($category);
+                $title = $domManifest->createAttribute('title');
+                $title->value = $content->getTitle();   
+                $domRes->appendChild($title);
+                $creator_id = $domManifest->createAttribute('creator_id');
+                $creator_id->value = $content->getCreator()->getId();   
+                $domRes->appendChild($creator_id);
+                $sticked = $domManifest->createAttribute('sticked');
+                $sticked->value = $content->isSticked();   
+                $domRes->appendChild($sticked);
+
+                
+                break;
+            case SyncConstant::MSG :
+                $modification_time = $content->getUpdate()->getTimestamp();
+                $subject_hash = $content->getSubject()->getHashName();
+                
+                $update_date = $domManifest->createAttribute('update_date');
+                $update_date->value = $modification_time;   
+                $domRes->appendChild($update_date);
+                $subject = $domManifest->createAttribute('subject');
+                $subject->value = $subject_hash;   
+                $domRes->appendChild($subject);
+                $creator_id = $domManifest->createAttribute('creator_id');
+                $creator_id->value = $content->getCreator()->getId();   
+                $domRes->appendChild($creator_id);
+                $cdata = $domManifest->createCDATASection($content->getContent());
+                $domRes->appendChild($cdata);
+                break;
+        }
     
-                fputs($manifest, '
-                    <forum class="'.get_class($content).'"
-                    id="'.$content->getId().'"
-                    name="'.$content->getName().'"
-                    hashname="'.$content->getHashName().'"
-                    forum_node="'.$node_forum->getNodeHashName().'" 
-                    creation_date="'.$creation_time.'"                    
-                    update_date="'.$modification_time.'">
-                    </forum>
-                    ');
     }
 
 
@@ -597,7 +654,7 @@ class CreationManager
     /*
     *   Add informations of a specific workspace in the manifest.
     */
-    private function addWorkspaceToManifest($manifest, $workspace)
+    private function addWorkspaceToManifest_($manifest, $workspace)
     {
         $my_res_node = $this->userSynchronizedRepo->findResourceNodeByWorkspace($workspace);
         //echo 'Ma creation_time : '.$my_res_node[0]->getCreationDate()->format('Y-m-d H:i:s').'<br/>';
@@ -620,28 +677,83 @@ class CreationManager
         modification_date="'.$modification_time.'">
         ');
     }
-    
+
+    /*
+    *   Add informations of a specific workspace in the manifest.
+    */
+    private function addWorkspaceToManifest($domManifest, $sectManifest, $workspace)
+    {
+        $my_res_node = $this->userSynchronizedRepo->findResourceNodeByWorkspace($workspace);
+        $creation_time = $my_res_node[0]->getCreationDate()->getTimestamp();  
+        $modification_time = $my_res_node[0]->getModificationDate()->getTimestamp(); 
+        
+        $domWorkspace = $domManifest->createElement('workspace');
+        $sectManifest->appendChild($domWorkspace);
+        
+        $type = $domManifest->createAttribute('type');
+        $type->value = get_class($workspace);
+        $domWorkspace->appendChild($type);        
+        $creator = $domManifest->createAttribute('creator');
+        $creator->value = $workspace->getCreator()->getId();
+        $domWorkspace->appendChild($creator);       
+        $name = $domManifest->createAttribute('name');
+        $name->value = $workspace->getName();
+        $domWorkspace->appendChild($name);     
+        $code = $domManifest->createAttribute('code');
+        $code->value = $workspace->getCode();
+        $domWorkspace->appendChild($code);    
+        $displayable = $domManifest->createAttribute('displayable');
+        $displayable->value = $workspace->isDisplayable();
+        $domWorkspace->appendChild($displayable);        
+        $selfregistration = $domManifest->createAttribute('selfregistration');
+        $selfregistration->value = $workspace->getSelfRegistration();
+        $domWorkspace->appendChild($selfregistration);       
+        $selfunregistration = $domManifest->createAttribute('selfunregistration');
+        $selfunregistration->value = $workspace->getSelfUnregistration();
+        $domWorkspace->appendChild($selfunregistration);        
+        $guid = $domManifest->createAttribute('guid');
+        $guid->value = $workspace->getGuid();
+        $domWorkspace->appendChild($guid);        
+        $hashname_node = $domManifest->createAttribute('hashname_node');
+        $hashname_node->value = $my_res_node[0]->getNodeHashName();
+        $domWorkspace->appendChild($hashname_node);       
+        $creation_date = $domManifest->createAttribute('creation_date');
+        $creation_date->value = $creation_time;
+        $domWorkspace->appendChild($creation_date);       
+        $modification_date = $domManifest->createAttribute('modification_date');
+        $modification_date->value = $modification_time;
+        $domWorkspace->appendChild($modification_date);
+        
+        return $domWorkspace;
+    }    
+
 
     /*
     *   Create the description of the manifest.
     */
-    private function writeManifestDescription($manifest, User $user, $syncTime)
+    private function writeManifestDescription($domManifest, $sectManifest, User $user)
     {
-        $dateSync = $this->userSynchronizedRepo->findUserSynchronized($user);
-        $user_tmp = $dateSync[0]->getLastSynchronization(); 
-        $sync_timestamp = $user_tmp->getTimestamp();
+        // $dateSync = $this->userSynchronizedRepo->findUserSynchronized($user);
+        // $user_tmp = $dateSync[0]->getLastSynchronization(); 
+        // $sync_timestamp = $user_tmp->getTimestamp();
         
-            
-        //$current_time = time();
-        //$current_timestamp = $current_time->getTimestamp();
+        $sectDescription = $domManifest->createElement('description');
+        $sectManifest->appendChild($sectDescription);
         
-        fputs($manifest ,'
-    <description>
-        <creation_date>'.$syncTime.'</creation_date>
-        <reference_date>'.$sync_timestamp.'</reference_date>
-        <user>'.$user->getUsername().'</user>
-        <user_id>'.$user->getId().'</user_id>
-    </description>
-        ');
+        $descCreation = $domManifest->createAttribute('creation_date');
+        $descCreation->value = time();   
+        $sectDescription->appendChild($descCreation);
+        
+        // $descReference = $domManifest->createAttribute('reference_date');
+        // $descReference->value = '1395323167';   
+        // $sectDescription->appendChild($descReference);
+        
+        $descPseudo = $domManifest->createAttribute('username');
+        $descPseudo->value = $user->getUsername();   
+        $sectDescription->appendChild($descPseudo);
+        
+        $descMail = $domManifest->createAttribute('user_mail');
+        $descMail->value = $user->getMail();   
+        $sectDescription->appendChild($descMail);
     }
 }

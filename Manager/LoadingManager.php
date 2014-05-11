@@ -151,39 +151,39 @@ class LoadingManager
             $tmpdirectory = $archive->extractTo($this->path);
             
             //Call LoadXML
-            // $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
+            $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
 
-            $this->loadXML('manifest_test_x.xml'); //Actually used for test.
+            // $this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
             //$this->rrmdir($this->path);
             //echo 'DIR deleted <br/>';
             
             //TODO : Utile seulement pour les tests.
-            foreach($this->syncInfoArray as $syncInfo)
-            {
-                echo 'For the workspace : '.$syncInfo->getWorkspace().'<br/>';
-                $add = $syncInfo->getCreate();
-                foreach($add as $elem)
-                {
-                    echo 'Create'.'<br/>';
-                    echo $elem.'<br/>';
-                }
+            // foreach($this->syncInfoArray as $syncInfo)
+            // {
+                // echo 'For the workspace : '.$syncInfo->getWorkspace().'<br/>';
+                // $add = $syncInfo->getCreate();
+                // foreach($add as $elem)
+                // {
+                    // echo 'Create'.'<br/>';
+                    // echo $elem.'<br/>';
+                // }
                 
-                $update = $syncInfo->getUpdate();
-                foreach($update as $up)
-                {
-                    echo 'Update'.'<br/>';
-                    echo $up.'<br/>';
-                }
+                // $update = $syncInfo->getUpdate();
+                // foreach($update as $up)
+                // {
+                    // echo 'Update'.'<br/>';
+                    // echo $up.'<br/>';
+                // }
                 
-                $doublon = $syncInfo->getDoublon();
-                foreach($doublon as $doub)
-                {
-                    echo 'Doublon'.'<br/>';
-                    echo $doub.'<br/>';
-                }
-            }
+                // $doublon = $syncInfo->getDoublon();
+                // foreach($doublon as $doub)
+                // {
+                    // echo 'Doublon'.'<br/>';
+                    // echo $doub.'<br/>';
+                // }
+            // }
         }
         else
         {
@@ -198,7 +198,7 @@ class LoadingManager
     {
         $xmlDocument = new DOMDocument();
         $xmlDocument->load($allWorkspace);
-        $this->importPlateform($xmlDocument->getElementsByTagName('workspace_list'));           
+        $this->importWorkspaces($xmlDocument->getElementsByTagName('workspace_list'));           
     }
 
     /*
@@ -243,7 +243,7 @@ class LoadingManager
         */
         
         $this->importDescription($xmlDocument);
-        $this->importPlateform($xmlDocument);      
+        $this->importWorkspaces($xmlDocument);      
         
     }
     
@@ -265,7 +265,7 @@ class LoadingManager
     *   This method is used to work on the different workspaces inside the
     *   <workspace> tags in the XML file.
     */
-    private function importPlateform($xmlDocument)
+    private function importWorkspaces($xmlDocument)
     {
         $workspace_list = $xmlDocument->getElementsByTagName("workspace");
         

@@ -114,12 +114,13 @@ class TransferManager
         $_POST['file']=$iSendThis;
         $_POST['username']=$user->getUsername();
         $_POST['password'] = "password";
+        $_POST['zip_hashname'] = substr($toTransfer, strlen($toTransfer)-40, 36);
         echo "I happy to know file ".$_POST['file'].'</br>';
         echo "And user ".$_POST['username'].'</br>';
         echo "With this password ".$_POST['password'].'</br>';
 
         //$reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $iSendThis );        
-        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/test/confirm/'.$user->getId(), array(), $_POST );        
+        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $_POST );        
         $content = $reponse->getContent();
         //echo $browser->getLastRequest().'<br/>';
         echo 'CONTENT : <br/>'.$content.'<br/>';
@@ -176,14 +177,15 @@ class TransferManager
     }
   
   
-    public function processSyncRequest($request, $user)
+    public function processSyncRequest($content, $filename, $user)
     {
         //TODO Verifier le fichier entrant
-        $content = $request->getContent();
-        echo "PRINT CONTENT OF REQUEST".$content.'<br/>';
+        //$content = $request->getContent();
+        //echo "PRINT CONTENT OF REQUEST".$content.'<br/>';
         
-        $hashname = $this->ut->generateGuid();
-        $zipName = SyncConstant::SYNCHRO_UP_DIR.$user.'/sync_'.$hashname.'.zip';
+        //$hashname = $this->ut->generateGuid();
+        //TODO, verification de l'existance du dossier
+        $zipName = SyncConstant::SYNCHRO_UP_DIR.$user.'/sync_'.$filename.'.zip';
         $zipFile = fopen($zipName, 'w+');
         $write = fwrite($zipFile, $content);
         fclose($zipFile);

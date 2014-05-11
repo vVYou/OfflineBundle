@@ -63,11 +63,16 @@ class SynchronisationController extends Controller
         
         $request = $this->getRequest();
         //TODO verifier l'authentification
-        echo "ceci est le tableau post : user ".$_POST['user'].'</br>';
+        echo "ceci est le tableau post : user ".$_POST['username'].'</br>';
         echo "ceci est le tableau post : file ".$_POST['file'].'</br>';
+        echo "ceci est le tableau post : password ".$_POST['password'].'</br>';
+        echo "ceci est le tableau post : zip_hashname ".$_POST['zip_hashname'].'</br>';
+        
+        $status = $this->authenticator->authenticate($_POST['username'], $_POST['password']) ? 200 : 403;
+        echo "STATUS : ".$status."<br/>";
         
         //Catch the sync zip sent via POST request
-        $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
+        $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($_POST['file'], $_POST['zip_hashname'], $user);
         
         //TODO verfier securite? => dans FileController il fait un checkAccess....
 
@@ -75,26 +80,26 @@ class SynchronisationController extends Controller
        /* $em = $this->getDoctrine()->getManager();
         $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
         $authUser = $arrayRepo[0];*/
-        $authUser = $this->getUserFromID($user);
+        //$authUser = $this->getUserFromID($user);
         
         //Load the archive
-        $this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
+        //$this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
         
         //Compute the answer
-        $toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
+        //$toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
         
         // echo "je prepare la reponse".$toSend."<br/>";
         //$userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
-        $this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
+       // $this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
 
         //Send back the online sync zip
         $response = new StreamedResponse();
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
         $response->setCallBack(
-            //function () use ($user) {
-                //readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
-            function () use ($toSend) {                
-                readfile($toSend);
+            function () use ($user) {
+                readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_D17FAF3F-9737-4148-A012-71AEA4309A03.zip');
+            // function () use ($toSend) {                
+                // readfile($toSend);
             }
         );
 
@@ -156,63 +161,6 @@ class SynchronisationController extends Controller
     //TODO Route pour supprimer les fichiers de synchro
     //TODO Routes pour les echanges de fichier en multiples morceaux
     //TODO gerer l'authentification partout !
-
-    
-    /**
-    *   @EXT\Route(
-    *       "/transfer/test/confirm/{user}",
-    *       name="claro_sync_test_confirm",
-    *   )
-    *
-    *   @EXT\Method("POST")    
-    *
-    *   @return Response
-    */
-    public function getTestConfirm($user)
-    {        
-        $request = $this->getRequest();
-        echo "ceci est le tableau post : user ".$_POST['username'].'</br>';
-        echo "ceci est le tableau post : file ".$_POST['file'].'</br>';
-        echo "ceci est le tableau post : password ".$_POST['password'].'</br>';
-        
-        $status = $this->authenticator->authenticate($_POST['username'], $_POST['password']) ? 200 : 403;
-        echo "STATUS : ".$status."<br/>";
-        
-        //Catch the sync zip sent via POST request
-        //$uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
-        
-        //TODO verfier securite? => dans FileController il fait un checkAccess....
-
-        //Identify User
-       /* $em = $this->getDoctrine()->getManager();
-        $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
-        $authUser = $arrayRepo[0];*/
-        //$authUser = $this->getUserFromID($user);
-        
-        //Load the archive
-        //$this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
-        
-        //Compute the answer
-        //$toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
-        
-        // echo "je prepare la reponse".$toSend."<br/>";
-        //$userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
-        //$this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
-
-        //Send back the online sync zip
-        $response = new StreamedResponse();
-        //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
-        $response->setCallBack(
-            function () use ($user) {
-                readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_D17FAF3F-9737-4148-A012-71AEA4309A03.zip');
-            // function () use ($toSend) {                
-                // readfile($toSend);
-            }
-        );
-
-        return $response;
-    
-    }
     
     
     /***

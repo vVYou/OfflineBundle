@@ -128,7 +128,7 @@ class OfflineController extends Controller
         
         //echo 'Bool : '.$bool.'<br/>';
         
-        $zip = $this->get('claroline.manager.loading_manager')->loadZip('sync_097EC883-B9D8-4998-9A47-966791971A87.zip', $user);
+        $zip = $this->get('claroline.manager.loading_manager')->loadZip('sync_D2DF8F72-D0E5-4E7A-A48D-08379822500D.zip', $user);
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         return array(
@@ -265,7 +265,7 @@ class OfflineController extends Controller
     /**
     *   @EXT\Route(
     *       "/sync/loadWorkspaces",
-    *       name="claro_sync_load"
+    *       name="claro_sync_load_workspace"
     *   )
     *
     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})

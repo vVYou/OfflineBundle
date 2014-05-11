@@ -153,7 +153,7 @@ class LoadingManager
             //Call LoadXML
             $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
 
-            //$this->loadXML('manifest_test_x.xml'); //Actually used for test.
+            // $this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
             //$this->rrmdir($this->path);
@@ -198,7 +198,7 @@ class LoadingManager
     {
         $xmlDocument = new DOMDocument();
         $xmlDocument->load($allWorkspace);
-        $this->importPlateform($xmlDocument->getElementsByTagName('workspace_list'));           
+        $this->importWorkspaces($xmlDocument->getElementsByTagName('workspace_list'));           
     }
 
     /*
@@ -241,8 +241,9 @@ class LoadingManager
                 ->nodeValue
                 ->childNodes qui renvoit lui meme un NodeList. la boucle est bouclée
         */
-        $this->importDescription($xmlDocument->getElementsByTagName('description'));
-        $this->importPlateform($xmlDocument->getElementsByTagName('plateform'));      
+        
+        $this->importDescription($xmlDocument);
+        $this->importWorkspaces($xmlDocument);      
         
     }
     
@@ -250,86 +251,77 @@ class LoadingManager
     *   This method is used to work on the different fields inside the
     *   <description> tags in the XML file.
     */
-    private function importDescription($documentDescription)
+    private function importDescription($xmlDocument)
     {
-        $descriptionChilds = $documentDescription->item(0)->childNodes;
-        for($i = 0; $i<$descriptionChilds->length ; $i++){
-            //echo '$i : '.$i.' '.$descriptionChilds->item($i)->nodeName.' '.$descriptionChilds->item($i)->nodeValue.'<br/>' ;
-            /*
-            *   ICI on peut controler / stocker les metadata du manfiest
-            */
-            if($descriptionChilds->item($i)->nodeName == 'user_id')
-            {
-                //$this->user = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($descriptionChilds->item($i)->nodeValue);
-                $this->user = $this->userRepo->findOneBy(array('id' => $descriptionChilds->item($i)->nodeValue));
-                echo 'My user : '.$this->user->getFirstName().'<br/>';
-            }
+        $descriptions = $xmlDocument->getElementsByTagName("description");
+        foreach($descriptions as $description)
+        {
+            $this->user = $this->userRepo->findOneBy(array('username' => $description->getAttribute('username'), 'mail' => $description->getAttribute('user_mail')));
+            echo 'My user : '.$this->user->getFirstName().'<br/>';
         }
     }
     
     /*
-    *   This method is used to work on the different fields inside the
-    *   <platform> tags in the XML file.
+    *   This method is used to work on the different workspaces inside the
+    *   <workspace> tags in the XML file.
     */
-    private function importPlateform($plateform)
+    private function importWorkspaces($xmlDocument)
     {
-        $plateformChilds = $plateform->item(0)->childNodes; // Platform childs = list of workspaces.
-        for($i = 0; $i<$plateformChilds->length; $i++)
+        $workspace_list = $xmlDocument->getElementsByTagName("workspace");
+        
+        foreach($workspace_list as $work)
         {
-            $item = $plateformChilds->item($i);
-            //TODO CREER des constantes pour les fichier XML, ce sera plus propre que tout hardcode partout
-            if($item->nodeName == 'workspace')
+            /**
+            *   Check if a workspace with the given guid already exists.
+            *   - if it doesn't exist then it will be created 
+            *   - then proceed to the resources (no matter if we have to create the workspace previously)
+            */
+            
+            //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
+            $workspace = $this->workspaceRepo->findOneBy(array('guid' => $work->getAttribute('guid')));
+            
+            if(count($workspace) >= 1)
             {
-                /**
-                *   Check if a workspace with the given guid already exists.
-                *   - if it doesn't exist then it will be created 
-                *   - then proceed to the resources (no matter if we have to create the workspace previously)
+                echo 'Mon Workspace : '.$workspace->getGuid().'<br/>';
+                
+                /*  
+                *   When a workspace with the same guid is found, we can update him if it's required.
+                *   We need to check if : modification_date_offline > modification_date_online.
+                *       - If it is, the workspace can be update with the changes described in the XML.
+                *       - If it's not, it means that the 'online' version of the workspace is up-to-date.
                 */
                 
-                //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
-                $workspace = $this->workspaceRepo->findOneBy(array('guid' => $item->getAttribute('guid')));
+                //echo 'I need to update my workspace!'.'<br/>';
+                $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
+                // TODO Mettre à jour la date de modification et le nom du directory
+                echo 'Mon Workspace Node '.$NodeWorkspace->getName().'<br/>';
+                $node_modif_date = $NodeWorkspace->getModificationDate()->getTimestamp();
+                $modif_date = $work->getAttribute('modification_date');
                 
-                if(count($workspace) >= 1)
+                if($modif_date > $node_modif_date)
                 {
-                    echo 'Mon Workspace : '.$workspace->getGuid().'<br/>';
-                    
-                    /*  
-                    *   When a workspace with the same guid is found, we can update him if it's required.
-                    *   We need to check if : modification_date_offline > modification_date_online.
-                    *       - If it is, the workspace can be update with the changes described in the XML.
-                    *       - If it's not, it means that the 'online' version of the workspace is up-to-date.
-                    */
-                    
-                    //echo 'I need to update my workspace!'.'<br/>';
-                    $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
-                    // TODO Mettre à jour la date de modification et le nom du directory
-                    echo 'Mon Workspace Node '.$NodeWorkspace->getName().'<br/>';
-                    $node_modif_date = $NodeWorkspace->getModificationDate()->getTimestamp();
-                    $modif_date = $item->getAttribute('modification_date');
-                    
-                    if($modif_date > $node_modif_date)
-                    {
-                       // The properties of the workspace has been changed and need to be update.
-                    }
-                    else
-                    {
-                       // The 'online' version of the workspace is up-to-date.
-                    }
+                   // The properties of the workspace has been changed and need to be update.
                 }
-                
                 else
                 {
-                  //  echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
-                    $workspace_creator = $this->userRepo->findOneBy(array('id' => $item->getAttribute('creator')));
-                    echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
-                    $workspace = $this->createWorkspace($item, $workspace_creator);
-                    //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
+                   // The 'online' version of the workspace is up-to-date.
                 }
-                
-                echo 'En route pour les ressources!'.'<br/>';
-                $info = $this->importWorkspace($item->childNodes, $workspace);
-                $this->syncInfoArray[] = $info;
             }
+            
+            else
+            {
+              //  echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
+                $workspace_creator = $this->userRepo->findOneBy(array('id' => $work->getAttribute('creator')));
+                echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
+                $workspace = $this->createWorkspace($work, $workspace_creator);
+                //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
+            }
+            
+            echo 'En route pour les ressources!'.'<br/>';
+            $info = $this->importWorkspace($work->childNodes, $workspace);
+            $this->syncInfoArray[] = $info;
+
+            
         }
     }
     
@@ -402,6 +394,10 @@ class LoadingManager
                     $this->resourceManager->rename($node, $resource->getAttribute('name'));
                     $wsInfo->addToUpdate($resource->getAttribute('name'));
                 }
+                else
+                {
+                    echo 'Already in Database'.'<br/>';
+                }
                 break;
             case SyncConstant::FORUM :
                 echo 'It s a forum!'.'<br/>';
@@ -439,6 +435,11 @@ class LoadingManager
                         // Doublon generation
                         $this->createDoublon($resource, $workspace, $node, true);
                         $wsInfo->addToDoublon($resource->getAttribute('name'));
+                    }
+                    
+                    else
+                    {
+                        echo 'Already in Database'.'<br/>';
                     }
                 }
                 break;
@@ -887,20 +888,12 @@ class LoadingManager
     /*
     *   Extract the text contains in the CDATA section of the XML file.
     */
-    private function extractCData($data)
+    private function extractCData($resource)
     {      
-        foreach($data->childNodes as $child)
-        {
-            if($child->nodeName == 'content')
-            {
-                foreach($child->childNodes as $contentsection)
-                {
-                    if($contentsection->nodeType == XML_CDATA_SECTION_NODE)
-                    {
-                        return $child->textContent;
-                    }
-                }
-            } 
+        foreach($resource->childNodes as $child) {
+            if ($child->nodeType == XML_CDATA_SECTION_NODE) {
+                echo $child->textContent . "<br/>";
+            }
         }
     }
     

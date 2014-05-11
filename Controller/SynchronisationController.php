@@ -67,6 +67,7 @@ class SynchronisationController extends Controller
         echo "ceci est le tableau post : file ".$_POST['file'].'</br>';
         echo "ceci est le tableau post : password ".$_POST['password'].'</br>';
         echo "ceci est le tableau post : zip_hashname ".$_POST['zip_hashname'].'</br>';
+        echo "ceci est le tableau post : Number of packets ".$_POST['nPackets'].'</br>';
         
         $status = $this->authenticator->authenticate($_POST['username'], $_POST['password']) ? 200 : 403;
         echo "STATUS : ".$status."<br/>";

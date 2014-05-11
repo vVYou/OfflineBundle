@@ -115,6 +115,7 @@ class TransferManager
         $_POST['username']=$user->getUsername();
         $_POST['password'] = "password";
         $_POST['zip_hashname'] = substr($toTransfer, strlen($toTransfer)-40, 36);
+        $_POST['nPackets'] = (int)(filesize($toTransfer)/SyncConstant::MAX_PACKET_SIZE)+1;
         echo "I happy to know file ".$_POST['file'].'</br>';
         echo "And user ".$_POST['username'].'</br>';
         echo "With this password ".$_POST['password'].'</br>';

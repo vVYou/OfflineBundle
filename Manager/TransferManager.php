@@ -109,16 +109,41 @@ class TransferManager
         //TODO dynamique route pour plateforme 2 ???
         
         $handle = fopen($toTransfer, 'r');
-        $iSendThis = fread($handle, filesize($toTransfer));
+        $iSendThis = fread($handle, filesize($toTransfer)); //TO DELETE
+        $fileSize = filesize($toTransfer)
+        $numberOfPackets = (int)($fileSize/SyncConstant::MAX_PACKET_SIZE)+1;
+        $packetNumber = 0;
+        
+        //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
+        
         //echo "I send this : <br/>".$iSendThis."<br/>".
-        $_POST['file']=$iSendThis;
+        $_POST['file']=$iSendThis; // TO DELETE
         $_POST['username']=$user->getUsername();
         $_POST['password'] = "password";
         $_POST['zip_hashname'] = substr($toTransfer, strlen($toTransfer)-40, 36);
-        $_POST['nPackets'] = (int)(filesize($toTransfer)/SyncConstant::MAX_PACKET_SIZE)+1;
-        echo "I happy to know file ".$_POST['file'].'</br>';
-        echo "And user ".$_POST['username'].'</br>';
-        echo "With this password ".$_POST['password'].'</br>';
+        $_POST['nPackets'] = $numberOfPackets ;
+        
+        /*
+        tant que différent longueur fin de fichier
+            - placer le curseur
+            - lire 1 paquet (plus court si fin de fichier)
+                - envoyer paquet
+                -capturer et analyser la réponse
+            - augmenter les compteurs
+        */
+        
+        
+        while($packetNumber < $numberOfPackets)
+        {
+            $position = $packetNumber*SyncConstant::MAXPACKET_SIZE_SIZE;
+            
+            
+            $_POST['packetNum'] = $packetNumber;
+            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $_POST );        
+            //control response, if ok
+            $packetNumber ++;
+            //else do not increment packetNumber, so it will send again the same packet
+        }
 
         //$reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $iSendThis );        
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $_POST );        

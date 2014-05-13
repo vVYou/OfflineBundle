@@ -135,22 +135,34 @@ class TransferManager
         
         while($packetNumber < $numberOfPackets)
         {
-            $position = $packetNumber*SyncConstant::MAXPACKET_SIZE_SIZE;
-            
+            $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
+            //Placement curseur dans le fichier
+            fseek($handle, $position);
+            if($filesize> $position+SyncConstant::MAX_PACKET_SIZE)
+            {
+                $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
+            }else{
+                $data = fread($handle, $filesize-$position)
+            }
+            $_POST['file'] = $data;
             
             $_POST['packetNum'] = $packetNumber;
-            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $_POST );        
+            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $_POST );    
+            $content = $reponse->getContent();
+            //echo $browser->getLastRequest().'<br/>';
+            echo 'CONTENT : <br/>'.$content.'<br/>';
+            
             //control response, if ok
             $packetNumber ++;
             //else do not increment packetNumber, so it will send again the same packet
         }
 
         //$reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $iSendThis );        
-        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $_POST );        
-        $content = $reponse->getContent();
-        //echo $browser->getLastRequest().'<br/>';
-        echo 'CONTENT : <br/>'.$content.'<br/>';
-        
+        // $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $_POST );        
+        // $content = $reponse->getContent();
+        // echo $browser->getLastRequest().'<br/>';
+        // echo 'CONTENT : <br/>'.$content.'<br/>';
+       
         $hashname = $this->ut->generateGuid();
         $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/';
         if(!is_dir($dir)){

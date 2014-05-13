@@ -62,18 +62,18 @@ class SynchronisationController extends Controller
         */
         
         $request = $this->getRequest();
+        echo "Request :".$request."<br/>";
         //TODO verifier l'authentification
-        echo "ceci est le tableau post : user ".$_POST['username'].'</br>';
-        echo "ceci est le tableau post : file ".$_POST['file'].'</br>';
-        echo "ceci est le tableau post : password ".$_POST['password'].'</br>';
-        echo "ceci est le tableau post : zip_hashname ".$_POST['zip_hashname'].'</br>';
-        echo "ceci est le tableau post : Number of packets ".$_POST['nPackets'].'</br>';
         
-        $status = $this->authenticator->authenticate($_POST['username'], $_POST['password']) ? 200 : 403;
+        $content = $request->getContent();
+        echo "CONTENT received : ".$content."<br/>";
+        $informationTable = (array)json_decode($content);
+        
+        $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;
         echo "STATUS : ".$status."<br/>";
         
         //Catch the sync zip sent via POST request
-        $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($_POST['file'], $_POST['zip_hashname'], $user);
+        // $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request['file'], $request['zipHashname'], $user);
         
         //TODO verfier securite? => dans FileController il fait un checkAccess....
 

@@ -118,11 +118,18 @@ class TransferManager
         
         //echo "I send this : <br/>".$iSendThis."<br/>".
         //$_POST['file']=$iSendThis; // TO DELETE
-        $_POST['username']=$user->getUsername();
-        $_POST['password'] = "password";
-        $_POST['zip_hashname'] = substr($toTransfer, strlen($toTransfer)-40, 36);
-        $_POST['nPackets'] = $numberOfPackets ;
-        
+            // $coordonnees = array (
+                // 'adresse' => '3 Rue du Paradis',
+                // 'ville' => 'Marseille');
+                            
+        $requestContent = array(
+            'username' => $user->getUsername(), 
+            'password' => "password",
+            'zipHashname' => substr($toTransfer, strlen($toTransfer)-40, 36),
+            'nPackets' => $numberOfPackets,
+            'file' => NULL, 
+            'packetNum' => 0);
+             
         /*
         tant que différent longueur fin de fichier
             - placer le curseur
@@ -131,11 +138,13 @@ class TransferManager
                 -capturer et analyser la réponse
             - augmenter les compteurs
         */
-        
+               
+        // $plouf = json_encode($requestContent);
+        // echo "JSON encode this : ".$plouf.'<br/>'; 
         
         while($packetNumber < $numberOfPackets)
         {
-            $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;            
+            $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;           
             echo "POSITION ".$position.'<br/>';
             //Placement curseur dans le fichier
             fseek($handle, $position);
@@ -147,12 +156,18 @@ class TransferManager
             }else{
                 $data = fread($handle, $fileSize-$position);
             }
-            $_POST['file'] = $data;
             
-            $_POST['packetNum'] = $packetNumber;
-            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $_POST );    
+            // $requestContent = (array)json_decode($plouf);
+            
+          //  $requestContent2['file'] = $data;
+            $requestContent['packetNum'] = $packetNumber;
+            
+            // $plouf2 = json_encode($requestContent2);
+            // echo "plouf : ".$plouf2."<br/>";
+            
+            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));    
             $content = $reponse->getContent();
-            //echo $browser->getLastRequest().'<br/>';
+            echo $browser->getLastRequest().'<br/>';
             echo 'CONTENT : <br/>'.$content.'<br/>';
             
             //control response, if ok

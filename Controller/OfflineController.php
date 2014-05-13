@@ -247,7 +247,7 @@ class OfflineController extends Controller
         $transfer = true;
         if($user == $authUser->getId()){
             //$test = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
-            $toTransfer = './synchronize_down/3/sync_D69A6427-582D-4846-9447-6420201CEB54.zip';
+            $toTransfer = './synchronize_down/3/sync_09D10C6E-016A-41C3-B976-99E7A094A253.zip';
             $test = $this->get('claroline.manager.transfer_manager')->transferZip($toTransfer, $authUser);
         }else{
             $transfer = false;

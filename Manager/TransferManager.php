@@ -89,6 +89,11 @@ class TransferManager
     */
     public function transferZip($toTransfer, User $user)    
     {  
+        /*
+        *   L'objectif de cette fonction est de transférer le fichier en paramètre à la plateforme dans l'URL est sauvegardée dans les constantes
+        *   Ce transfer s'effectue en plusieurs paquets
+        */
+        
         // ATTENTION, droits d'ecriture de fichier
         
         //Declaration du client HTML Buzz
@@ -104,6 +109,9 @@ class TransferManager
         //TODO, checkin password !
 
         $requestContent = $this->getMetadataArray($user, $toTransfer);
+        
+        echo "Checksum : ".$requestContent['checksum'].'<br/>';
+        
         $packetNumber = 0;
         $numberOfPackets = $requestContent['nPackets'];
         $handle = fopen($toTransfer, 'r');
@@ -125,28 +133,34 @@ class TransferManager
         
         fclose($handle); //return boolean
         //TODO control file closure 
-       
-       //TODO ADAPT end of procedure
-        $hashname = $this->ut->generateGuid();
-        $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/';
-        if(!is_dir($dir)){
-            mkdir($dir);
-        }
-        $zip_path = $dir.'sync_'.$hashname.'.zip';
-        //TODO Check ouverture du fichier
-        $zipFile = fopen($zip_path, 'w+');
-        $write = fwrite($zipFile, $content);
-        if(!$write){
-        //SHOULD RETURN ERROR
-            echo 'An ERROR happen re-writing zip file at reception<br/>';
-        }
-        if (!fclose($zipFile)){
-            //TODO SHOULD be an exception
-            echo 'An ERROR happened closing archive file at reception<br/>';
-        }
-        //echo 'TRANSFER PASS !';
         
-        return $zip_path;
+        //Changer la fin
+        //return reussite ou echec
+        
+        echo "Status : ";
+        return $content;
+       
+        //TODO ADAPT end of procedure
+        // $hashname = $this->ut->generateGuid();
+        // $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/';
+        // if(!is_dir($dir)){
+            // mkdir($dir);
+        // }
+        // $zip_path = $dir.'sync_'.$hashname.'.zip';
+        //TODO Check ouverture du fichier
+        // $zipFile = fopen($zip_path, 'w+');
+        // $write = fwrite($zipFile, $content);
+        // if(!$write){
+        //SHOULD RETURN ERROR
+            // echo 'An ERROR happen re-writing zip file at reception<br/>';
+        // }
+        // if (!fclose($zipFile)){
+            //TODO SHOULD be an exception
+            // echo 'An ERROR happened closing archive file at reception<br/>';
+        // }
+        // echo 'TRANSFER PASS !';
+        
+        // return $zip_path;
     }
     
     public function getMetadataArray($user, $filename)
@@ -156,6 +170,7 @@ class TransferManager
             'password' => "password",
             'zipHashname' => substr($filename, strlen($filename)-40, 36),
             'nPackets' => (int)(filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1,
+            'checksum' => hash_file( "sha256", $filename),
             'file' => "", 
             'packetNum' => 0);
     }

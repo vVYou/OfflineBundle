@@ -61,8 +61,6 @@ class SynchronisationController extends Controller
         *   Generer le zip descendant et le retourner dans la stream reponse
         */
         
-        // $request = $this->getRequest();
-        // echo "Request :".$request."<br/>";
         //TODO verifier l'authentification
         
         $content = $this->getRequest()->getContent();
@@ -73,6 +71,11 @@ class SynchronisationController extends Controller
         $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;
         echo "STATUS : ".$status."<br/>";
         
+        
+        $content = array();
+        
+        return new JsonResponse($content, $status);
+    }
         //Catch the sync zip sent via POST request
         // $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request['file'], $request['zipHashname'], $user);
         
@@ -95,18 +98,18 @@ class SynchronisationController extends Controller
        // $this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
 
         //Send back the online sync zip
-        $response = new StreamedResponse();
+        // $response = new StreamedResponse();
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
-        $response->setCallBack(
-            function () use ($user) {
-                readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_D17FAF3F-9737-4148-A012-71AEA4309A03.zip');
+        // $response->setCallBack(
+            // function () use ($user) {
+                // readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_D17FAF3F-9737-4148-A012-71AEA4309A03.zip');
             // function () use ($toSend) {                
                 // readfile($toSend);
-            }
-        );
+            // }
+        // );
 
-        return $response;
-    }
+        // return $response;
+    // }
 
     
     /**

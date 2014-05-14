@@ -100,36 +100,17 @@ class TransferManager
         //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
         
         //TODO dynamique zip file name - constante repertoire sync_up et sync_down
-        //TODO dynamique route pour plateforme 2 ???
-        
-        $handle = fopen($toTransfer, 'r');
-        //$iSendThis = fread($handle, filesize($toTransfer)); //TO DELETE
-        $fileSize = filesize($toTransfer);
-        $numberOfPackets = (int)($fileSize/SyncConstant::MAX_PACKET_SIZE)+1;
-        $packetNumber = 0;
-        
         //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
+        //TODO, checkin password !
 
-        $requestContent = array(
-            'username' => $user->getUsername(), 
-            'password' => "password",
-            'zipHashname' => substr($toTransfer, strlen($toTransfer)-40, 36),
-            'nPackets' => $numberOfPackets,
-            'file' => "", 
-            'packetNum' => 0);
-             
-        /*
-        tant que différent longueur fin de fichier
-            - placer le curseur
-            - lire 1 paquet (plus court si fin de fichier)
-                - envoyer paquet
-                -capturer et analyser la réponse
-            - augmenter les compteurs
-        */
+        $requestContent = $this->getMetadataArray($user, $toTransfer);
+        $packetNumber = 0;
+        $numberOfPackets = $requestContent['nPackets'];
+        $handle = fopen($toTransfer, 'r');
         
         while($packetNumber < $numberOfPackets)
         {
-            $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $handle, $fileSize));
+            $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $handle, filesize($toTransfer)));
             $requestContent['packetNum'] = $packetNumber;
             
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));    
@@ -141,13 +122,11 @@ class TransferManager
             $packetNumber ++;
             //else do not increment packetNumber, so it will send again the same packet
         }
-
-        //$reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $iSendThis );        
-        // $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), $_POST );        
-        // $content = $reponse->getContent();
-        // echo $browser->getLastRequest().'<br/>';
-        // echo 'CONTENT : <br/>'.$content.'<br/>';
+        
+        fclose($handle); //return boolean
+        //TODO control file closure 
        
+       //TODO ADAPT end of procedure
         $hashname = $this->ut->generateGuid();
         $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/';
         if(!is_dir($dir)){
@@ -168,6 +147,17 @@ class TransferManager
         //echo 'TRANSFER PASS !';
         
         return $zip_path;
+    }
+    
+    public function getMetadataArray($user, $filename)
+    {
+        return array(
+            'username' => $user->getUsername(), 
+            'password' => "password",
+            'zipHashname' => substr($filename, strlen($filename)-40, 36),
+            'nPackets' => (int)(filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1,
+            'file' => "", 
+            'packetNum' => 0);
     }
     
     public function getPacket($packetNumber, $handle, $fileSize)

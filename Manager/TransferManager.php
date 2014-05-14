@@ -88,13 +88,7 @@ class TransferManager
     *   @param User $user
     */
     public function transferZip($toTransfer, User $user)    
-    {   /*
-        *   Objectif de la methode :
-        *   appeler le serveur distant en lui demandant d'envoyer son zip de synchro
-        *   via cette requete post, injecter mon zip de synchro local dedans
-        *   enregistrer le zip recu en retour pour le traiter en local
-        */
-    
+    {  
         // ATTENTION, droits d'ecriture de fichier
         
         //Declaration du client HTML Buzz
@@ -115,12 +109,6 @@ class TransferManager
         $packetNumber = 0;
         
         //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
-        
-        //echo "I send this : <br/>".$iSendThis."<br/>".
-        //$_POST['file']=$iSendThis; // TO DELETE
-            // $coordonnees = array (
-                // 'adresse' => '3 Rue du Paradis',
-                // 'ville' => 'Marseille');
                             
         $requestContent = array(
             'username' => $user->getUsername(), 
@@ -138,9 +126,6 @@ class TransferManager
                 -capturer et analyser la réponse
             - augmenter les compteurs
         */
-               
-        // $plouf = json_encode($requestContent);
-        // echo "JSON encode this : ".$plouf.'<br/>'; 
         
         while($packetNumber < $numberOfPackets)
         {
@@ -160,7 +145,7 @@ class TransferManager
             }
             
             //SOUCIS ICI, pas de datas dans le tableau !!!!!!!
-            $requestContent['file'] = "".$data;
+            $requestContent['file'] = base64_encode($data);
             $requestContent['packetNum'] = $packetNumber;
             
             // foreach($requestContent as $key => $element)

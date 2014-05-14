@@ -109,7 +109,7 @@ class TransferManager
         $packetNumber = 0;
         
         //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
-                            
+
         $requestContent = array(
             'username' => $user->getUsername(), 
             'password' => "password",
@@ -129,34 +129,12 @@ class TransferManager
         
         while($packetNumber < $numberOfPackets)
         {
-        
-            echo "envoi du packet : ".$packetNumber."-----------------------<br/>";
-            $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;           
-            // echo "POSITION ".$position.'<br/>';
-            //Placement curseur dans le fichier
-            fseek($handle, $position);
-            // echo "FILESIZE ".$fileSize.'<br/>';
-            // echo "Condition : ".($fileSize > $position+SyncConstant::MAX_PACKET_SIZE).'<br/>';
-            if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE)
-            {
-                $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
-            }else{
-                $data = fread($handle, $fileSize-$position);
-            }
-            
-            //SOUCIS ICI, pas de datas dans le tableau !!!!!!!
-            $requestContent['file'] = base64_encode($data);
+            $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $handle, $fileSize));
             $requestContent['packetNum'] = $packetNumber;
-            
-            // foreach($requestContent as $key => $element)
-            // {
-                // echo $key." : ".$element."<br/>";
-            // }
-            // echo "Type de file : ".gettype($data).'<br>';
             
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));    
             $content = $reponse->getContent();
-            echo $browser->getLastRequest().'<br/>';
+            // echo $browser->getLastRequest().'<br/>';
             echo 'CONTENT : <br/>'.$content.'<br/>';
             
             //control response, if ok
@@ -190,6 +168,20 @@ class TransferManager
         //echo 'TRANSFER PASS !';
         
         return $zip_path;
+    }
+    
+    public function getPacket($packetNumber, $handle, $fileSize)
+    {
+        // echo "envoi du packet : ".$packetNumber."-----------------------<br/>";
+        $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
+        fseek($handle, $position);
+        if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE)
+        {
+            $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
+        }else{
+            $data = fread($handle, $fileSize-$position);
+        }
+        return $data;
     }
     
     /*

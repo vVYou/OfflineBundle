@@ -61,13 +61,14 @@ class SynchronisationController extends Controller
         *   Generer le zip descendant et le retourner dans la stream reponse
         */
         
-        $request = $this->getRequest();
-        echo "Request :".$request."<br/>";
+        // $request = $this->getRequest();
+        // echo "Request :".$request."<br/>";
         //TODO verifier l'authentification
         
-        $content = $request->getContent();
-        echo "CONTENT received : ".$content."<br/>";
+        $content = $this->getRequest()->getContent();
+        // echo "CONTENT received : ".$content."<br/>";
         $informationTable = (array)json_decode($content);
+        echo "Packet Number : ".$informationTable['packetNum'].'<br/>';
         
         $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;
         echo "STATUS : ".$status."<br/>";

@@ -255,7 +255,9 @@ class TransferManager
         $client = new Curl();
         $client->setTimeout(60);
         $browser = new Browser($client);
-
+        
+        // $hash2 = hash("sha256", $user->getUsername().$user->getCreationDate()->format('Y-m-d H:i:s').rand());
+        // echo " token : ".$hash2.'<br/>';
         //TODO remove hardcode
         $contentArray = array(
             'username' => 'ket',

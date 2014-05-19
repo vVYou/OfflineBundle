@@ -301,8 +301,7 @@ class OfflineController extends Controller
     {       
         $this->get('claroline.manager.transfer_manager')->getUserInfo($user);
          
-        $username = "ok boy";
-        //$username = $user->getFirstName() . ' ' . $user->getLastName();
+        $username = $user->getFirstName() . ' ' . $user->getLastName();
         return array(
             'user' => $username
          );

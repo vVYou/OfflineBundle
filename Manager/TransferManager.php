@@ -118,8 +118,11 @@ class TransferManager
         
         while($packetNumber < $numberOfPackets)
         {
+            //TODO D'autres elements a encoder en base 64?
             $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $handle, filesize($toTransfer)));
             $requestContent['packetNum'] = $packetNumber;
+            
+            echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
             
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));    
             $content = $reponse->getContent();
@@ -245,5 +248,22 @@ class TransferManager
         {
             echo "HE CONFIRM RECEIVE !<br/>";
         }
+    }
+    
+    public function getUserInfo($user)
+    {
+        $client = new Curl();
+        $client->setTimeout(60);
+        $browser = new Browser($client);
+
+        //TODO remove hardcode
+        $contentArray = array(
+            'username' => 'ket',
+            'password' => 'password'
+        );
+        echo "content array : ".json_encode($contentArray).'<br/>';
+        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 
+        //TODO charge user
+        echo "trop cool : ".$reponse->getContent()."<br/>";
     }
 }

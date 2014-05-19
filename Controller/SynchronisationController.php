@@ -13,6 +13,7 @@ use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Library\Security\Authenticator;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Repository\UserRepository;
 use Claroline\OfflineBundle\SyncConstant;
 use \DateTime;
 use \ZipArchive;
@@ -70,10 +71,8 @@ class SynchronisationController extends Controller
         
         $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;
         echo "STATUS : ".$status."<br/>";
-        
-        
+        $status = 403;
         $content = array();
-        
         return new JsonResponse($content, $status);
     }
         //Catch the sync zip sent via POST request
@@ -111,6 +110,36 @@ class SynchronisationController extends Controller
         // return $response;
     // }
 
+    /**
+    *   @EXT\Route(
+    *       "/sync/user",
+    *       name="claro_sync_user",
+    *   )
+    *
+    *   @EXT\Method("POST")    
+    *
+    *   @return Response
+    */
+    public function getUserIformations()
+    {
+        //TODO imposer ceci en HTTPS !
+        $content = $this->getRequest()->getContent();
+        echo "receive content <br/>";
+        $informationTable = (array)json_decode($content);
+        $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;        
+        echo "STATUS : ".$status."<br/>";
+        $returnContent = array(); 
+
+        if($status == 200){
+            // Get User informations and return them
+            $em = $this->getDoctrine()->getManager();
+            $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationTable['username']);
+            //TODO ajout du token
+            $returnContent = $user->getUserAsTab();
+        }
+        
+        return new JsonResponse($returnContent, $status);
+    }
     
     /**
     *   @EXT\Route(

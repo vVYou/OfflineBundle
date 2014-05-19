@@ -283,4 +283,28 @@ class OfflineController extends Controller
             'user' => $username
          );
     }
+    
+    
+    /**
+    *   @EXT\Route(
+    *       "/sync/getuser",
+    *       name="claro_sync_getuser"
+    *   )
+    *
+    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:load.html.twig")
+    *
+    * @param User $user
+    * @return Response
+    */
+    public function getUserAction(User $user)
+    {       
+        $this->get('claroline.manager.transfer_manager')->getUserInfo($user);
+         
+        $username = "ok boy";
+        //$username = $user->getFirstName() . ' ' . $user->getLastName();
+        return array(
+            'user' => $username
+         );
+    }
 }

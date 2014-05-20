@@ -76,19 +76,6 @@ class SynchronisationController extends Controller
         $content = $this->get('claroline.manager.transfer_manager')->processSyncRequest($informationTable);
         return new JsonResponse($content, $status);
     }
-        //Catch the sync zip sent via POST request
-        // $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request['file'], $request['zipHashname'], $user);
-        
-        //TODO verfier securite? => dans FileController il fait un checkAccess....
-
-        //Identify User
-       /* $em = $this->getDoctrine()->getManager();
-        $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
-        $authUser = $arrayRepo[0];*/
-        //$authUser = $this->getUserFromID($user);
-        
-        //Load the archive
-        //$this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
         
         //Compute the answer
         //$toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);

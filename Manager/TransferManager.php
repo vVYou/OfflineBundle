@@ -16,10 +16,11 @@ use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
+use Claroline\OfflineBundle\Manager\LoadingManager;
+use Claroline\OfflineBundle\Manager\CreationManager;
 use Claroline\OfflineBundle\SyncConstant;
 //use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
-use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use JMS\DiExtraBundle\Annotation as DI;
@@ -49,8 +50,10 @@ class TransferManager
     private $pagerFactory;
     private $translator;
     private $userSynchronizedRepo;
+    private $userRepo;
+    private $loadingManager;
     private $resourceManager;
-    private $router;
+    private $syncManager;
     private $ut;
     
     /**
@@ -61,7 +64,8 @@ class TransferManager
      *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
      *     "translator"     = @DI\Inject("translator"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "router"         = @DI\Inject("router"),
+     *     "syncManager"= @DI\Inject("claroline.manager.synchronize_manager"),
+     *     "loadingManager" = @DI\Inject("claroline.manager.loading_manager"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
@@ -70,16 +74,19 @@ class TransferManager
         PagerFactory $pagerFactory,
         TranslatorInterface $translator,
         ResourceManager $resourceManager,
-        UrlGeneratorInterface $router,
+        CreationManager $syncManager,
+        LoadingManager $loadingManager,
         ClaroUtilities $ut
     )
     {
         $this->om = $om;
         $this->pagerFactory = $pagerFactory;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
+        $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
-        $this->router = $router;
+        $this->syncManager = $syncManager;
+        $this->loadingManager = $loadingManager;
         $this->ut = $ut;
     }
     
@@ -107,11 +114,7 @@ class TransferManager
         //TODO dynamique zip file name - constante repertoire sync_up et sync_down
         //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
         //TODO, checkin password !
-
-        echo "FILESIZE SEND :".filesize($toTransfer).'<br/>';
         $requestContent = $this->getMetadataArray($user, $toTransfer);
-        
-        echo "Checksum : ".$requestContent['checksum'].'<br/>';
         
         $packetNumber = 0;
         $numberOfPackets = $requestContent['nPackets'];
@@ -179,21 +182,18 @@ class TransferManager
             'nPackets' => (int)(filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1,
             'checksum' => hash_file( "sha256", $filename),
             'file' => "", 
-            'packetNum' => 0);
+            'packetNum' => 0,
+            'message' => "");
     }
     
     public function getPacket($packetNumber, $handle, $fileSize)
     {
-        // echo "envoi du packet : ".$packetNumber."-----------------------<br/>";
         $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
         fseek($handle, $position);
-        echo "je prends le packet ".$packetNumber."<br/>";
         if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE)
         {
-            echo "packet of size ".SyncConstant::MAX_PACKET_SIZE."<br/>";
             $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
         }else{
-            echo "packet of size ".($fileSize-$position)."<br/>";
             $data = fread($handle, $fileSize-$position);
         }
         return $data;
@@ -210,14 +210,29 @@ class TransferManager
         $write = fwrite($partFile, base64_decode($content['file']));
         //TODO control writing errors
         fclose($partFile);
-        echo "Donc le packet recu a la taille : ".filesize($partName)."<br/>";
         if($content['packetNum'] == ($content['nPackets']-1)){
-            $zipName = $this->assembleParts($content);
-            //Load zipName
-            //Create Archive
-            //Return nPackets & hashname
+            return $this->endExchangeProcess($content);
         }
         return array();
+    }
+    
+    public function endExchangeProcess($content){
+        $zipName = $this->assembleParts($content);
+        if($zipName != null){
+            //Load archive
+            $user = $this->userRepo->loadUserByUsername($content['username']);
+            //TODO LOAD when patch
+            //$this->loadingManager->loadZip($zipName, $user);
+            //Create synchronisation
+            $toSend = $this->syncManager->createSyncZip($user);
+            return $this->getMetadataArray($user, $toSend);
+        }else{
+            return array(
+                'message' => 'error assemble parts',
+                'nPackets' => 0,
+                'hashname' => 'null'
+            );
+        }
     }
     
     public function assembleParts($content)
@@ -227,19 +242,14 @@ class TransferManager
         for($i = 0; $i<$content['nPackets']; $i++){
             //TODO control writing errors
             $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$i;
-            echo "FILESIZE PART ".$i." :".filesize($partName).'<br/>';
             $partFile = fopen($partName, 'r');
             $write = fwrite($zipFile, fread($partFile, filesize($partName)));
             fclose($partFile);
         }
         fclose($zipFile);
-        echo "FILESIZE RECEIVED :".filesize($zipName).'<br/>';
-        echo "checksum reassembled : ".hash_file( "sha256", $zipName)."<br/>";
         if(hash_file( "sha256", $zipName) == $content['checksum']){
-            echo "ce sont les meme YOUHOU !!! <br/>";
             return $zipName;
         }else{
-            echo "Dam IT it fails! <br/>";
             return null;
         }
     }

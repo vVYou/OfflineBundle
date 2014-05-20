@@ -12,22 +12,23 @@
 namespace Claroline\OfflineBundle\Manager;
 
 use Claroline\CoreBundle\Entity\User;
+use Claroline\CoreBundle\Entity\Resource\ResourceType;
+use Claroline\CoreBundle\Entity\Resource\ResourceNode;
+use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
+use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Manager\LoadingManager;
 use Claroline\OfflineBundle\Manager\CreationManager;
+use Claroline\OfflineBundle\Manager\UserSyncManager;
 use Claroline\OfflineBundle\SyncConstant;
 //use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use JMS\DiExtraBundle\Annotation as DI;
-use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
-use Claroline\CoreBundle\Manager\ResourceManager;
-use Claroline\CoreBundle\Entity\Resource\ResourceType;
-use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use \ZipArchive;
 use \DateTime;
 use \Buzz\Browser;
@@ -54,6 +55,7 @@ class TransferManager
     private $loadingManager;
     private $resourceManager;
     private $syncManager;
+    private $userSynchronizedManager;
     private $ut;
     
     /**
@@ -65,7 +67,9 @@ class TransferManager
      *     "translator"     = @DI\Inject("translator"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
      *     "syncManager"= @DI\Inject("claroline.manager.synchronize_manager"),
-     *     "loadingManager" = @DI\Inject("claroline.manager.loading_manager"),
+     *     "loadingManager" =
+     @DI\Inject("claroline.manager.loading_manager"),*     "userSyncManager" =
+     @DI\Inject("claroline.manager.user_sync_manager"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
@@ -76,6 +80,7 @@ class TransferManager
         ResourceManager $resourceManager,
         CreationManager $syncManager,
         LoadingManager $loadingManager,
+        UserSyncManager $userSyncManager,
         ClaroUtilities $ut
     )
     {
@@ -87,6 +92,7 @@ class TransferManager
         $this->resourceManager = $resourceManager;
         $this->syncManager = $syncManager;
         $this->loadingManager = $loadingManager;
+        $this->userSynchronizedManager = $userSyncManager;
         $this->ut = $ut;
     }
     
@@ -94,19 +100,15 @@ class TransferManager
     /*
     *   @param User $user
     */
-    public function transferZip($toTransfer, User $user)    
-    {  
-        /*
+    public function uploadZip($toTransfer, User $user)    
+    {  /*
         *   L'objectif de cette fonction est de transférer le fichier en paramètre à la plateforme dans l'URL est sauvegardée dans les constantes
         *   Ce transfer s'effectue en plusieurs paquets
         */
         
         // ATTENTION, droits d'ecriture de fichier
         
-        //Declaration du client HTML Buzz
-        $client = new Curl();
-        $client->setTimeout(60);
-        $browser = new Browser($client);
+        $browser = $this->getBrowser();
         
         //Browser post signature                public function post($url, $headers = array(), $content = '')
         //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
@@ -115,64 +117,64 @@ class TransferManager
         //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
         //TODO, checkin password !
         $requestContent = $this->getMetadataArray($user, $toTransfer);
-        
         $packetNumber = 0;
         $numberOfPackets = $requestContent['nPackets'];
-        $handle = fopen($toTransfer, 'r');
+        $responseContent = "";
         
         while($packetNumber < $numberOfPackets)
         {
             //TODO D'autres elements a encoder en base 64?
-            $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $handle, filesize($toTransfer)));
+            $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $toTransfer));
             $requestContent['packetNum'] = $packetNumber;
             
             echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
             
             //TODO identifier une erreur de transfert (analyse du status)
-            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));    
-            $content = $reponse->getContent();
+            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip/'.$user->getId(), array(), json_encode($requestContent));    
+            $responseContent = $reponse->getContent();
             // echo $browser->getLastRequest().'<br/>';
-            echo 'CONTENT : <br/>'.$content.'<br/>';
+            echo 'CONTENT : <br/>'.$responseContent.'<br/>';
             
             //control response, if ok
             $packetNumber ++;
             //else do not increment packetNumber, so it will send again the same packet
         }
         
-        fclose($handle); //return boolean
-        //TODO control file closure 
+        return $responseContent;
+    }
+    
+    public function getSyncZip($hashToGet, $numPackets, $user)
+    {
+        // TAKE the hash
+        // begin with part 0, up to numPackets
+        // query and catch request
+        // When all, assemble, verify checksum
+        // load archive
+        // clean online folder
+        $packetNum = 0;
+        $browser = $this->getBrowser();
+        $requestContent = array(
+            'id' => $user->getId(),
+            'username' => $user->getUsername(), 
+            'token' => $user->getExchangeToken(),
+            'hashname' => $hashToGet,
+            'nPackets' => $numPackets,
+            'packetNum' => 0);
         
-        //Changer la fin
-        //return reussite ou echec
-        
-        echo "Status : ";
-        return $content;
-       
-        //TODO ADAPT end of procedure
-        // $hashname = $this->ut->generateGuid();
-        // $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/';
-        // if(!is_dir($dir)){
-            // mkdir($dir);
-        // }
-        // $zip_path = $dir.'sync_'.$hashname.'.zip';
-        //TODO Check ouverture du fichier
-        // $zipFile = fopen($zip_path, 'w+');
-        // $write = fwrite($zipFile, $content);
-        // if(!$write){
-        //SHOULD RETURN ERROR
-            // echo 'An ERROR happen re-writing zip file at reception<br/>';
-        // }
-        // if (!fclose($zipFile)){
-            //TODO SHOULD be an exception
-            // echo 'An ERROR happened closing archive file at reception<br/>';
-        // }
-        // echo 'TRANSFER PASS !';
-        
-        // return $zip_path;
+        while($packetNum < $numPackets){
+            echo 'doing packet '.$packetNum.'<br/>';
+            $requestContent['packetNum'] = $packetNum;
+            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));
+            echo 'I receive : '.$reponse->getContent().'<br/>';
+            $this->processSyncRequest(json_decode($reponse->getContent()));
+            $packetNum++;
+        }
+        return "suceed";
     }
     
     public function getMetadataArray($user, $filename)
     {
+        //TODO clear password from table
         return array(
             'id' => $user->getId(),
             'username' => $user->getUsername(), 
@@ -186,8 +188,10 @@ class TransferManager
             'message' => "");
     }
     
-    public function getPacket($packetNumber, $handle, $fileSize)
+    public function getPacket($packetNumber, $filename)
     {
+        $handle = fopen($filename, 'r');
+        $fileSize = filesize($filename);
         $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
         fseek($handle, $position);
         if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE)
@@ -196,6 +200,8 @@ class TransferManager
         }else{
             $data = fread($handle, $fileSize-$position);
         }
+        fclose($handle);
+        //TODO control file closure
         return $data;
     }
   
@@ -224,7 +230,9 @@ class TransferManager
             //TODO LOAD when patch
             //$this->loadingManager->loadZip($zipName, $user);
             //Create synchronisation
+            //TODO remove creation for zip loading offline
             $toSend = $this->syncManager->createSyncZip($user);
+            $this->userSynchronizedManager->updateUserSynchronized($user);
             return $this->getMetadataArray($user, $toSend);
         }else{
             return array(
@@ -248,6 +256,7 @@ class TransferManager
         }
         fclose($zipFile);
         if(hash_file( "sha256", $zipName) == $content['checksum']){
+            echo "CHECKSUM SUCCEED <br/>";
             return $zipName;
         }else{
             return null;
@@ -256,9 +265,7 @@ class TransferManager
 
     public function confirmRequest($user)
     {
-        $client = new Curl();
-        $client->setTimeout(60);
-        $browser = new Browser($client);
+        $browser = $this->getBrowser();
 
         $reponse = $browser->get(SyncConstant::PLATEFORM_URL.'/transfer/confirm/'.$user->getId()); 
         if ($reponse)       
@@ -269,12 +276,8 @@ class TransferManager
     
     public function getUserInfo($user)
     {
-        $client = new Curl();
-        $client->setTimeout(60);
-        $browser = new Browser($client);
+        $browser = $this->getBrowser();
         
-        // $hash2 = hash("sha256", $user->getUsername().$user->getCreationDate()->format('Y-m-d H:i:s').rand());
-        // echo " token : ".$hash2.'<br/>';
         //TODO remove hardcode
         $contentArray = array(
             'username' => 'ket',
@@ -284,5 +287,13 @@ class TransferManager
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 
         //TODO charge user
         echo "trop cool : ".$reponse->getContent()."<br/>";
+    }
+    
+    private function getBrowser()
+    {
+        $client = new Curl();
+        $client->setTimeout(60);
+        $browser = new Browser($client);
+        return $browser;
     }
 }

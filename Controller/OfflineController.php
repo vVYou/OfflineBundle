@@ -151,7 +151,8 @@ class OfflineController extends Controller
     * @return Response
     */
     public function syncAction($user, User $authUser)
-    {   /**
+    {   /** DEPRECATED
+        *   TODO UPDATE THE FUNCTION !!!!!
         *   TODO CLEAN UNUSED FUNCTIONS
         *   TODO MODIFY return with render different twig donc redirect plutot que le boolean true false
         */
@@ -246,9 +247,8 @@ class OfflineController extends Controller
     {
         $transfer = true;
         if($user == $authUser->getId()){
-            //$test = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
             $toTransfer = './synchronize_down/3/sync_0252D476-FD7D-4E39-9285-A53EDEFCAC90.zip';
-            $test = $this->get('claroline.manager.transfer_manager')->transferZip($toTransfer, $authUser);
+            $test = $this->get('claroline.manager.transfer_manager')->uploadZip($toTransfer, $authUser);
         }else{
             $transfer = false;
         }
@@ -260,7 +260,39 @@ class OfflineController extends Controller
         );
     }
 
-
+    /**
+    *
+    *  Transfer a file (sync archive) from a computer to another
+    *   
+    *   @EXT\Route(
+    *       "/sync/getsync/{user}",
+    *       name="claro_sync_gettest"
+    *   )
+    *
+    * @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:transfer.html.twig")
+    *
+    * @param User $user
+    * @return Reponse
+    */
+    public function getSyncAction($user, User $authUser)
+    {
+        $transfer = true;
+        if($user == $authUser->getId()){
+            $hashToGet = '1A7BE8A0-EE83-4853-93A4-63BABB8B8B84';
+            $numPackets = 3;
+            $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($hashToGet, $numPackets, $authUser);
+            echo $test."<br/>";
+        }else{
+            $transfer = false;
+        }
+        
+        $username = $authUser->getFirstName() . ' ' . $authUser->getLastName(); 
+        return array(
+            'user' => $username,
+            'transfer' => $transfer
+        );
+    }
 
     /**
     *   @EXT\Route(

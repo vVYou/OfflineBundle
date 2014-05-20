@@ -21,7 +21,6 @@ use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 
 class UserSynchronizedRepository extends EntityRepository
 {
-
     /**
     * Deeper magic goes here.
     * Gets userSynchronize from this pure database

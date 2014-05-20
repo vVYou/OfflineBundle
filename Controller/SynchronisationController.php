@@ -45,15 +45,15 @@ class SynchronisationController extends Controller
 
     /**
     *   @EXT\Route(
-    *       "/transfer/getzip/{user}",
-    *       name="claro_sync_get_zip",
+    *       "/transfer/uploadzip/{user}",
+    *       name="claro_sync_upload_zip",
     *   )
     *
     *   @EXT\Method("POST")    
     *
     *   @return Response
     */
-    public function getZipAction($user)
+    public function getUploadAction($user)
     {   /*
         *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
         *   la methode recevra avec la requete le zip de l'utilisateur offline
@@ -76,27 +76,36 @@ class SynchronisationController extends Controller
         $content = $this->get('claroline.manager.transfer_manager')->processSyncRequest($informationTable);
         return new JsonResponse($content, $status);
     }
-        
-        //Compute the answer
-        //$toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
-        
-        // echo "je prepare la reponse".$toSend."<br/>";
-        //$userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
-       // $this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
-
-        //Send back the online sync zip
-        // $response = new StreamedResponse();
-        //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
-        // $response->setCallBack(
-            // function () use ($user) {
-                // readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_D17FAF3F-9737-4148-A012-71AEA4309A03.zip');
-            // function () use ($toSend) {                
-                // readfile($toSend);
-            // }
-        // );
-
-        // return $response;
-    // }
+    
+    
+    /**
+    *   @EXT\Route(
+    *       "/transfer/getzip/{user}",
+    *       name="claro_sync_get_zip",
+    *   )
+    *
+    *   @EXT\Method("POST")    
+    *
+    *   @return Response
+    */
+    public function getZipAction($user)
+    {
+        $content = $this->getRequest()->getContent();
+        $informationTable = (array)json_decode($content);
+        echo "Ask Packet Number : ".$informationTable['packetNum'].'<br/>';
+        $status = $this->authenticator->authenticateWithToken($informationTable['username'], $informationTable['token']) ? 200 : 403;
+        echo "STATUS : ".$status."<br/>";
+        $content = array();
+        if($status = 200){
+            $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$informationTable['id'].'/sync_'.$informationTable['hashname'].'.zip';
+            $em = $this->getDoctrine()->getManager();
+            $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationTable['username']);
+            $content = $this->get('claroline.manager.transfer_manager')->getMetadataArray($user, $fileName);
+            $content['packetNum']=$informationTable['packetNum'];
+            $content['file'] = base64_encode($this->get('claroline.manager.transfer_manager')->getPacket($informationTable['packetNum'], $fileName));
+        }
+        return new JsonResponse($content, $status);
+    }
 
     /**
     *   @EXT\Route(

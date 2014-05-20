@@ -419,7 +419,7 @@ class CreationManager
                 //echo 'Le fichier : '. $resToAdd->getName() . "<br/>";
                 //echo 'Add to the Archive' . "<br/>";
                 //$path = $path.$resToAdd->getWorkspace()->getId();
-                $archive->addFile('..'.SyncConstant::ZIPFILEDIR.$my_res->getHashName(), 'data/'.$path.SyncConstant::ZIPFILEDIR.$my_res->getHashName());
+                $archive->addFile('..'.SyncConstant::ZIPFILEDIR.$my_res->getHashName(), 'data'.$path.SyncConstant::ZIPFILEDIR.$my_res->getHashName());
                 //$archive->renameName('../files/'.$my_res->getHashName(), 'data/'.$workspace_id.'/files/'.$my_res->getHashName());
                 break;
             case SyncConstant::DIR :

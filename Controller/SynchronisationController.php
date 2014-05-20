@@ -62,17 +62,18 @@ class SynchronisationController extends Controller
         *   Generer le zip descendant et le retourner dans la stream reponse
         */
         
-        //TODO verifier l'authentification
+        //TODO verifier l'authentification via token
         
         $content = $this->getRequest()->getContent();
         // echo "CONTENT received : ".$content."<br/>";
         $informationTable = (array)json_decode($content);
         echo "Packet Number : ".$informationTable['packetNum'].'<br/>';
         
-        $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;
+        $status = $this->authenticator->authenticateWithToken($informationTable['username'], $informationTable['token']) ? 200 : 403;
         echo "STATUS : ".$status."<br/>";
-        $status = 403;
-        $content = array();
+        // $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;
+        // echo "STATUS : ".$status."<br/>";
+        $content = $this->get('claroline.manager.transfer_manager')->processSyncRequest($informationTable);
         return new JsonResponse($content, $status);
     }
         //Catch the sync zip sent via POST request

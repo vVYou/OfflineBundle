@@ -108,6 +108,7 @@ class TransferManager
         //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
         //TODO, checkin password !
 
+        echo "FILESIZE SEND :".filesize($toTransfer).'<br/>';
         $requestContent = $this->getMetadataArray($user, $toTransfer);
         
         echo "Checksum : ".$requestContent['checksum'].'<br/>';
@@ -124,6 +125,7 @@ class TransferManager
             
             echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
             
+            //TODO identifier une erreur de transfert (analyse du status)
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));    
             $content = $reponse->getContent();
             // echo $browser->getLastRequest().'<br/>';
@@ -169,9 +171,11 @@ class TransferManager
     public function getMetadataArray($user, $filename)
     {
         return array(
+            'id' => $user->getId(),
             'username' => $user->getUsername(), 
             'password' => "password",
-            'zipHashname' => substr($filename, strlen($filename)-40, 36),
+            'token' => $user->getExchangeToken(),
+            'hashname' => substr($filename, strlen($filename)-40, 36),
             'nPackets' => (int)(filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1,
             'checksum' => hash_file( "sha256", $filename),
             'file' => "", 
@@ -183,58 +187,61 @@ class TransferManager
         // echo "envoi du packet : ".$packetNumber."-----------------------<br/>";
         $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
         fseek($handle, $position);
+        echo "je prends le packet ".$packetNumber."<br/>";
         if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE)
         {
+            echo "packet of size ".SyncConstant::MAX_PACKET_SIZE."<br/>";
             $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
         }else{
+            echo "packet of size ".($fileSize-$position)."<br/>";
             $data = fread($handle, $fileSize-$position);
         }
         return $data;
     }
-    
-    /*
-    *
-    *   GUZZLE example, did not work for know, but we hope to have it soon, it will be better
-    *
-    * @param User $user
-    */
-    public function getSyncZip(User $user)
-    {
-        $client = new Client();
-       // echo 'tiemout<br/>';
-        $response = $client->post(SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId(), [
-            'body' => [
-                'field_name' => 'abc',
-                'file_filed' => fopen(SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync.zip', 'r')
-            ],
-            'timeout' => 45
-        ]);
-       
-        /*
-        $request = $client->createRequest('POST', SyncConstant::PLATEFORM_URL.'/sync/getzip/'.$user->getId());
-        $postBody = $request->getBody();
-        echo 'Body :=  '.get_class($postBody).'<br/>';
-        $postBody->setField('filename', 'sync_zip');
-        //$postBody->addFile(new PostFile('file',  fopen('./synchronize_up/'.$user->getId().'/sync.zip', 'r')));
-        //$response = $client->send($request);
-        */
-        echo 'TRANSFER PASS 2 <br/>';
-    }
   
   
-    public function processSyncRequest($content, $filename, $user)
+    public function processSyncRequest($content)
     {
-        //TODO Verifier le fichier entrant
-        //$content = $request->getContent();
-        //echo "PRINT CONTENT OF REQUEST".$content.'<br/>';
+        //TODO Verifier le fichier entrant (dependency injections)
         
-        //$hashname = $this->ut->generateGuid();
         //TODO, verification de l'existance du dossier
-        $zipName = SyncConstant::SYNCHRO_UP_DIR.$user.'/sync_'.$filename.'.zip';
+        $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$content['packetNum'];
+        $partFile = fopen($partName, 'w+');
+        $write = fwrite($partFile, base64_decode($content['file']));
+        //TODO control writing errors
+        fclose($partFile);
+        echo "Donc le packet recu a la taille : ".filesize($partName)."<br/>";
+        if($content['packetNum'] == ($content['nPackets']-1)){
+            $zipName = $this->assembleParts($content);
+            //Load zipName
+            //Create Archive
+            //Return nPackets & hashname
+        }
+        return array();
+    }
+    
+    public function assembleParts($content)
+    {
+        $zipName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/sync_'.$content['hashname'].'.zip';
         $zipFile = fopen($zipName, 'w+');
-        $write = fwrite($zipFile, $content);
+        for($i = 0; $i<$content['nPackets']; $i++){
+            //TODO control writing errors
+            $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$i;
+            echo "FILESIZE PART ".$i." :".filesize($partName).'<br/>';
+            $partFile = fopen($partName, 'r');
+            $write = fwrite($zipFile, fread($partFile, filesize($partName)));
+            fclose($partFile);
+        }
         fclose($zipFile);
-        return $zipName;
+        echo "FILESIZE RECEIVED :".filesize($zipName).'<br/>';
+        echo "checksum reassembled : ".hash_file( "sha256", $zipName)."<br/>";
+        if(hash_file( "sha256", $zipName) == $content['checksum']){
+            echo "ce sont les meme YOUHOU !!! <br/>";
+            return $zipName;
+        }else{
+            echo "Dam IT it fails! <br/>";
+            return null;
+        }
     }
 
     public function confirmRequest($user)

@@ -331,7 +331,8 @@ class OfflineController extends Controller
     */
     public function getUserAction(User $user)
     {       
-        $this->get('claroline.manager.transfer_manager')->getUserInfo($user);
+        //TODO change "password", with a window getting password in clear
+        $this->get('claroline.manager.transfer_manager')->getUserInfo($user->getUsername(), "password");
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         return array(

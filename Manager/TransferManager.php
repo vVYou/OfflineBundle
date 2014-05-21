@@ -66,10 +66,9 @@ class TransferManager
      *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
      *     "translator"     = @DI\Inject("translator"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "syncManager"= @DI\Inject("claroline.manager.synchronize_manager"),
-     *     "loadingManager" =
-     @DI\Inject("claroline.manager.loading_manager"),*     "userSyncManager" =
-     @DI\Inject("claroline.manager.user_sync_manager"),
+     *     "syncManager"    = @DI\Inject("claroline.manager.synchronize_manager"),
+     *     "loadingManager" = @DI\Inject("claroline.manager.loading_manager"),
+     *     "userSyncManager" = @DI\Inject("claroline.manager.user_sync_manager"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
@@ -105,17 +104,11 @@ class TransferManager
         *   L'objectif de cette fonction est de transférer le fichier en paramètre à la plateforme dans l'URL est sauvegardée dans les constantes
         *   Ce transfer s'effectue en plusieurs paquets
         */
-        
         // ATTENTION, droits d'ecriture de fichier
-        
-        $browser = $this->getBrowser();
-        
-        //Browser post signature                public function post($url, $headers = array(), $content = '')
-        //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
-        
-        //TODO dynamique zip file name - constante repertoire sync_up et sync_down
         //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
         //TODO, checkin password !
+        
+        $browser = $this->getBrowser();
         $requestContent = $this->getMetadataArray($user, $toTransfer);
         $packetNumber = 0;
         $numberOfPackets = $requestContent['nPackets'];
@@ -123,19 +116,16 @@ class TransferManager
         
         while($packetNumber < $numberOfPackets)
         {
-            //TODO D'autres elements a encoder en base 64?
             $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $toTransfer));
             $requestContent['packetNum'] = $packetNumber;
-            
-            echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
+            // echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
             
             //TODO identifier une erreur de transfert (analyse du status)
+            //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip/'.$user->getId(), array(), json_encode($requestContent));    
             $responseContent = $reponse->getContent();
-            // echo $browser->getLastRequest().'<br/>';
-            //Don't forget it's a json to decode
             echo 'CONTENT : <br/>'.$responseContent.'<br/>';
-            
+            $responseContent = (array)json_decode($responseContent);
             //control response, if ok
             $packetNumber ++;
             //else do not increment packetNumber, so it will send again the same packet
@@ -146,12 +136,6 @@ class TransferManager
     
     public function getSyncZip($hashToGet, $numPackets, $user)
     {
-        // TAKE the hash
-        // begin with part 0, up to numPackets
-        // query and catch request
-        // When all, assemble, verify checksum
-        // load archive
-        // clean online folder
         $packetNum = 0;
         $browser = $this->getBrowser();
         $requestContent = array(
@@ -161,8 +145,7 @@ class TransferManager
             'hashname' => $hashToGet,
             'nPackets' => $numPackets,
             'packetNum' => 0);
-        
-        echo "SENDING TAB : ".json_encode($requestContent)."<br/>";
+        // echo "SENDING TAB : ".json_encode($requestContent)."<br/>";
         
         while($packetNum < $numPackets){
             echo 'doing packet '.$packetNum.'<br/>';
@@ -178,11 +161,9 @@ class TransferManager
     
     public function getMetadataArray($user, $filename)
     {
-        //TODO clear password from table
         return array(
             'id' => $user->getId(),
             'username' => $user->getUsername(), 
-            'password' => "password",
             'token' => $user->getExchangeToken(),
             'hashname' => substr($filename, strlen($filename)-40, 36),
             'nPackets' => (int)(filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1,
@@ -198,8 +179,7 @@ class TransferManager
         $fileSize = filesize($filename);
         $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
         fseek($handle, $position);
-        if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE)
-        {
+        if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE){
             $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
         }else{
             $data = fread($handle, $fileSize-$position);
@@ -221,7 +201,6 @@ class TransferManager
         //TODO control writing errors
         fclose($partFile);
         if($content['packetNum'] == ($content['nPackets']-1)){
-            // echo "MAKING END PROCESS <br/>";
             return $this->endExchangeProcess($content, $createSync);
         }
         return array();
@@ -286,14 +265,15 @@ class TransferManager
         }
     }
     
-    public function getUserInfo($user)
+    public function getUserInfo($username, $password)
     {
+        // The given password has to be clear, without any encryption, the security is made by the HTTPS communication
         $browser = $this->getBrowser();
         
         //TODO remove hardcode
         $contentArray = array(
-            'username' => 'ket',
-            'password' => 'password'
+            'username' => $username,
+            'password' => $password
         );
         echo "content array : ".json_encode($contentArray).'<br/>';
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 

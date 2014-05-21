@@ -73,7 +73,7 @@ class SynchronisationController extends Controller
         echo "STATUS : ".$status."<br/>";
         // $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;
         // echo "STATUS : ".$status."<br/>";
-        $content = $this->get('claroline.manager.transfer_manager')->processSyncRequest($informationTable);
+        $content = $this->get('claroline.manager.transfer_manager')->processSyncRequest($informationTable, true);
         return new JsonResponse($content, $status);
     }
     

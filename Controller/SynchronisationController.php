@@ -92,11 +92,11 @@ class SynchronisationController extends Controller
     {
         $content = $this->getRequest()->getContent();
         $informationTable = (array)json_decode($content);
-        echo "Ask Packet Number : ".$informationTable['packetNum'].'<br/>';
+        // echo "Ask Packet Number : ".$informationTable['packetNum'].'<br/>';
         $status = $this->authenticator->authenticateWithToken($informationTable['username'], $informationTable['token']) ? 200 : 403;
-        echo "STATUS : ".$status."<br/>";
+        // echo "STATUS : ".$status."<br/>";
         $content = array();
-        if($status = 200){
+        if($status == 200){
             $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$informationTable['id'].'/sync_'.$informationTable['hashname'].'.zip';
             $em = $this->getDoctrine()->getManager();
             $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationTable['username']);

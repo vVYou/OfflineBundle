@@ -133,6 +133,7 @@ class TransferManager
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip/'.$user->getId(), array(), json_encode($requestContent));    
             $responseContent = $reponse->getContent();
             // echo $browser->getLastRequest().'<br/>';
+            //Don't forget it's a json to decode
             echo 'CONTENT : <br/>'.$responseContent.'<br/>';
             
             //control response, if ok
@@ -161,12 +162,18 @@ class TransferManager
             'nPackets' => $numPackets,
             'packetNum' => 0);
         
+        echo "SENDING TAB : ".json_encode($requestContent)."<br/>";
+        
         while($packetNum < $numPackets){
             echo 'doing packet '.$packetNum.'<br/>';
             $requestContent['packetNum'] = $packetNum;
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));
-            echo 'I receive : '.$reponse->getContent().'<br/>';
-            $this->processSyncRequest(json_decode($reponse->getContent()));
+            $content = $reponse->getContent();
+            echo "CONTENT received : ".$content."<br/>";
+            // $jsonDecode = json_decode($content);
+            // echo "when I decode : ".$jsonDecode."<br/>";
+            // echo "it's type of ".gettype($jsonDecode)."<br/>";
+            $this->processSyncRequest((array)json_decode($content));
             $packetNum++;
         }
         return "suceed";
@@ -209,14 +216,18 @@ class TransferManager
     public function processSyncRequest($content)
     {
         //TODO Verifier le fichier entrant (dependency injections)
-        
+        // echo "I process the request ".$content."<br/>";
         //TODO, verification de l'existance du dossier
         $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$content['packetNum'];
+        echo "PART NAME : ".$partName."<br/>";
         $partFile = fopen($partName, 'w+');
         $write = fwrite($partFile, base64_decode($content['file']));
         //TODO control writing errors
         fclose($partFile);
+        echo "Packet Num process : ".$content['packetNum'].'<br/>';
+        echo "nPackets process : ".($content['nPackets']-1).'<br/>';
         if($content['packetNum'] == ($content['nPackets']-1)){
+            echo "MAKING END PROCESS <br/>";
             return $this->endExchangeProcess($content);
         }
         return array();
@@ -226,11 +237,13 @@ class TransferManager
         $zipName = $this->assembleParts($content);
         if($zipName != null){
             //Load archive
+            echo "LOAD USER <br/>";
             $user = $this->userRepo->loadUserByUsername($content['username']);
             //TODO LOAD when patch
             //$this->loadingManager->loadZip($zipName, $user);
             //Create synchronisation
             //TODO remove creation for zip loading offline
+            echo "CREATE SYNC <br/>";
             $toSend = $this->syncManager->createSyncZip($user);
             $this->userSynchronizedManager->updateUserSynchronized($user);
             return $this->getMetadataArray($user, $toSend);
@@ -259,6 +272,7 @@ class TransferManager
             echo "CHECKSUM SUCCEED <br/>";
             return $zipName;
         }else{
+            echo "CHECKSUM FAIL <br/>";
             return null;
         }
     }

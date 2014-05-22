@@ -27,16 +27,16 @@ use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use JMS\DiExtraBundle\Annotation as DI;
-use \ZipArchive;
+// use \ZipArchive;
 use \DateTime;
 use \Buzz\Browser;
 use \Buzz\Client\Curl;
 use \Buzz\Client\FileGetContents;
-use \Guzzle\Http\Client;
-use \Guzzle\Http\Post\PostFile;
-use \Guzzle\Http\EntityBody;
-use \Guzzle\Http\EntityBodyInterface;
-use \Guzzle\Http\Post\PostBodyInterface;
+// use \Guzzle\Http\Client;
+// use \Guzzle\Http\Post\PostFile;
+// use \Guzzle\Http\EntityBody;
+// use \Guzzle\Http\EntityBodyInterface;
+// use \Guzzle\Http\Post\PostBodyInterface;
 
 
 /**
@@ -51,7 +51,7 @@ class TransferManager
     private $userRepo;
     private $loadingManager;
     private $resourceManager;
-    private $syncManager;
+    private $creationManager;
     private $userSynchronizedManager;
     private $ut;
     
@@ -62,7 +62,7 @@ class TransferManager
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "translator"     = @DI\Inject("translator"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "syncManager"    = @DI\Inject("claroline.manager.creation_manager"),
+     *     "creationManager"    = @DI\Inject("claroline.manager.creation_manager"),
      *     "loadingManager" = @DI\Inject("claroline.manager.loading_manager"),
      *     "userSyncManager" = @DI\Inject("claroline.manager.user_sync_manager"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc")
@@ -72,7 +72,7 @@ class TransferManager
         ObjectManager $om,
         TranslatorInterface $translator,
         ResourceManager $resourceManager,
-        CreationManager $syncManager,
+        CreationManager $creationManager,
         LoadingManager $loadingManager,
         UserSyncManager $userSyncManager,
         ClaroUtilities $ut
@@ -83,7 +83,7 @@ class TransferManager
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
-        $this->syncManager = $syncManager;
+        $this->creationManager = $creationManager;
         $this->loadingManager = $loadingManager;
         $this->userSynchronizedManager = $userSyncManager;
         $this->ut = $ut;
@@ -100,8 +100,8 @@ class TransferManager
         */
         // ATTENTION, droits d'ecriture de fichier
         //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
-        //TODO, checkin password !
         
+        //TODO packetNum as a parameter
         $browser = $this->getBrowser();
         $requestContent = $this->getMetadataArray($user, $toTransfer);
         $packetNumber = 0;
@@ -120,16 +120,17 @@ class TransferManager
             $responseContent = $reponse->getContent();
             echo 'CONTENT : <br/>'.$responseContent.'<br/>';
             $responseContent = (array)json_decode($responseContent);
-            //control response, if ok
+            //TODO incrementer si success code
             $packetNumber ++;
-            //else do not increment packetNumber, so it will send again the same packet
         }
-        
+        //TODO boucler si le checksum est mauvais
         return $responseContent;
     }
     
     public function getSyncZip($hashToGet, $numPackets, $user)
     {
+        //TODO packetnum as a parameter
+        //TODO recommencer en cas d'echec
         $packetNum = 0;
         $browser = $this->getBrowser();
         $requestContent = array(
@@ -148,8 +149,10 @@ class TransferManager
             $content = $reponse->getContent();
             echo "CONTENT received : ".$content."<br/>";
             $this->processSyncRequest((array)json_decode($content), false);
+            //TODO incrementer si success code
             $packetNum++;
         }
+        //TODO return zipPath;
         return "suceed";
     }
     
@@ -210,7 +213,7 @@ class TransferManager
             //$this->loadingManager->loadZip($zipName, $user);
             if($createSync){
                 //Create synchronisation
-                $toSend = $this->syncManager->createSyncZip($user);
+                $toSend = $this->creationManager->createSyncZip($user);
                 $this->userSynchronizedManager->updateUserSynchronized($user);
                 return $this->getMetadataArray($user, $toSend);
             }else{
@@ -281,5 +284,19 @@ class TransferManager
         $client->setTimeout(60);
         $browser = new Browser($client);
         return $browser;
+    }
+    
+    public function getLastPacketUploaded($filename)
+    {
+        // TODO implement
+        // has to get the last packet uploaded on online plateform
+        return null;
+    }
+    
+    public function getNumberOfPacket($filename)
+    {
+        // TODO implement
+        // objectif recuperer le numbre de packet du fichier à télécharger
+        return null;
     }
 }

@@ -167,6 +167,8 @@ class OfflineController extends Controller
             $em = $this->getDoctrine()->getManager();
             $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($authUser);
             $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
+            // $i = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop("24F0DCDC-3B64-4019-8D6A-80FBCEA68AF9", $authUser);
+            // echo "last download : ".$i."<br/>";
             
             //Format the view
             $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();

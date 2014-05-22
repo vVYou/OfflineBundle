@@ -11,6 +11,7 @@
 
 namespace Claroline\OfflineBundle\Manager;
 
+use \DateTime;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\SyncConstant;
@@ -80,7 +81,7 @@ class SynchronisationManager
                 $this->step3Download($user, $userSync, $userSync->getFilename());
                 break;
             case UserSynchronized::FAIL_DOWNLOAD : 
-                // $packetNum = $this->getDownloadStop($userSync->getFilename(), $user);
+                $packetNum = $this->getDownloadStop($userSync->getFilename(), $user);
                 $this->step3Download($user, $userSync, $userSync->getFilename());//null, $packetNum);
                 break;
             case UserSynchronized::SUCCESS_DOWNLOAD :
@@ -132,6 +133,8 @@ class SynchronisationManager
         echo "I 'm at step 4<br/> with filename ".$filename.'<br/>';
         $this->loadingManager->loadZip($filename, $user);
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
+        $now = new DateTime();
+        $userSync->setLastSynchronization($now);
         $this->userSyncManager->updateUserSync($userSync);
     }
     
@@ -144,7 +147,7 @@ class SynchronisationManager
         while($stop)
         {
             $file = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$filename.'_'.($index + 1);
-            if(! file_exists()){
+            if(! file_exists($file)){
                 $stop=false;
             }else{
                 $index++;

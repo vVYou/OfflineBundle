@@ -215,7 +215,7 @@ class TransferManager
             // echo "LOAD USER <br/>";
             $user = $this->userRepo->loadUserByUsername($content['username']);
             //TODO LOAD when patch
-            //$this->loadingManager->loadZip($zipName, $user);
+            // $this->loadingManager->loadZip($zipName, $user);
             if($createSync){
                 //Create synchronisation
                 $toSend = $this->creationManager->createSyncZip($user);
@@ -244,6 +244,7 @@ class TransferManager
             $partFile = fopen($partName, 'r');
             $write = fwrite($zipFile, fread($partFile, filesize($partName)));
             fclose($partFile);
+            unlink($partName);
         }
         fclose($zipFile);
         if(hash_file( "sha256", $zipName) == $content['checksum']){

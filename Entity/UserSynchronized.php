@@ -17,10 +17,12 @@ use Gedmo\Mapping\Annotation as Gedmo;
  */
 class UserSynchronized
 {   
-    const TRANSFER_INIT = 0;
-    const TRANSFER_SUCCES = 1;
-    const TRANSFER_IN_PROGRESS = 2;
-    const TRANSFER_FAIL = 3;
+    const SUCCESS_SYNC = 0;
+    const STARTED_UPLOAD = 1;
+    const FAIL_UPLOAD = 2;
+    const SUCCESS_UPLOAD = 3;
+    const FAIL_DOWNLOAD = 4;
+    const SUCCESS_DOWNLOAD = 5;
 
     /**
      * @ORM\Id
@@ -72,7 +74,7 @@ class UserSynchronized
     public function __construct(User $user)
     {
         $this->user = $user;
-        $this->status = TRANSFER_INIT;
+        $this->status = SUCCESS_SYNC;
     }
     
     /**

@@ -17,14 +17,12 @@ use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Manager\LoadingManager;
 use Claroline\OfflineBundle\Manager\CreationManager;
 use Claroline\OfflineBundle\Manager\UserSyncManager;
 use Claroline\OfflineBundle\SyncConstant;
-//use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -48,7 +46,6 @@ use \Guzzle\Http\Post\PostBodyInterface;
 class TransferManager
 {
     private $om;
-    private $pagerFactory;
     private $translator;
     private $userSynchronizedRepo;
     private $userRepo;
@@ -63,10 +60,9 @@ class TransferManager
      *
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
      *     "translator"     = @DI\Inject("translator"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "syncManager"    = @DI\Inject("claroline.manager.synchronize_manager"),
+     *     "syncManager"    = @DI\Inject("claroline.manager.creation_manager"),
      *     "loadingManager" = @DI\Inject("claroline.manager.loading_manager"),
      *     "userSyncManager" = @DI\Inject("claroline.manager.user_sync_manager"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc")
@@ -74,7 +70,6 @@ class TransferManager
      */
     public function __construct(
         ObjectManager $om,
-        PagerFactory $pagerFactory,
         TranslatorInterface $translator,
         ResourceManager $resourceManager,
         CreationManager $syncManager,
@@ -84,7 +79,6 @@ class TransferManager
     )
     {
         $this->om = $om;
-        $this->pagerFactory = $pagerFactory;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->translator = $translator;

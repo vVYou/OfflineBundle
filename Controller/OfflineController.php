@@ -168,7 +168,7 @@ class OfflineController extends Controller
         else
         {
             //CREATE THE SYNC_ZIP
-            $archive = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
+            $archive = $this->get('claroline.manager.creation_manager')->createSyncZip($authUser);
             echo 'I send : '.$archive.'<br/>';
             
             //TRANSFERT THE ZIP
@@ -217,7 +217,7 @@ class OfflineController extends Controller
     */
     public function seekAction(User $user)
     {
-        $test = $this->get('claroline.manager.synchronize_manager')->createSyncZip($user);
+        $test = $this->get('claroline.manager.creation_manager')->createSyncZip($user);
         $username = $user->getFirstName() . ' ' . $user->getLastName(); 
         echo 'Congratulations '.$username.'! '."<br/>".'You are now synchronized!';
         echo ''.$test;   

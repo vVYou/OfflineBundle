@@ -177,7 +177,7 @@ class SynchronisationController extends Controller
     {
         //TODO Authentification User
         $authUser = $this->getUserFromID($user);
-        $toSend = $this->get('claroline.manager.synchronize_manager')->writeWorspaceList($authUser);
+        $toSend = $this->get('claroline.manager.creation_manager')->writeWorspaceList($authUser);
         
         //Send back the online sync zip
         $response = new StreamedResponse();

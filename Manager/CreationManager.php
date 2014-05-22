@@ -34,7 +34,7 @@ use \DOMElement;
 use \DateTime;
 
 /**
- * @DI\Service("claroline.manager.synchronize_manager")
+ * @DI\Service("claroline.manager.creation_manager")
  */
 class CreationManager
 {

@@ -62,16 +62,15 @@ class OfflineController extends Controller
     public function helloAction(User $user)
     {
         $em = $this->getDoctrine()->getManager();
-        //TODO Should use manager ?
-        $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         
-        if ($userSynchroDate) {
+        if ($userSync) {
         //TODO Liens vers la route de synchronisation
             return $this->render('ClarolineOfflineBundle:Offline:sync.html.twig', array(
                 'user' => $username,
-                'user_sync_date' => $userSynchroDate[0]->getLastSynchronization()
+                'user_sync_date' => $userSync[0]->getLastSynchronization()
             ) );
         }else{
         //TODO Methode d'installation
@@ -151,9 +150,7 @@ class OfflineController extends Controller
     * @return Response
     */
     public function syncAction($user, User $authUser)
-    {   /** DEPRECATED
-        *   TODO UPDATE THE FUNCTION !!!!!
-        *   TODO CLEAN UNUSED FUNCTIONS
+    {  /** 
         *   TODO MODIFY return with render different twig donc redirect plutot que le boolean true false
         */
         
@@ -167,29 +164,9 @@ class OfflineController extends Controller
         }
         else
         {
-            //CREATE THE SYNC_ZIP
-            $archive = $this->get('claroline.manager.creation_manager')->createSyncZip($authUser);
-            echo 'I send : '.$archive.'<br/>';
-            
-            //TRANSFERT THE ZIP
-            $this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
-            $response = $this->get('claroline.manager.transfer_manager')->transferZip($archive, $authUser);
-            echo 'I received  : '.$response.'<br/>';
-            
-            //LOAD RECEIVED SYNC_ZIP 
-            $this->get('claroline.manager.loading_manager')->loadZip($response, $authUser);
-            
-            //echo 'SUCCEED';
-            
-            //UPDATE SYNCHRONIZE DATE
-            $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
-
-            //CONFIRM UPDATE TO ONLINE
-            $this->get('claroline.manager.transfer_manager')->confirmRequest($authUser);
-            
-            //clean directory
-            unlink($archive);
-            unlink($response);
+            $em = $this->getDoctrine()->getManager();
+            $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($authUser);
+            $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
             
             //Format the view
             $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();

@@ -64,6 +64,7 @@ class SynchronisationManager
     public function synchroniseUser(User $user, UserSynchronized $userSync)
     {
         $status = $userSync->getStatus();
+        echo "begin with the switch, status is ".$status."<br/>";
         switch($status){
             case UserSynchronized::SUCCESS_SYNC :
                 $this->step1Create($user, $userSync);
@@ -91,40 +92,47 @@ class SynchronisationManager
     
     public function step1Create(User $user, UserSynchronized $userSync)
     {
-        $toUpload = $creationManager->createSyncZip($user);
+        echo "I 'm at step 1<br/>";
+        $toUpload = $this->creationManager->createSyncZip($user);
+        $userSync->setFilename($toUpload);
         $userSync->setStatus(UserSynchronized::STARTED_UPLOAD);
-        //TODO Pierre-Yves updateUserSync OK ??? j'avoue que je me pose des questions sur la gestion des entités
-        $userSyncManager->updateUserSync($userSync);
+        $this->userSyncManager->updateUserSync($userSync);
+        echo "j'ai créé ceci ".$toUpload."<br/>";
         $this->step2Upload($user, $userSync, $toUpload);
     }
     
     public function step2Upload(User $user, UserSynchronized $userSync, $filename, $packetNum = 0)
     {
+        echo "I 'm at step 2<br/>";
         //TODO organise data return from transferManager
-        $toDownload = $transferManager->uploadZip($filename, $user); //FROM PACKET NUM...
+        $toDownload = $this->transferManager->uploadZip($filename, $user); //FROM PACKET NUM...
         $userSync->setFilename($toDownload['hashname']);
         $userSync->setStatus(UserSynchronized::SUCCESS_UPLOAD);
-        $userSyncManager->updateUserSync($userSync);
-        $this->step3Download($user, $userSync, $toDownload['filename'], $toDownload['nPackets']);
+        $this->userSyncManager->updateUserSync($userSync);
+        echo "je vais telecharger ceci ".$toDownload['hashname']."<br/>";
+        $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['nPackets']);
     }
     
-    public function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = null, $packetNum = 0)
+    public function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = 1, $packetNum = 0) //Change nPackets to null
     {
-        if(nPackets == null){
-            $nPackets = $transferManager->getNumberOfPacket($filename);
+        echo "I 'm at step 3<br/>";
+        if($nPackets == null){
+            $nPackets = $this->transferManager->getNumberOfPacket($filename);
         }else{
-            $toLoad = $transferManager->getSyncZip($filename, $nPackets, $user);
+            $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $user);
             $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
-            $userSyncManager->updateUserSync($userSync);
+            $this->userSyncManager->updateUserSync($userSync);
+            echo "il me reste donc ceci a charger ".$toLoad."<br/>";
             $this->step4Load($user, $userSync, $toLoad);
         }
     }
     
     public function step4Load(User $user, UserSynchronized $userSync, $filename)
     {
-        $loadManager->loadZip($filename, $user);
+        echo "I 'm at step 4<br/> with filename ".$filename.'<br/>';
+        $this->loadingManager->loadZip($filename, $user);
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
-        $userSyncManager->updateUserSync($userSync);
+        $this->userSyncManager->updateUserSync($userSync);
     }
     
     public function getDownloadStop($filename, $user)

@@ -67,10 +67,10 @@ class SynchronisationController extends Controller
         $content = $this->getRequest()->getContent();
         // echo "CONTENT received : ".$content."<br/>";
         $informationTable = (array)json_decode($content);
-        echo "Packet Number : ".$informationTable['packetNum'].'<br/>';
+        // echo "Packet Number : ".$informationTable['packetNum'].'<br/>';
         
         $status = $this->authenticator->authenticateWithToken($informationTable['username'], $informationTable['token']) ? 200 : 403;
-        echo "STATUS : ".$status."<br/>";
+        // echo "STATUS : ".$status."<br/>";
         // $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;
         // echo "STATUS : ".$status."<br/>";
         $content = array();

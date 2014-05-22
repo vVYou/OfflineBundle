@@ -141,19 +141,23 @@ class TransferManager
             'nPackets' => $numPackets,
             'packetNum' => 0);
         // echo "SENDING TAB : ".json_encode($requestContent)."<br/>";
-        
+        $zipName = "";
         while($packetNum < $numPackets){
             echo 'doing packet '.$packetNum.'<br/>';
             $requestContent['packetNum'] = $packetNum;
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));
             $content = $reponse->getContent();
             echo "CONTENT received : ".$content."<br/>";
-            $this->processSyncRequest((array)json_decode($content), false);
+            $zipName = $this->processSyncRequest((array)json_decode($content), false);
             //TODO incrementer si success code
             $packetNum++;
         }
-        //TODO return zipPath;
-        return "suceed";
+        return $zipName;
+    }
+    
+    public function getNumberOfParts($filename)
+    {
+        return (int)(filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1;
     }
     
     public function getMetadataArray($user, $filename)
@@ -163,7 +167,7 @@ class TransferManager
             'username' => $user->getUsername(), 
             'token' => $user->getExchangeToken(),
             'hashname' => substr($filename, strlen($filename)-40, 36),
-            'nPackets' => (int)(filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1,
+            'nPackets' => $this->getNumberOfParts($filename),
             'checksum' => hash_file( "sha256", $filename),
             'file' => "", 
             'packetNum' => 0,
@@ -172,6 +176,7 @@ class TransferManager
     
     public function getPacket($packetNumber, $filename)
     {
+        // TODO verifier que le paquet demander est credible => packetNum*packetSize<filesize
         $handle = fopen($filename, 'r');
         $fileSize = filesize($filename);
         $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
@@ -217,11 +222,10 @@ class TransferManager
                 $this->userSynchronizedManager->updateUserSynchronized($user);
                 return $this->getMetadataArray($user, $toSend);
             }else{
-                return array(
-                    'message' => 'loading complete'
-                );
+                return $zipName;
             }
         }else{
+            // TODO erreurs intelligentes et catch a la reception !
             return array(
                 'message' => 'error assemble parts',
                 'nPackets' => 0,
@@ -243,10 +247,10 @@ class TransferManager
         }
         fclose($zipFile);
         if(hash_file( "sha256", $zipName) == $content['checksum']){
-            echo "CHECKSUM SUCCEED <br/>";
+            // echo "CHECKSUM SUCCEED <br/>";
             return $zipName;
         }else{
-            echo "CHECKSUM FAIL <br/>";
+            // echo "CHECKSUM FAIL <br/>";
             return null;
         }
     }
@@ -293,7 +297,7 @@ class TransferManager
         return null;
     }
     
-    public function getNumberOfPacket($filename)
+    public function getOnlineNumberOfPackets($filename)
     {
         // TODO implement
         // objectif recuperer le numbre de packet du fichier à télécharger

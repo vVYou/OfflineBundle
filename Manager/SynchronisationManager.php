@@ -79,7 +79,7 @@ class SynchronisationManager
                 $this->step3Download($user, $userSync, $userSync->getFilename());
                 break;
             case UserSynchronized::FAIL_DOWNLOAD : 
-                // $packetNum = $this->getDownloadStop($userSync->getFilename());
+                // $packetNum = $this->getDownloadStop($userSync->getFilename(), $user);
                 $this->step3Download($user, $userSync, $userSync->getFilename());//null, $packetNum);
                 break;
             case UserSynchronized::SUCCESS_DOWNLOAD :
@@ -127,10 +127,21 @@ class SynchronisationManager
         $userSyncManager->updateUserSync($userSync);
     }
     
-    public function getDownloadStop($filename)
+    public function getDownloadStop($filename, $user)
     {
         // TODO cette fonction doit retourner le dernier paquet téléchargé sur l'ordinateur;
         // Si aucun fichier n'est trouvé avec le nom envoyé, -1 est retourné
-        return -1;
+        $stop = true;
+        $index = -1;
+        while($stop)
+        {
+            $file = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$filename.'_'.($index + 1);
+            if(! file_exists()){
+                $stop=false;
+            }else{
+                $index++;
+            }
+        }
+        return $index;
     }
 }

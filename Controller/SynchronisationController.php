@@ -66,16 +66,16 @@ class SynchronisationController extends Controller
         
         $content = $this->getRequest()->getContent();
         // echo "CONTENT received : ".$content."<br/>";
-        $informationTable = (array)json_decode($content);
-        // echo "Packet Number : ".$informationTable['packetNum'].'<br/>';
+        $informationsArray = (array)json_decode($content);
+        // echo "Packet Number : ".$informationsArray['packetNum'].'<br/>';
         
-        $status = $this->authenticator->authenticateWithToken($informationTable['username'], $informationTable['token']) ? 200 : 403;
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 403;
         // echo "STATUS : ".$status."<br/>";
-        // $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;
+        // $status = $this->authenticator->authenticate($informationsArray['username'], $informationsArray['password']) ? 200 : 403;
         // echo "STATUS : ".$status."<br/>";
         $content = array();
         if ($status == 200){
-            $content = $this->get('claroline.manager.transfer_manager')->processSyncRequest($informationTable, true);
+            $content = $this->get('claroline.manager.transfer_manager')->processSyncRequest($informationsArray, true);
         }
         return new JsonResponse($content, $status);
     }
@@ -94,18 +94,18 @@ class SynchronisationController extends Controller
     public function getZipAction($user)
     {
         $content = $this->getRequest()->getContent();
-        $informationTable = (array)json_decode($content);
-        // echo "Ask Packet Number : ".$informationTable['packetNum'].'<br/>';
-        $status = $this->authenticator->authenticateWithToken($informationTable['username'], $informationTable['token']) ? 200 : 403;
+        $informationsArray = (array)json_decode($content);
+        // echo "Ask Packet Number : ".$informationsArray['packetNum'].'<br/>';
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 403;
         // echo "STATUS : ".$status."<br/>";
         $content = array();
         if($status == 200){
-            $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$informationTable['id'].'/sync_'.$informationTable['hashname'].'.zip';
+            $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$informationsArray['id'].'/sync_'.$informationsArray['hashname'].'.zip';
             $em = $this->getDoctrine()->getManager();
-            $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationTable['username']);
+            $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationsArray['username']);
             $content = $this->get('claroline.manager.transfer_manager')->getMetadataArray($user, $fileName);
-            $content['packetNum']=$informationTable['packetNum'];
-            $content['file'] = base64_encode($this->get('claroline.manager.transfer_manager')->getPacket($informationTable['packetNum'], $fileName));
+            $content['packetNum']=$informationsArray['packetNum'];
+            $content['file'] = base64_encode($this->get('claroline.manager.transfer_manager')->getPacket($informationsArray['packetNum'], $fileName));
         }
         return new JsonResponse($content, $status);
     }
@@ -122,23 +122,51 @@ class SynchronisationController extends Controller
     */
     public function getUserIformations()
     {
-        //TODO imposer ceci en HTTPS !
         $content = $this->getRequest()->getContent();
-        echo "receive content <br/>";
-        $informationTable = (array)json_decode($content);
-        $status = $this->authenticator->authenticate($informationTable['username'], $informationTable['password']) ? 200 : 403;        
-        echo "STATUS : ".$status."<br/>";
+        // echo "receive content <br/>";
+        $informationsArray = (array)json_decode($content);
+        $status = $this->authenticator->authenticate($informationsArray['username'], $informationsArray['password']) ? 200 : 403;        
+        // echo "STATUS : ".$status."<br/>";
         $returnContent = array(); 
 
         if($status == 200){
             // Get User informations and return them
             $em = $this->getDoctrine()->getManager();
-            $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationTable['username']);
+            $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationsArray['username']);
             //TODO ajout du token
             $returnContent = $user->getUserAsTab();
         }
-        
         return new JsonResponse($returnContent, $status);
+    }
+    
+   /**
+    *   @EXT\Route(
+    *       "/sync/lastUploaded",
+    *       name="claro_sync_last_uploaded",
+    *   )
+    *
+    *   @EXT\Method("POST")    
+    *
+    *   @return Response
+    */
+    public function getLastUploaded()
+    {
+        $content = $this->getRequest()->getContent();
+        $informationsArray = (array)json_decode($content);
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 403;
+        $content = array();
+        if($status == 200)
+        {
+            $filename = SyncConstant::SYNCHRO_UP_DIR.$informationsArray['id'].'/'.$informationsArray['hashname'];
+            $em = $this->getDoctrine()->getManager();
+            $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationsArray['username']);
+            $lastUp = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop($filename, $user);
+            $content = array(
+                'hashname' => $informationsArray['hashname'],
+                'lastUpload' => $lastUp
+            );
+        }
+        return new JsonResponse($content, $status);
     }
     
     /**

@@ -291,14 +291,21 @@ class TransferManager
         return $browser;
     }
     
-    public function getLastPacketUploaded($filename)
+    public function getLastPacketUploaded($filename, $user)
     {
-        // TODO implement
-        // has to get the last packet uploaded on online plateform
+        echo "filename : ".$filename."<br/>";
+        $browser = $this->getBrowser();
+        $contentArray = array(
+            'username' => $user->getUsername(),
+            'id' => $user->getId(),
+            'token' => $user->getExchangeToken(),
+            'hashname' => substr($filename, strlen($filename)-40, 36)
+        );
+        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/lastUploaded', array(), json_encode($contentArray)); 
         return null;
     }
     
-    public function getOnlineNumberOfPackets($filename)
+    public function getOnlineNumberOfPackets($filename, $user)
     {
         // TODO implement
         // objectif recuperer le numbre de packet du fichier à télécharger

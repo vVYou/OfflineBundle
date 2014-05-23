@@ -71,8 +71,8 @@ class SynchronisationManager
                 $this->step1Create($user, $userSync);
                 break;
             case UserSynchronized::STARTED_UPLOAD :
-                // $packetNum = $transferManager->getLastPacketUploaded($userSync->getFilename());
-                $this->step2Upload($user, $userSync, $userSync->getFilename());//, $packetNum);
+                $packetNum = $this->transferManager->getLastPacketUploaded($userSync->getFilename(), $user);
+                $this->step2Upload($user, $userSync, $userSync->getFilename(), $packetNum);
                 break;
             case UserSynchronized::FAIL_UPLOAD :
                 $this->step2Upload($user, $userSync, $userSync->getFilename());
@@ -118,7 +118,7 @@ class SynchronisationManager
     {
         echo "I 'm at step 3<br/>";
         if($nPackets == null){
-            $nPackets = $this->transferManager->getNumberOfPacket($filename);
+            $nPackets = $this->transferManager->getOnlineNumberOfPackets($filename, $user);
         }else{
             $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $user);
             $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
@@ -139,9 +139,11 @@ class SynchronisationManager
     }
     
     public function getDownloadStop($filename, $user)
-    {
-        // TODO cette fonction doit retourner le dernier paquet téléchargé sur l'ordinateur;
-        // Si aucun fichier n'est trouvé avec le nom envoyé, -1 est retourné
+    {  /*
+        * Cette fonction doit retourner le dernier paquet téléchargé sur l'ordinateur;
+        * Si aucun fichier n'est trouvé avec le nom envoyé, -1 est retourné
+        */
+        
         $stop = true;
         $index = -1;
         while($stop)

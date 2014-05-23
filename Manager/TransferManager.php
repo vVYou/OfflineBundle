@@ -92,7 +92,7 @@ class TransferManager
     /*
     *   @param User $user
     */
-    public function uploadZip($toTransfer, User $user)    
+    public function uploadZip($toTransfer, User $user, $packetNumber)    
     {  /*
         *   L'objectif de cette fonction est de transférer le fichier en paramètre à la plateforme dans l'URL est sauvegardée dans les constantes
         *   Ce transfer s'effectue en plusieurs paquets
@@ -103,7 +103,6 @@ class TransferManager
         //TODO packetNum as a parameter
         $browser = $this->getBrowser();
         $requestContent = $this->getMetadataArray($user, $toTransfer);
-        $packetNumber = 0;
         $numberOfPackets = $requestContent['nPackets'];
         $responseContent = "";
         
@@ -126,9 +125,8 @@ class TransferManager
         return $responseContent;
     }
     
-    public function getSyncZip($hashToGet, $numPackets, $user)
+    public function getSyncZip($hashToGet, $numPackets, $packetNum, $user)
     {
-        //TODO packetnum as a parameter
         //TODO recommencer en cas d'echec
         $packetNum = 0;
         $browser = $this->getBrowser();

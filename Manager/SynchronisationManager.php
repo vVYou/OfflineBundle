@@ -106,7 +106,7 @@ class SynchronisationManager
     public function step2Upload(User $user, UserSynchronized $userSync, $filename, $packetNum = 0)
     {
         echo "I 'm at step 2 ".$packetNum."<br/>";
-        $toDownload = $this->transferManager->uploadZip($filename, $user); //FROM PACKET NUM...
+        $toDownload = $this->transferManager->uploadZip($filename, $user, $packetNum);
         $userSync->setFilename($toDownload['hashname']);
         $userSync->setStatus(UserSynchronized::SUCCESS_UPLOAD);
         $this->userSyncManager->updateUserSync($userSync);
@@ -123,7 +123,7 @@ class SynchronisationManager
             //TODO if nPackets = -1; status=FAIL; $this->synchronise
             echo "nPackets = ".$nPackets."<br/>";
         }
-        $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $user);
+        $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $packetNum, $user);
         $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
         $this->userSyncManager->updateUserSync($userSync);
         echo "il me reste donc ceci a charger ".$toLoad."<br/>";

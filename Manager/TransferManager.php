@@ -31,11 +31,6 @@ use \DateTime;
 use \Buzz\Browser;
 use \Buzz\Client\Curl;
 use \Buzz\Client\FileGetContents;
-// use \Guzzle\Http\Client;
-// use \Guzzle\Http\Post\PostFile;
-// use \Guzzle\Http\EntityBody;
-// use \Guzzle\Http\EntityBodyInterface;
-// use \Guzzle\Http\Post\PostBodyInterface;
 
 
 /**
@@ -87,7 +82,7 @@ class TransferManager
         $this->userSynchronizedManager = $userSyncManager;
         $this->ut = $ut;
     }
-    
+
     
     /*
     *   @param User $user
@@ -100,7 +95,6 @@ class TransferManager
         // ATTENTION, droits d'ecriture de fichier
         //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
         
-        //TODO packetNum as a parameter
         $browser = $this->getBrowser();
         $requestContent = $this->getMetadataArray($user, $toTransfer);
         $numberOfPackets = $requestContent['nPackets'];
@@ -202,10 +196,10 @@ class TransferManager
     public function getPacket($packetNumber, $filename)
     {
         $fileSize = filesize($filename);
-        if($packetNumber*SyncConstant::MAX_PACKET_SIZE > $fileSize){
+        $handle = fopen($filename, 'r');
+        if($packetNumber*SyncConstant::MAX_PACKET_SIZE > $fileSize || !$handle){
             return null;
         }else{
-            $handle = fopen($filename, 'r');
             $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
             fseek($handle, $position);
             if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE){
@@ -226,6 +220,7 @@ class TransferManager
         //TODO, verification de l'existance du dossier
         $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$content['packetNum'];
         $partFile = fopen($partName, 'w+');
+        if(!$partFile) return array( "status" => 424 );
         $write = fwrite($partFile, base64_decode($content['file']));
         //TODO control writing errors
         fclose($partFile);
@@ -268,10 +263,12 @@ class TransferManager
     {
         $zipName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/sync_'.$content['hashname'].'.zip';
         $zipFile = fopen($zipName, 'w+');
+        if(!$zipFile) return null;
         for($i = 0; $i<$content['nPackets']; $i++){
             //TODO control writing errors
             $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$i;
             $partFile = fopen($partName, 'r');
+            if(!$partFile) return null;
             $write = fwrite($zipFile, fread($partFile, filesize($partName)));
             fclose($partFile);
             unlink($partName);

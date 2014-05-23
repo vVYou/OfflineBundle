@@ -118,10 +118,11 @@ class SynchronisationManager
     {
         echo "I 'm at step 3<br/>";
         if($nPackets == null){
-            echo "nPackets null <br/>";
             $nPackets = $this->transferManager->getOnlineNumberOfPackets($filename, $user);
-            //TODO if nPackets = -1; status=FAIL; $this->synchronise
-            echo "nPackets = ".$nPackets."<br/>";
+        }
+        if($nPackets == -1){
+            //TODO Change status to fail ? => problem with filename
+            $this->step1Create($user, $userSync);
         }
         $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $packetNum, $user);
         $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);

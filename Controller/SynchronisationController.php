@@ -69,13 +69,13 @@ class SynchronisationController extends Controller
         $informationsArray = (array)json_decode($content);
         // echo "Packet Number : ".$informationsArray['packetNum'].'<br/>';
         
-        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 403;
-        // echo "STATUS : ".$status."<br/>";
-        // $status = $this->authenticator->authenticate($informationsArray['username'], $informationsArray['password']) ? 200 : 403;
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 401;
         // echo "STATUS : ".$status."<br/>";
         $content = array();
         if ($status == 200){
             $content = $this->get('claroline.manager.transfer_manager')->processSyncRequest($informationsArray, true);
+            // echo "what s generate by process request? : ".json_encode($content).'<br/>';
+            $status = $content['status'];
         }
         return new JsonResponse($content, $status);
     }
@@ -96,7 +96,7 @@ class SynchronisationController extends Controller
         $content = $this->getRequest()->getContent();
         $informationsArray = (array)json_decode($content);
         // echo "Ask Packet Number : ".$informationsArray['packetNum'].'<br/>';
-        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 403;
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 401;
         // echo "STATUS : ".$status."<br/>";
         $content = array();
         if($status == 200){
@@ -105,7 +105,12 @@ class SynchronisationController extends Controller
             $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationsArray['username']);
             $content = $this->get('claroline.manager.transfer_manager')->getMetadataArray($user, $fileName);
             $content['packetNum']=$informationsArray['packetNum'];
-            $content['file'] = base64_encode($this->get('claroline.manager.transfer_manager')->getPacket($informationsArray['packetNum'], $fileName));
+            $data = $this->get('claroline.manager.transfer_manager')->getPacket($informationsArray['packetNum'], $fileName);
+            if($data == null){
+                $status = 424;
+            }else{
+                $content['file'] = base64_encode($data);
+            }
         }
         return new JsonResponse($content, $status);
     }
@@ -125,7 +130,7 @@ class SynchronisationController extends Controller
         $content = $this->getRequest()->getContent();
         // echo "receive content <br/>";
         $informationsArray = (array)json_decode($content);
-        $status = $this->authenticator->authenticate($informationsArray['username'], $informationsArray['password']) ? 200 : 403;        
+        $status = $this->authenticator->authenticate($informationsArray['username'], $informationsArray['password']) ? 200 : 401;        
         // echo "STATUS : ".$status."<br/>";
         $returnContent = array(); 
 
@@ -153,7 +158,7 @@ class SynchronisationController extends Controller
     {
         $content = $this->getRequest()->getContent();
         $informationsArray = (array)json_decode($content);
-        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 403;
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 401;
         $content = array();
         if($status == 200)
         {
@@ -183,7 +188,7 @@ class SynchronisationController extends Controller
     {
         $content = $this->getRequest()->getContent();
         $informationsArray = (array)json_decode($content);
-        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 403;
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 401;
         $content = array();
         if($status == 200)
         {

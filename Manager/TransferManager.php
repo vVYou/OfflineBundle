@@ -105,24 +105,44 @@ class TransferManager
         $requestContent = $this->getMetadataArray($user, $toTransfer);
         $numberOfPackets = $requestContent['nPackets'];
         $responseContent = "";
+        $status = 200;
         
-        while($packetNumber < $numberOfPackets)
+        while($packetNumber < $numberOfPackets && $status == 200)
         {
             $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $toTransfer));
             $requestContent['packetNum'] = $packetNumber;
             // echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
             
-            //TODO identifier une erreur de transfert (analyse du status)
             //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip/'.$user->getId(), array(), json_encode($requestContent));    
             $responseContent = $reponse->getContent();
             echo 'CONTENT : <br/>'.$responseContent.'<br/>';
+            $status = $reponse->getStatusCode();
             $responseContent = (array)json_decode($responseContent);
-            //TODO incrementer si success code
             $packetNumber ++;
         }
-        //TODO boucler si le checksum est mauvais
-        return $responseContent;
+        if($status != 200){
+            return $this->analyseStatusCode($status);
+        }else{
+            return $responseContent;
+        }
+    }
+    
+    public function analyseStatusCode($status)
+    {   // TODO throw exception ?
+        echo "the status ".$status." to analyse <br/>";
+        switch($status){
+            case 200:
+                return true;
+            case 401:
+                echo "error authentication <br/>";
+                return false;
+            case 424:
+                echo "method failure <br/>";
+                return false;
+            default:
+                return true;
+        }
     }
     
     public function getSyncZip($hashToGet, $numPackets, $packetNum, $user)
@@ -138,18 +158,24 @@ class TransferManager
             'nPackets' => $numPackets,
             'packetNum' => 0);
         // echo "SENDING TAB : ".json_encode($requestContent)."<br/>";
-        $zipName = "";
-        while($packetNum < $numPackets){
+        $processContent = null;
+        $status = 200;
+        while($packetNum < $numPackets && $status == 200){
             echo 'doing packet '.$packetNum.'<br/>';
             $requestContent['packetNum'] = $packetNum;
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));
             $content = $reponse->getContent();
             echo "CONTENT received : ".$content."<br/>";
-            $zipName = $this->processSyncRequest((array)json_decode($content), false);
-            //TODO incrementer si success code
+            $status = $reponse->getStatusCode();
+            $processContent = $this->processSyncRequest((array)json_decode($content), false);
             $packetNum++;
         }
-        return $zipName;
+        if($status != 200 || $processContent['status'] != 200){
+            //TODO, traitement different que pour upload
+            return $this->analyseStatusCode($status);
+        }else{
+            return $processContent['zip_name'];
+        }
     }
     
     public function getNumberOfParts($filename)
@@ -169,27 +195,28 @@ class TransferManager
             'token' => $user->getExchangeToken(),
             'hashname' => substr($filename, strlen($filename)-40, 36),
             'nPackets' => $this->getNumberOfParts($filename),
-            'checksum' => hash_file( "sha256", $filename),
-            'file' => "", 
-            'packetNum' => 0,
-            'message' => "");
+            'checksum' => hash_file( "sha256", $filename)
+        );
     }
     
     public function getPacket($packetNumber, $filename)
     {
-        // TODO verifier que le paquet demander est credible => packetNum*packetSize<filesize
-        $handle = fopen($filename, 'r');
         $fileSize = filesize($filename);
-        $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
-        fseek($handle, $position);
-        if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE){
-            $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
+        if($packetNumber*SyncConstant::MAX_PACKET_SIZE > $fileSize){
+            return null;
         }else{
-            $data = fread($handle, $fileSize-$position);
+            $handle = fopen($filename, 'r');
+            $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
+            fseek($handle, $position);
+            if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE){
+                $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
+            }else{
+                $data = fread($handle, $fileSize-$position);
+            }
+            fclose($handle);
+            //TODO control file closure
+            return $data;
         }
-        fclose($handle);
-        //TODO control file closure
-        return $data;
     }
   
   
@@ -198,7 +225,6 @@ class TransferManager
         //TODO Verifier le fichier entrant (dependency injections)
         //TODO, verification de l'existance du dossier
         $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$content['packetNum'];
-        // echo "PART NAME : ".$partName."<br/>";
         $partFile = fopen($partName, 'w+');
         $write = fwrite($partFile, base64_decode($content['file']));
         //TODO control writing errors
@@ -206,7 +232,9 @@ class TransferManager
         if($content['packetNum'] == ($content['nPackets']-1)){
             return $this->endExchangeProcess($content, $createSync);
         }
-        return array();
+        return array(
+            "status" => 200
+        );
     }
     
     public function endExchangeProcess($content, $createSync){
@@ -220,16 +248,18 @@ class TransferManager
                 //Create synchronisation
                 $toSend = $this->creationManager->createSyncZip($user);
                 $this->userSynchronizedManager->updateUserSynchronized($user);
-                return $this->getMetadataArray($user, $toSend);
+                $metaDataArray = $this->getMetadataArray($user, $toSend);
+                $metaDataArray["status"] = 200;
+                return $metaDataArray;
             }else{
-                return $zipName;
+                return array(
+                    "zip_name" => $zipName,
+                    "status" => 200
+                );
             }
         }else{
-            // TODO erreurs intelligentes et catch a la reception !
             return array(
-                'message' => 'error assemble parts',
-                'nPackets' => 0,
-                'hashname' => 'null'
+                'status' => 424
             );
         }
     }

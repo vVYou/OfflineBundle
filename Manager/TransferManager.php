@@ -27,7 +27,6 @@ use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use JMS\DiExtraBundle\Annotation as DI;
-// use \ZipArchive;
 use \DateTime;
 use \Buzz\Browser;
 use \Buzz\Client\Curl;
@@ -157,7 +156,11 @@ class TransferManager
     
     public function getNumberOfParts($filename)
     {
-        return (int)(filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1;
+        if(! file_exists($filename)){
+            return -1;
+        }else{
+            return (int)(filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1;
+        }
     }
     
     public function getMetadataArray($user, $filename)
@@ -212,7 +215,6 @@ class TransferManager
         $zipName = $this->assembleParts($content);
         if($zipName != null){
             //Load archive
-            // echo "LOAD USER <br/>";
             $user = $this->userRepo->loadUserByUsername($content['username']);
             //TODO LOAD when patch
             // $this->loadingManager->loadZip($zipName, $user);
@@ -281,6 +283,7 @@ class TransferManager
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 
         //TODO charge user
         echo "trop cool : ".$reponse->getContent()."<br/>";
+        //TODO return content or create user and return confirm
     }
     
     private function getBrowser()
@@ -293,7 +296,6 @@ class TransferManager
     
     public function getLastPacketUploaded($filename, $user)
     {
-        echo "filename : ".$filename."<br/>";
         $browser = $this->getBrowser();
         $contentArray = array(
             'username' => $user->getUsername(),
@@ -301,14 +303,22 @@ class TransferManager
             'token' => $user->getExchangeToken(),
             'hashname' => substr($filename, strlen($filename)-40, 36)
         );
-        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/lastUploaded', array(), json_encode($contentArray)); 
-        return null;
+        $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/lastUploaded', array(), json_encode($contentArray));
+        $responseArray = (array)json_decode($response->getContent());
+        return $responseArray['lastUpload'];
     }
     
     public function getOnlineNumberOfPackets($filename, $user)
     {
-        // TODO implement
-        // objectif recuperer le numbre de packet du fichier à télécharger
-        return null;
+        $browser = $this->getBrowser();
+        $contentArray = array(
+            'username' => $user->getUsername(),
+            'id' => $user->getId(),
+            'token' => $user->getExchangeToken(),
+            'hashname' => $filename
+        );
+        $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/numberOfPacketsToDownload', array(), json_encode($contentArray));
+        $responseArray = (array)json_decode($response->getContent());
+        return $responseArray['nPackets'];
     }
 }

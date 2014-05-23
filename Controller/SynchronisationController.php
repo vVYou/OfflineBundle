@@ -169,6 +169,34 @@ class SynchronisationController extends Controller
         return new JsonResponse($content, $status);
     }
     
+   /**
+    *   @EXT\Route(
+    *       "/sync/numberOfPacketsToDownload",
+    *       name="claro_sync_number_of_packets_to_download",
+    *   )
+    *
+    *   @EXT\Method("POST")    
+    *
+    *   @return Response
+    */
+    public function getNumberOfPacketsToDownload()
+    {
+        $content = $this->getRequest()->getContent();
+        $informationsArray = (array)json_decode($content);
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 403;
+        $content = array();
+        if($status == 200)
+        {
+            $filename = SyncConstant::SYNCHRO_DOWN_DIR.$informationsArray['id'].'/sync_'.$informationsArray['hashname'].".zip";
+            $nPackets = $this->get('claroline.manager.transfer_manager')->getNumberOfParts($filename);
+            $content = array(
+                'hashname' => $informationsArray['hashname'],
+                'nPackets' => $nPackets
+            );
+        }
+        return new JsonResponse($content, $status);
+    }
+    
     /**
     *   @EXT\Route(
     *       "/transfer/confirm/{user}",
@@ -203,6 +231,7 @@ class SynchronisationController extends Controller
     */
     public function workspaceAction($user)
     {
+        // Deprecated, not used anymore
         //TODO Authentification User
         $authUser = $this->getUserFromID($user);
         $toSend = $this->get('claroline.manager.creation_manager')->writeWorspaceList($authUser);
@@ -219,16 +248,5 @@ class SynchronisationController extends Controller
         return $response;
     }
 
-
     //TODO Route pour supprimer les fichiers de synchro
-    //TODO Routes pour les echanges de fichier en multiples morceaux
-    //TODO gerer l'authentification partout !
-    
-    
-    /***
-    *         $status = $this->authenticator->authenticate($username, $password) ? 200 : 403;
-        $content = ($status === 403) ?
-            array('message' => $this->translator->trans('login_failure', array(), 'platform')) :
-            array();
-    */
 }

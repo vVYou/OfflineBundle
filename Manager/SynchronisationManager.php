@@ -72,7 +72,8 @@ class SynchronisationManager
                 break;
             case UserSynchronized::STARTED_UPLOAD :
                 $packetNum = $this->transferManager->getLastPacketUploaded($userSync->getFilename(), $user);
-                $this->step2Upload($user, $userSync, $userSync->getFilename(), $packetNum);
+                echo "last uploaded : ".$packetNum."<br/>";
+                $this->step2Upload($user, $userSync, $userSync->getFilename(), $packetNum+1);
                 break;
             case UserSynchronized::FAIL_UPLOAD :
                 $this->step2Upload($user, $userSync, $userSync->getFilename());
@@ -82,7 +83,7 @@ class SynchronisationManager
                 break;
             case UserSynchronized::FAIL_DOWNLOAD : 
                 $packetNum = $this->getDownloadStop($userSync->getFilename(), $user);
-                $this->step3Download($user, $userSync, $userSync->getFilename());//null, $packetNum);
+                $this->step3Download($user, $userSync, $userSync->getFilename(), null, $packetNum);
                 break;
             case UserSynchronized::SUCCESS_DOWNLOAD :
                 $toLoad = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$userSync->getFilename().'.zip';
@@ -104,8 +105,7 @@ class SynchronisationManager
     
     public function step2Upload(User $user, UserSynchronized $userSync, $filename, $packetNum = 0)
     {
-        echo "I 'm at step 2<br/>";
-        //TODO organise data return from transferManager
+        echo "I 'm at step 2 ".$packetNum."<br/>";
         $toDownload = $this->transferManager->uploadZip($filename, $user); //FROM PACKET NUM...
         $userSync->setFilename($toDownload['hashname']);
         $userSync->setStatus(UserSynchronized::SUCCESS_UPLOAD);
@@ -114,18 +114,20 @@ class SynchronisationManager
         $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['nPackets']);
     }
     
-    public function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = 1, $packetNum = 0) //Change nPackets to null
+    public function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = null, $packetNum = 0)
     {
         echo "I 'm at step 3<br/>";
         if($nPackets == null){
+            echo "nPackets null <br/>";
             $nPackets = $this->transferManager->getOnlineNumberOfPackets($filename, $user);
-        }else{
-            $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $user);
-            $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
-            $this->userSyncManager->updateUserSync($userSync);
-            echo "il me reste donc ceci a charger ".$toLoad."<br/>";
-            $this->step4Load($user, $userSync, $toLoad);
+            //TODO if nPackets = -1; status=FAIL; $this->synchronise
+            echo "nPackets = ".$nPackets."<br/>";
         }
+        $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $user);
+        $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
+        $this->userSyncManager->updateUserSync($userSync);
+        echo "il me reste donc ceci a charger ".$toLoad."<br/>";
+        $this->step4Load($user, $userSync, $toLoad);
     }
     
     public function step4Load(User $user, UserSynchronized $userSync, $filename)

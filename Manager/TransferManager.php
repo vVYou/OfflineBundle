@@ -93,7 +93,6 @@ class TransferManager
         *   Ce transfer s'effectue en plusieurs paquets
         */
         // ATTENTION, droits d'ecriture de fichier
-        //PROCEDURE D'envoi complet du packet, à améliorer en sauvegardant l'etat et reprendre là ou on en etait si nécessaire...
         
         $browser = $this->getBrowser();
         $requestContent = $this->getMetadataArray($user, $toTransfer);
@@ -123,7 +122,7 @@ class TransferManager
     }
     
     public function analyseStatusCode($status)
-    {   // TODO throw exception ?
+    {   // TODO throw exception ? - comment differencier erreur pour upload ou getzip?
         echo "the status ".$status." to analyse <br/>";
         switch($status){
             case 200:
@@ -133,6 +132,7 @@ class TransferManager
                 return false;
             case 424:
                 echo "method failure <br/>";
+                //erreur 424 = read - write ou checksum
                 return false;
             default:
                 return true;
@@ -141,7 +141,6 @@ class TransferManager
     
     public function getSyncZip($hashToGet, $numPackets, $packetNum, $user)
     {
-        //TODO recommencer en cas d'echec
         $packetNum = 0;
         $browser = $this->getBrowser();
         $requestContent = array(
@@ -151,7 +150,6 @@ class TransferManager
             'hashname' => $hashToGet,
             'nPackets' => $numPackets,
             'packetNum' => 0);
-        // echo "SENDING TAB : ".json_encode($requestContent)."<br/>";
         $processContent = null;
         $status = 200;
         while($packetNum < $numPackets && $status == 200){
@@ -165,7 +163,6 @@ class TransferManager
             $packetNum++;
         }
         if($status != 200 || $processContent['status'] != 200){
-            //TODO, traitement different que pour upload
             return $this->analyseStatusCode($status);
         }else{
             return $processContent['zip_name'];
@@ -207,8 +204,7 @@ class TransferManager
             }else{
                 $data = fread($handle, $fileSize-$position);
             }
-            fclose($handle);
-            //TODO control file closure
+            if(!fclose($handle)) return null;
             return $data;
         }
     }
@@ -220,10 +216,10 @@ class TransferManager
         //TODO, verification de l'existance du dossier
         $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$content['packetNum'];
         $partFile = fopen($partName, 'w+');
-        if(!$partFile) return array( "status" => 424 );
+        if(!$partFile) return array("status" => 424);
         $write = fwrite($partFile, base64_decode($content['file']));
-        //TODO control writing errors
-        fclose($partFile);
+        if($write === false) return array("status" => 424);
+        if(!fclose($partFile)) return array("status" => 424);
         if($content['packetNum'] == ($content['nPackets']-1)){
             return $this->endExchangeProcess($content, $createSync);
         }
@@ -265,15 +261,15 @@ class TransferManager
         $zipFile = fopen($zipName, 'w+');
         if(!$zipFile) return null;
         for($i = 0; $i<$content['nPackets']; $i++){
-            //TODO control writing errors
             $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$i;
             $partFile = fopen($partName, 'r');
             if(!$partFile) return null;
             $write = fwrite($zipFile, fread($partFile, filesize($partName)));
-            fclose($partFile);
+            if($write === false) return null;
+            if(!fclose($partFile)) return null;
             unlink($partName);
         }
-        fclose($zipFile);
+        if(!fclose($zipFile))return null;
         if(hash_file( "sha256", $zipName) == $content['checksum']){
             // echo "CHECKSUM SUCCEED <br/>";
             return $zipName;

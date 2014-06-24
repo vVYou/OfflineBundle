@@ -151,9 +151,9 @@ class LoadingManager
             $tmpdirectory = $archive->extractTo($this->path);
             
             //Call LoadXML
-            $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
+            // $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
 
-            // $this->loadXML('manifest_test_x.xml'); //Actually used for test.
+            $this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
             //Destroy Directory
             //$this->rrmdir($this->path);
@@ -892,7 +892,7 @@ class LoadingManager
     {      
         foreach($resource->childNodes as $child) {
             if ($child->nodeType == XML_CDATA_SECTION_NODE) {
-                echo $child->textContent . "<br/>";
+                return $child->textContent;
             }
         }
     }

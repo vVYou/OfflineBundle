@@ -31,4 +31,7 @@ class SyncConstant
     const CATE = "Claroline\ForumBundle\Entity\Category";
     const SUB = "Claroline\ForumBundle\Entity\Subject";
     const MSG = "Claroline\ForumBundle\Entity\Message";
+    
+    //Installation Constant
+    const COMP_PATH = "C:\offline_component\win";
 }

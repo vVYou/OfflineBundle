@@ -95,6 +95,7 @@ class CreationManager
      */
      public function createSyncZip(User $user)
     {
+        ini_set('max_execution_time', 0);
         $typeList = array('file', 'directory', 'text', 'claroline_forum'); //TODO ! PAS OPTIMAL !
 
         $archive = new ZipArchive();        

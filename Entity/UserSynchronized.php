@@ -16,7 +16,14 @@ use Gedmo\Mapping\Annotation as Gedmo;
  * @DoctrineAssert\UniqueEntity("user")
  */
 class UserSynchronized
-{
+{   
+    const SUCCESS_SYNC = 0;
+    const STARTED_UPLOAD = 1;
+    const FAIL_UPLOAD = 2;
+    const SUCCESS_UPLOAD = 3;
+    const FAIL_DOWNLOAD = 4;
+    const SUCCESS_DOWNLOAD = 5;
+
     /**
      * @ORM\Id
      * @ORM\Column(type="integer")
@@ -50,10 +57,24 @@ class UserSynchronized
      */
     protected $sentTime;
 
-
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="filename", nullable=true, type="string")
+     */
+    protected $filename;
+    
+    /**
+     * @var integer
+     *
+     * @ORM\Column(name="status", type="integer")
+     */
+    protected $status;
+    
     public function __construct(User $user)
     {
-        $this-> user = $user;
+        $this->user = $user;
+        $this->status = SUCCESS_SYNC;
     }
     
     /**
@@ -104,5 +125,25 @@ class UserSynchronized
     public function setSentTime(\DateTime $date)
     {
         $this->sentTime = $date;
+    }
+    
+    public function getFilename()
+    {
+        return $this->filename;
+    }
+    
+    public function setFilename($filename)
+    {
+        $this->filename = $filename;
+    }
+    
+    public function getStatus()
+    {
+        return $this->status;
+    }
+    
+    public function setStatus($status)
+    {
+        $this->status = $status;
     }
 }

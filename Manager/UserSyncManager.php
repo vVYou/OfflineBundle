@@ -89,5 +89,14 @@ class UserSyncManager
         $this->om->persist($userSync[0]);
         $this->om->endFlushSuite();
     }
-
+    
+    /*
+     * @param \Claroline\OfflineBundle\Entity\UserSynchronized $userSync
+     */
+    public function updateUserSync(UserSynchronized $userSync)
+    {
+        $this->om->startFlushSuite();
+        $this->om->persist($userSync);
+        $this->om->endFlushSuite();
+    }
 }

@@ -13,6 +13,7 @@ use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Library\Security\Authenticator;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Repository\UserRepository;
 use Claroline\OfflineBundle\SyncConstant;
 use \DateTime;
 use \ZipArchive;
@@ -44,6 +45,44 @@ class SynchronisationController extends Controller
 
     /**
     *   @EXT\Route(
+    *       "/transfer/uploadzip/{user}",
+    *       name="claro_sync_upload_zip",
+    *   )
+    *
+    *   @EXT\Method("POST")    
+    *
+    *   @return Response
+    */
+    public function getUploadAction($user)
+    {   /*
+        *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
+        *   la methode recevra avec la requete le zip de l'utilisateur offline
+        *   Il faut donc commencer par recevoir le zip du offline
+        *   Ensuite le traiter
+        *   Generer le zip descendant et le retourner dans la stream reponse
+        */
+        
+        //TODO verifier l'authentification via token
+        
+        $content = $this->getRequest()->getContent();
+        // echo "CONTENT received : ".$content."<br/>";
+        $informationsArray = (array)json_decode($content);
+        // echo "Packet Number : ".$informationsArray['packetNum'].'<br/>';
+        
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 401;
+        // echo "STATUS : ".$status."<br/>";
+        $content = array();
+        if ($status == 200){
+            $content = $this->get('claroline.manager.transfer_manager')->processSyncRequest($informationsArray, true);
+            // echo "what s generate by process request? : ".json_encode($content).'<br/>';
+            $status = $content['status'];
+        }
+        return new JsonResponse($content, $status);
+    }
+    
+    
+    /**
+    *   @EXT\Route(
     *       "/transfer/getzip/{user}",
     *       name="claro_sync_get_zip",
     *   )
@@ -53,54 +92,115 @@ class SynchronisationController extends Controller
     *   @return Response
     */
     public function getZipAction($user)
-    {   /*
-        *   A adapter ici. Au sein de la requete qui appelle on est maintenant sur du POST et non plus sur du GET
-        *   la methode recevra avec la requete le zip de l'utilisateur offline
-        *   Il faut donc commencer par recevoir le zip du offline
-        *   Ensuite le traiter
-        *   Generer le zip descendant et le retourner dans la stream reponse
-        */
-        
-        $request = $this->getRequest();
-        //TODO verifier l'authentification
-        echo "ceci est le tableau post : user ".$_POST['user'].'</br>';
-        echo "ceci est le tableau post : file ".$_POST['file'].'</br>';
-        
-        //Catch the sync zip sent via POST request
-        $uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
-        
-        //TODO verfier securite? => dans FileController il fait un checkAccess....
-
-        //Identify User
-       /* $em = $this->getDoctrine()->getManager();
-        $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
-        $authUser = $arrayRepo[0];*/
-        $authUser = $this->getUserFromID($user);
-        
-        //Load the archive
-        $this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
-        
-        //Compute the answer
-        $toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
-        
-        // echo "je prepare la reponse".$toSend."<br/>";
-        //$userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
-        $this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
-
-        //Send back the online sync zip
-        $response = new StreamedResponse();
-        //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
-        $response->setCallBack(
-            //function () use ($user) {
-                //readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_2CCDD72F-C788-41B8-8AA4-B407E8FD9193.zip');
-            function () use ($toSend) {                
-                readfile($toSend);
+    {
+        $content = $this->getRequest()->getContent();
+        $informationsArray = (array)json_decode($content);
+        // echo "Ask Packet Number : ".$informationsArray['packetNum'].'<br/>';
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 401;
+        // echo "STATUS : ".$status."<br/>";
+        $content = array();
+        if($status == 200){
+            $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$informationsArray['id'].'/sync_'.$informationsArray['hashname'].'.zip';
+            $em = $this->getDoctrine()->getManager();
+            $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationsArray['username']);
+            $content = $this->get('claroline.manager.transfer_manager')->getMetadataArray($user, $fileName);
+            $content['packetNum']=$informationsArray['packetNum'];
+            $data = $this->get('claroline.manager.transfer_manager')->getPacket($informationsArray['packetNum'], $fileName);
+            if($data == null){
+                $status = 424;
+            }else{
+                $content['file'] = base64_encode($data);
             }
-        );
-
-        return $response;
+        }
+        return new JsonResponse($content, $status);
     }
 
+    /**
+    *   @EXT\Route(
+    *       "/sync/user",
+    *       name="claro_sync_user",
+    *   )
+    *
+    *   @EXT\Method("POST")    
+    *
+    *   @return Response
+    */
+    public function getUserIformations()
+    {
+        $content = $this->getRequest()->getContent();
+        // echo "receive content <br/>";
+        $informationsArray = (array)json_decode($content);
+        $status = $this->authenticator->authenticate($informationsArray['username'], $informationsArray['password']) ? 200 : 401;        
+        // echo "STATUS : ".$status."<br/>";
+        $returnContent = array(); 
+
+        if($status == 200){
+            // Get User informations and return them
+            $em = $this->getDoctrine()->getManager();
+            $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationsArray['username']);
+            //TODO ajout du token
+            $returnContent = $user->getUserAsTab();
+        }
+        return new JsonResponse($returnContent, $status);
+    }
+    
+   /**
+    *   @EXT\Route(
+    *       "/sync/lastUploaded",
+    *       name="claro_sync_last_uploaded",
+    *   )
+    *
+    *   @EXT\Method("POST")    
+    *
+    *   @return Response
+    */
+    public function getLastUploaded()
+    {
+        $content = $this->getRequest()->getContent();
+        $informationsArray = (array)json_decode($content);
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 401;
+        $content = array();
+        if($status == 200)
+        {
+            $filename = SyncConstant::SYNCHRO_UP_DIR.$informationsArray['id'].'/'.$informationsArray['hashname'];
+            $em = $this->getDoctrine()->getManager();
+            $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationsArray['username']);
+            $lastUp = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop($filename, $user);
+            $content = array(
+                'hashname' => $informationsArray['hashname'],
+                'lastUpload' => $lastUp
+            );
+        }
+        return new JsonResponse($content, $status);
+    }
+    
+   /**
+    *   @EXT\Route(
+    *       "/sync/numberOfPacketsToDownload",
+    *       name="claro_sync_number_of_packets_to_download",
+    *   )
+    *
+    *   @EXT\Method("POST")    
+    *
+    *   @return Response
+    */
+    public function getNumberOfPacketsToDownload()
+    {
+        $content = $this->getRequest()->getContent();
+        $informationsArray = (array)json_decode($content);
+        $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 401;
+        $content = array();
+        if($status == 200)
+        {
+            $filename = SyncConstant::SYNCHRO_DOWN_DIR.$informationsArray['id'].'/sync_'.$informationsArray['hashname'].".zip";
+            $nPackets = $this->get('claroline.manager.transfer_manager')->getNumberOfParts($filename);
+            $content = array(
+                'hashname' => $informationsArray['hashname'],
+                'nPackets' => $nPackets
+            );
+        }
+        return new JsonResponse($content, $status);
+    }
     
     /**
     *   @EXT\Route(
@@ -136,9 +236,10 @@ class SynchronisationController extends Controller
     */
     public function workspaceAction($user)
     {
+        // Deprecated, not used anymore
         //TODO Authentification User
         $authUser = $this->getUserFromID($user);
-        $toSend = $this->get('claroline.manager.synchronize_manager')->writeWorspaceList($authUser);
+        $toSend = $this->get('claroline.manager.creation_manager')->writeWorspaceList($authUser);
         
         //Send back the online sync zip
         $response = new StreamedResponse();
@@ -152,73 +253,5 @@ class SynchronisationController extends Controller
         return $response;
     }
 
-
     //TODO Route pour supprimer les fichiers de synchro
-    //TODO Routes pour les echanges de fichier en multiples morceaux
-    //TODO gerer l'authentification partout !
-
-    
-    /**
-    *   @EXT\Route(
-    *       "/transfer/test/confirm/{user}",
-    *       name="claro_sync_test_confirm",
-    *   )
-    *
-    *   @EXT\Method("POST")    
-    *
-    *   @return Response
-    */
-    public function getTestConfirm($user)
-    {        
-        $request = $this->getRequest();
-        echo "ceci est le tableau post : user ".$_POST['username'].'</br>';
-        echo "ceci est le tableau post : file ".$_POST['file'].'</br>';
-        echo "ceci est le tableau post : password ".$_POST['password'].'</br>';
-        
-        $status = $this->authenticator->authenticate($_POST['username'], $_POST['password']) ? 200 : 403;
-        echo "STATUS : ".$status."<br/>";
-        
-        //Catch the sync zip sent via POST request
-        //$uploadedSync = $this->get('claroline.manager.transfer_manager')->processSyncRequest($request, $user);
-        
-        //TODO verfier securite? => dans FileController il fait un checkAccess....
-
-        //Identify User
-       /* $em = $this->getDoctrine()->getManager();
-        $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
-        $authUser = $arrayRepo[0];*/
-        //$authUser = $this->getUserFromID($user);
-        
-        //Load the archive
-        //$this->get('claroline.manager.loading_manager')->loadZip($uploadedSync, $authUser);
-        
-        //Compute the answer
-        //$toSend = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
-        
-        // echo "je prepare la reponse".$toSend."<br/>";
-        //$userSynchro = $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
-        //$this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
-
-        //Send back the online sync zip
-        $response = new StreamedResponse();
-        //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
-        $response->setCallBack(
-            function () use ($user) {
-                readfile(SyncConstant::SYNCHRO_DOWN_DIR.$user.'/sync_D17FAF3F-9737-4148-A012-71AEA4309A03.zip');
-            // function () use ($toSend) {                
-                // readfile($toSend);
-            }
-        );
-
-        return $response;
-    
-    }
-    
-    
-    /***
-    *         $status = $this->authenticator->authenticate($username, $password) ? 200 : 403;
-        $content = ($status === 403) ?
-            array('message' => $this->translator->trans('login_failure', array(), 'platform')) :
-            array();
-    */
 }

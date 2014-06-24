@@ -71,16 +71,15 @@ class OfflineController extends Controller
     public function helloAction(User $user)
     {
         $em = $this->getDoctrine()->getManager();
-        //TODO Should use manager ?
-        $userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         
-        if ($userSynchroDate) {
+        if ($userSync) {
         //TODO Liens vers la route de synchronisation
             return $this->render('ClarolineOfflineBundle:Offline:sync.html.twig', array(
                 'user' => $username,
-                'user_sync_date' => $userSynchroDate[0]->getLastSynchronization()
+                'user_sync_date' => $userSync[0]->getLastSynchronization()
             ) );
         }else{
         //TODO Methode d'installation
@@ -160,8 +159,7 @@ class OfflineController extends Controller
     * @return Response
     */
     public function syncAction($user, User $authUser)
-    {   /**
-        *   TODO CLEAN UNUSED FUNCTIONS
+    {  /** 
         *   TODO MODIFY return with render different twig donc redirect plutot que le boolean true false
         */
         
@@ -175,29 +173,11 @@ class OfflineController extends Controller
         }
         else
         {
-            //CREATE THE SYNC_ZIP
-            $archive = $this->get('claroline.manager.synchronize_manager')->createSyncZip($authUser);
-            echo 'I send : '.$archive.'<br/>';
-            
-            //TRANSFERT THE ZIP
-            $this->get('claroline.manager.user_sync_manager')->updateSentTime($authUser);
-            $response = $this->get('claroline.manager.transfer_manager')->transferZip($archive, $authUser);
-            echo 'I received  : '.$response.'<br/>';
-            
-            //LOAD RECEIVED SYNC_ZIP 
-            $this->get('claroline.manager.loading_manager')->loadZip($response, $authUser);
-            
-            //echo 'SUCCEED';
-            
-            //UPDATE SYNCHRONIZE DATE
-            $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
-
-            //CONFIRM UPDATE TO ONLINE
-            $this->get('claroline.manager.transfer_manager')->confirmRequest($authUser);
-            
-            //clean directory
-            unlink($archive);
-            unlink($response);
+            $em = $this->getDoctrine()->getManager();
+            $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($authUser);
+            $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
+            // $i = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop("24F0DCDC-3B64-4019-8D6A-80FBCEA68AF9", $authUser);
+            // echo "last download : ".$i."<br/>";
             
             //Format the view
             $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
@@ -225,7 +205,7 @@ class OfflineController extends Controller
     */
     public function seekAction(User $user)
     {
-        $test = $this->get('claroline.manager.synchronize_manager')->createSyncZip($user);
+        $test = $this->get('claroline.manager.creation_manager')->createSyncZip($user);
         $username = $user->getFirstName() . ' ' . $user->getLastName(); 
         echo 'Congratulations '.$username.'! '."<br/>".'You are now synchronized!';
         echo ''.$test;   
@@ -255,9 +235,8 @@ class OfflineController extends Controller
     {
         $transfer = true;
         if($user == $authUser->getId()){
-            //$test = $this->get('claroline.manager.transfer_manager')->getSyncZip($authUser);
-            $toTransfer = './synchronize_down/3/sync_D69A6427-582D-4846-9447-6420201CEB54.zip';
-            $test = $this->get('claroline.manager.transfer_manager')->transferZip($toTransfer, $authUser);
+            $toTransfer = './synchronize_down/3/sync_0252D476-FD7D-4E39-9285-A53EDEFCAC90.zip';
+            $test = $this->get('claroline.manager.transfer_manager')->uploadZip($toTransfer, $authUser, 0);
         }else{
             $transfer = false;
         }
@@ -269,7 +248,39 @@ class OfflineController extends Controller
         );
     }
 
-
+    /**
+    *
+    *  Transfer a file (sync archive) from a computer to another
+    *   
+    *   @EXT\Route(
+    *       "/sync/getsync/{user}",
+    *       name="claro_sync_gettest"
+    *   )
+    *
+    * @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:transfer.html.twig")
+    *
+    * @param User $user
+    * @return Reponse
+    */
+    public function getSyncAction($user, User $authUser)
+    {
+        $transfer = true;
+        if($user == $authUser->getId()){
+            $hashToGet = '1A7BE8A0-EE83-4853-93A4-63BABB8B8B84';
+            $numPackets = 3;
+            $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($hashToGet, $numPackets, 0, $authUser);
+            echo $test."<br/>";
+        }else{
+            $transfer = false;
+        }
+        
+        $username = $authUser->getFirstName() . ' ' . $authUser->getLastName(); 
+        return array(
+            'user' => $username,
+            'transfer' => $transfer
+        );
+    }
 
     /**
     *   @EXT\Route(
@@ -286,6 +297,30 @@ class OfflineController extends Controller
     public function loadWorkspacesAction(User $user)
     {       
         $zip = $this->get('claroline.manager.loading_manager')->loadPublicWorkspaceList(SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/all_workspaces.xml');
+         
+        $username = $user->getFirstName() . ' ' . $user->getLastName();
+        return array(
+            'user' => $username
+         );
+    }
+    
+    
+    /**
+    *   @EXT\Route(
+    *       "/sync/getuser",
+    *       name="claro_sync_getuser"
+    *   )
+    *
+    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:load.html.twig")
+    *
+    * @param User $user
+    * @return Response
+    */
+    public function getUserAction(User $user)
+    {       
+        //TODO change "password", with a window getting password in clear
+        $this->get('claroline.manager.transfer_manager')->getUserInfo($user->getUsername(), "password");
          
         $username = $user->getFirstName() . ' ' . $user->getLastName();
         return array(

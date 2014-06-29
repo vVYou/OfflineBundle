@@ -35,4 +35,9 @@ class SyncConstant
     
     //Installation Constant
     const COMP_PATH = "C:\offline_component\win";
+    const APP_CACHE = '/app/cache/';
+    const LOG = '/app/logs/';
+    const SYNC_UP = '/web/synchronize_up/';
+    const SYNC_DW = '/web/synchronize_down/';
+    const PLAT_FILES = '/files/';
 }

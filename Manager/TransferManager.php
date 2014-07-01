@@ -99,15 +99,16 @@ class TransferManager
         $numberOfPackets = $requestContent['nPackets'];
         $responseContent = "";
         $status = 200;
+        echo "je vais envoyer des putains de données <br/>";
         
         while($packetNumber < $numberOfPackets && $status == 200)
         {
             $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $toTransfer));
             $requestContent['packetNum'] = $packetNumber;
-            // echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
+            echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
             
             //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
-            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip/'.$user->getId(), array(), json_encode($requestContent));    
+            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip', array(), json_encode($requestContent));    
             $responseContent = $reponse->getContent();
             echo 'CONTENT : <br/>'.$responseContent.'<br/>';
             $status = $reponse->getStatusCode();
@@ -134,6 +135,10 @@ class TransferManager
                 echo "method failure <br/>";
                 //erreur 424 = read - write ou checksum
                 return false;
+            case 500:
+                echo "method failure <br/>";
+            //TODO attention erreur 500 (erreur sur la plateforme d'envoi)
+                return false;
             default:
                 return true;
         }
@@ -144,8 +149,8 @@ class TransferManager
         $packetNum = 0;
         $browser = $this->getBrowser();
         $requestContent = array(
-            'id' => $user->getId(),
-            'username' => $user->getUsername(), 
+            // 'id' => $user->getId(),
+            // 'username' => $user->getUsername(), 
             'token' => $user->getExchangeToken(),
             'hashname' => $hashToGet,
             'nPackets' => $numPackets,
@@ -155,7 +160,7 @@ class TransferManager
         while($packetNum < $numPackets && $status == 200){
             echo 'doing packet '.$packetNum.'<br/>';
             $requestContent['packetNum'] = $packetNum;
-            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));
+            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip', array(), json_encode($requestContent));
             $content = $reponse->getContent();
             echo "CONTENT received : ".$content."<br/>";
             $status = $reponse->getStatusCode();
@@ -181,8 +186,8 @@ class TransferManager
     public function getMetadataArray($user, $filename)
     {
         return array(
-            'id' => $user->getId(),
-            'username' => $user->getUsername(), 
+            // 'id' => $user->getId(),
+            // 'username' => $user->getUsername(), 
             'token' => $user->getExchangeToken(),
             'hashname' => substr($filename, strlen($filename)-40, 36),
             'nPackets' => $this->getNumberOfParts($filename),
@@ -232,7 +237,7 @@ class TransferManager
         $zipName = $this->assembleParts($content);
         if($zipName != null){
             //Load archive
-            $user = $this->userRepo->loadUserByUsername($content['username']);
+            $user = $this->userRepo->>findOneBy(array('exchangeToken' => $informationsArray['token'])); //loadUserByUsername($content['username']);
             //TODO LOAD when patch
             // $this->loadingManager->loadZip($zipName, $user);
             if($createSync){
@@ -326,6 +331,7 @@ class TransferManager
         );
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/lastUploaded', array(), json_encode($contentArray));
         $responseArray = (array)json_decode($response->getContent());
+        echo "CONTENT received : ".$response->getContent()."<br/>";
         return $responseArray['lastUpload'];
     }
     

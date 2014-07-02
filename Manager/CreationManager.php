@@ -123,7 +123,7 @@ class CreationManager
         
         if($archive->open($fileName, ZipArchive::CREATE) === true)
         {   
-           $this->fillSyncZip($userWS, $domManifest, $sectManifest, $typeArray, $user, $archive);
+           $this->fillSyncZip($userWS, $domManifest, $sectManifest, $typeArray, $user, $archive, $date);
         }
         else
         {           
@@ -184,7 +184,7 @@ class CreationManager
     *   Fill the Zip with the file required for the synchronisation.
     *   Also, create a manifest containing all the changes done.
     */
-    private function fillSyncZip($userWS, $domManifest, $sectManifest, $typeArray, $user, $archive)
+    private function fillSyncZip($userWS, $domManifest, $sectManifest, $typeArray, $user, $archive, $date)
     {
         foreach($userWS as $element)
         {
@@ -199,7 +199,7 @@ class CreationManager
                 {
                     
                     $path = ''; // USELESS?
-                    $ressourcesToSync = $this->checkObsolete($userRes, $user);  // Remove all the resources not modified.
+                    $ressourcesToSync = $this->checkObsolete($userRes, $user, $date);  // Remove all the resources not modified.
                     //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
 
                     $this->addResourcesToArchive($ressourcesToSync, $archive, $domManifest, $domWorkspace, $user, $path);
@@ -210,11 +210,10 @@ class CreationManager
                         /*
                         *   Check, if the resource is a forum, is there are new messages, subjects or category created offline.
                         */
-                        $forum_content = $this->checkNewContent($userRes, $user); 
+                        $forum_content = $this->checkNewContent($userRes, $user, $date); 
                         echo count($forum_content);
                         $this->addForumToArchive($domManifest, $domWorkspace, $forum_content);
                     }
-                    
                 }
             }
         }
@@ -225,10 +224,10 @@ class CreationManager
     *   Check all the messages, subjects and categories of the forums
     *   and return the ones that have been created.
     */
-    private function checkNewContent(array $userRes, User $user)
+    private function checkNewContent(array $userRes, User $user, $date_sync)
     {
-        $date_tmp = $this->userSynchronizedRepo->findUserSynchronized($user);
-        $date_sync = $date_tmp[0]->getLastSynchronization()->getTimestamp();
+        // $date_tmp = $this->userSynchronizedRepo->findUserSynchronized($user);
+        // $date_sync = $date_tmp[0]->getLastSynchronization()->getTimestamp();
         
         $elem_to_sync = array();
         foreach($userRes as $node_forum)
@@ -322,12 +321,12 @@ class CreationManager
     *   Filter all the resources based on the user's last synchronization and
     *   check which one need to be sent.
     */
-    private function checkObsolete(array $userRes, User $user)
+    private function checkObsolete(array $userRes, User $user, $date_user)
     {
         //$em = $this->getDoctrine()->getManager();
-        $dateSync = $this->userSynchronizedRepo->findUserSynchronized($user);
-        $user_tmp = $dateSync[0]->getLastSynchronization();
-        $date_user = $user_tmp->getTimestamp();
+        // $dateSync = $this->userSynchronizedRepo->findUserSynchronized($user);
+        // $user_tmp = $dateSync[0]->getLastSynchronization();
+        // $date_user = $user_tmp->getTimestamp();
         $new_res = array();
         
         foreach($userRes as $resource)

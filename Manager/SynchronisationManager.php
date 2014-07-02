@@ -114,7 +114,7 @@ class SynchronisationManager
         $this->userSyncManager->updateUserSync($userSync);
         echo "je vais telecharger ceci ".$toDownload['hashname']."<br/>";
         $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['nPackets']);
-        // unlink($filename);
+        unlink($filename);
     }
     
     public function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = null, $packetNum = 0)
@@ -132,7 +132,7 @@ class SynchronisationManager
             $this->userSyncManager->updateUserSync($userSync);
             echo "il me reste donc ceci a charger ".$toLoad."<br/>";
             $this->step4Load($user, $userSync, $toLoad);
-            // unlink($toLoad);
+            unlink($toLoad);
         }
     }
     

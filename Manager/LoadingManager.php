@@ -69,6 +69,7 @@ class LoadingManager
     private $forumManager;
     private $templateDir;
     private $user;
+    private $synchronizationDate;
     private $ut;
     private $dispatcher;
     private $path;
@@ -258,6 +259,8 @@ class LoadingManager
         {
             $this->user = $this->userRepo->findOneBy(array('username' => $description->getAttribute('username'), 'mail' => $description->getAttribute('user_mail')));
             echo 'My user : '.$this->user->getFirstName().'<br/>';
+            $this->synchronizationDate = $description->getAttribute('synchronization_date');
+            echo 'My sync date : '.$this->synchronizationDate.'<br/>';
         }
     }
     

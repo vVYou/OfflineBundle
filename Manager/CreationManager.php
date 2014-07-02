@@ -130,7 +130,6 @@ class CreationManager
             throw new \Exception('Impossible to open the zip file');
         }
         
-        // fclose($domManifest);
         $domManifest->save($manifestName);
         $archive->addFile($manifestName);
         $archivePath = $archive->filename;
@@ -745,9 +744,10 @@ class CreationManager
         $descCreation->value = time();   
         $sectDescription->appendChild($descCreation);
         
-        // $descReference = $domManifest->createAttribute('reference_date');
-        // $descReference->value = '1395323167';   
-        // $sectDescription->appendChild($descReference);
+        $userSync = $this->userSynchronizedRepo->findUserSynchronized($user);
+        $descReference = $domManifest->createAttribute('synchronization_date');
+        $descReference->value = $userSync[0]->getLastSynchronization()->getTimestamp();   
+        $sectDescription->appendChild($descReference);
         
         $descPseudo = $domManifest->createAttribute('username');
         $descPseudo->value = $user->getUsername();   

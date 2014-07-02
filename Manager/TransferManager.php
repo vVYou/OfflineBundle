@@ -99,18 +99,17 @@ class TransferManager
         $numberOfPackets = $requestContent['nPackets'];
         $responseContent = "";
         $status = 200;
-        echo "je vais envoyer des putains de données <br/>";
         
         while($packetNumber < $numberOfPackets && $status == 200)
         {
             $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $toTransfer));
             $requestContent['packetNum'] = $packetNumber;
-            echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
+            // echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
             
             //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip', array(), json_encode($requestContent));    
             $responseContent = $reponse->getContent();
-            echo 'CONTENT : <br/>'.$responseContent.'<br/>';
+            // echo 'CONTENT : <br/>'.$responseContent.'<br/>';
             $status = $reponse->getStatusCode();
             $responseContent = (array)json_decode($responseContent);
             $packetNumber ++;
@@ -158,11 +157,11 @@ class TransferManager
         $processContent = null;
         $status = 200;
         while($packetNum < $numPackets && $status == 200){
-            echo 'doing packet '.$packetNum.'<br/>';
+            // echo 'doing packet '.$packetNum.'<br/>';
             $requestContent['packetNum'] = $packetNum;
             $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip', array(), json_encode($requestContent));
             $content = $reponse->getContent();
-            echo "CONTENT received : ".$content."<br/>";
+            // echo "CONTENT received : ".$content."<br/>";
             $status = $reponse->getStatusCode();
             $processContent = $this->processSyncRequest((array)json_decode($content), false);
             $packetNum++;
@@ -307,10 +306,10 @@ class TransferManager
             'username' => $username,
             'password' => $password
         );
-        echo "content array : ".json_encode($contentArray).'<br/>';
+        // echo "content array : ".json_encode($contentArray).'<br/>';
         $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 
         //TODO charge user
-        echo "trop cool : ".$reponse->getContent()."<br/>";
+        // echo "trop cool : ".$reponse->getContent()."<br/>";
         //TODO return content or create user and return confirm
     }
     
@@ -333,7 +332,7 @@ class TransferManager
         );
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/lastUploaded', array(), json_encode($contentArray));
         $responseArray = (array)json_decode($response->getContent());
-        echo "CONTENT received : ".$response->getContent()."<br/>";
+        // echo "CONTENT received : ".$response->getContent()."<br/>";
         return $responseArray['lastUpload'];
     }
     

@@ -112,6 +112,7 @@ class SynchronisationManager
         $this->userSyncManager->updateUserSync($userSync);
         echo "je vais telecharger ceci ".$toDownload['hashname']."<br/>";
         $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['nPackets']);
+        unlink($filename);
     }
     
     public function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = null, $packetNum = 0)
@@ -123,12 +124,14 @@ class SynchronisationManager
         if($nPackets == -1){
             //TODO Change status to fail ? => problem with filename
             $this->step1Create($user, $userSync);
+        }else{
+            $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $packetNum, $user);
+            $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
+            $this->userSyncManager->updateUserSync($userSync);
+            echo "il me reste donc ceci a charger ".$toLoad."<br/>";
+            $this->step4Load($user, $userSync, $toLoad);
+            unlink($toLoad);
         }
-        $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $packetNum, $user);
-        $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
-        $this->userSyncManager->updateUserSync($userSync);
-        echo "il me reste donc ceci a charger ".$toLoad."<br/>";
-        $this->step4Load($user, $userSync, $toLoad);
     }
     
     public function step4Load(User $user, UserSynchronized $userSync, $filename)

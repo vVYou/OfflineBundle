@@ -96,7 +96,7 @@ class CreationManager
      public function createSyncZip(User $user, $date)
     {
         ini_set('max_execution_time', 0);
-        $typeList = array('file', 'directory', 'text', 'claroline_forum'); //TODO ! PAS OPTIMAL !
+        $typeList = array('directory', 'file', 'text', 'claroline_forum'); //TODO ! PAS OPTIMAL !
 
         $archive = new ZipArchive();        
         $domManifest = new DOMDocument('1.0', "UTF-8");
@@ -463,7 +463,8 @@ class CreationManager
             $mimetype->value = $resToAdd->getMimeType();   
             $domRes->appendChild($mimetype);
             $creator = $domManifest->createAttribute('creator');
-            $creator->value = $resToAdd->getCreator()->getId(); 
+            // $creator->value = $resToAdd->getCreator()->getId(); 
+            $creator->value = $resToAdd->getCreator()->getExchangeToken(); 
             $domRes->appendChild($creator);
             $hashname_node = $domManifest->createAttribute('hashname_node');
             $hashname_node->value = $resToAdd->getNodeHashName(); 
@@ -480,7 +481,14 @@ class CreationManager
             
             
             switch($typeNode)
-            {
+            {                
+                case SyncConstant::DIR :               
+                    // Check if the directory is not a Workspace
+                    if($resToAdd->getParent() != NULL)
+                    {                       
+                        // Futur resolution goes here
+                    }
+                    break;
                 case SyncConstant::FILE :
                     $my_res = $this->resourceManager->getResourceFromNode($resToAdd);           
                     $size = $domManifest->createAttribute('size');
@@ -489,13 +497,6 @@ class CreationManager
                     $hashname = $domManifest->createAttribute('hashname');
                     $hashname->value = $my_res->getHashName(); 
                     $domRes->appendChild($hashname);
-                    break;
-                case SyncConstant::DIR :               
-                    // Check if the directory is not a Workspace
-                    if($resToAdd->getParent() != NULL)
-                    {                       
-                        // Futur resolution goes here
-                    }
                     break;
                 case SyncConstant::TEXT :
                     $my_res = $this->resourceManager->getResourceFromNode($resToAdd);  
@@ -573,7 +574,7 @@ class CreationManager
                 $title->value = $content->getTitle();   
                 $domRes->appendChild($title);
                 $creator_id = $domManifest->createAttribute('creator_id');
-                $creator_id->value = $content->getCreator()->getId();   
+                $creator_id->value = $content->getCreator()->getExchangeToken();   
                 $domRes->appendChild($creator_id);
                 $sticked = $domManifest->createAttribute('sticked');
                 $sticked->value = $content->isSticked();   
@@ -592,7 +593,7 @@ class CreationManager
                 $subject->value = $subject_hash;   
                 $domRes->appendChild($subject);
                 $creator_id = $domManifest->createAttribute('creator_id');
-                $creator_id->value = $content->getCreator()->getId();   
+                $creator_id->value = $content->getCreator()->getExchangeToken();   
                 $domRes->appendChild($creator_id);
                 $cdata = $domManifest->createCDATASection($content->getContent());
                 $domRes->appendChild($cdata);
@@ -617,7 +618,7 @@ class CreationManager
                     name="'.$content->getTitle().'"
                     hashname="'.$content->getHashName().'"
                     category="'.$category.'"  
-                    creator_id="'.$content->getCreator()->getId().'"
+                    creator_id="'.$content->getCreator()->getExchangeToken().'"
                     creation_date="'.$creation_time.'"
                     update_date="'.$update_time.'"
                     sticked="'.$content->isSticked().'">
@@ -641,7 +642,7 @@ class CreationManager
                     id="'.$content->getId().'"
                     subject="'.$subject.'"  
                     hashname="'.$content->getHashName().'"
-                    creator_id="'.$content->getCreator()->getId().'"
+                    creator_id="'.$content->getCreator()->getExchangeToken().'"
                     creation_date="'.$creation_time.'"
                     update_date="'.$update_time.'">
                         <content><![CDATA['.$content->getContent().']]></content>
@@ -664,7 +665,7 @@ class CreationManager
         fputs($manifest,  '
         <workspace id="'.$workspace->getId().'"
         type="'.get_class($workspace).'"
-        creator="'.$workspace->getCreator()->getId().'"
+        creator="'.$workspace->getCreator()->getExchangeToken().'"
         name="'.$workspace->getName().'"
         code="'.$workspace->getCode().'"
         displayable="'.$workspace->isDisplayable().'"
@@ -693,7 +694,7 @@ class CreationManager
         $type->value = get_class($workspace);
         $domWorkspace->appendChild($type);        
         $creator = $domManifest->createAttribute('creator');
-        $creator->value = $workspace->getCreator()->getId();
+        $creator->value = $workspace->getCreator()->getExchangeToken();
         $domWorkspace->appendChild($creator);       
         $name = $domManifest->createAttribute('name');
         $name->value = $workspace->getName();

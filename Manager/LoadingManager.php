@@ -141,6 +141,7 @@ class LoadingManager
     */
     public function loadZip($zipPath, User $user)
     {   
+        $this->user = $user;
         //Extract the Zip
         $archive = new ZipArchive();
         if ($archive->open($zipPath))
@@ -317,7 +318,7 @@ class LoadingManager
             else
             {
                 // echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
-                $workspace_creator = $this->userRepo->findOneBy(array('id' => $work->getAttribute('creator')));
+                $workspace_creator = $this->userRepo->findOneBy(array('exchangeToken' => $work->getAttribute('creator')));
                 // echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
                 $workspace = $this->createWorkspace($work, $workspace_creator);
                 //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
@@ -468,7 +469,7 @@ class LoadingManager
         $modification_date->setTimestamp($resource->getAttribute('modification_date'));
         
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        $creator = $this->userRepo->findOneBy(array('id' => $resource->getAttribute('creator')));
+        $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
         $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
         
         if(count($parent_node) < 1)
@@ -537,7 +538,7 @@ class LoadingManager
         $modification_date->setTimestamp($resource->getAttribute('modification_date'));
         
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        $creator = $this->userRepo->findOneBy(array('id' => $resource->getAttribute('creator')));
+        $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
         $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
         
         if(count($parent_node) < 1)
@@ -624,7 +625,7 @@ class LoadingManager
         // echo 'Je cree mon Workspace!'.'<br/>';
         $creation_date = new DateTime();
         $modification_date = new DateTime();
-        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $workspace->getAttribute('creator')));
+        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('exchangeToken' => $workspace->getAttribute('creator')));
         $ds = DIRECTORY_SEPARATOR;
 
         $type = Configuration::TYPE_SIMPLE;
@@ -764,7 +765,7 @@ class LoadingManager
         // echo 'Subject created'.'<br/>';
         
         $category = $this->categoryRepo->findOneBy(array('hashName' => $subject->getAttribute('category')));
-        $creator = $this->userRepo->findOneBy(array('id' => $subject->getAttribute('creator_id')));
+        $creator = $this->userRepo->findOneBy(array('exchangeToken' => $subject->getAttribute('creator_id')));
         $sub = new Subject();
         $sub->setTitle($subject->getAttribute('name'));
         $sub->setCategory($category);
@@ -806,7 +807,7 @@ class LoadingManager
         // echo 'Message created'.'<br/>';
         
         $subject = $this->subjectRepo->findOneBy(array('hashName' => $message->getAttribute('subject')));
-        $creator = $this->userRepo->findOneBy(array('id' => $message->getAttribute('creator_id')));
+        $creator = $this->userRepo->findOneBy(array('exchangeToken' => $message->getAttribute('creator_id')));
         $content = $this->extractCData($message);
         $msg = new Message();
         $msg->setContent($content.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');

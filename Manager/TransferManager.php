@@ -219,7 +219,8 @@ class TransferManager
     {
         //TODO Verifier le fichier entrant (dependency injections)
         //TODO, verification de l'existance du dossier
-        $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$content['packetNum'];
+        $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
+        $partName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$content['hashname'].'_'.$content['packetNum'];
         $partFile = fopen($partName, 'w+');
         if(!$partFile) return array("status" => 424);
         $write = fwrite($partFile, base64_decode($content['file']));
@@ -237,7 +238,7 @@ class TransferManager
         $zipName = $this->assembleParts($content);
         if($zipName != null){
             //Load archive
-            $user = $this->userRepo->>findOneBy(array('exchangeToken' => $informationsArray['token'])); //loadUserByUsername($content['username']);
+            $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token'])); //loadUserByUsername($content['username']);
             //TODO LOAD when patch
             // $this->loadingManager->loadZip($zipName, $user);
             if($createSync){
@@ -262,11 +263,12 @@ class TransferManager
     
     public function assembleParts($content)
     {
-        $zipName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/sync_'.$content['hashname'].'.zip';
+        $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
+        $zipName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$content['hashname'].'.zip';
         $zipFile = fopen($zipName, 'w+');
         if(!$zipFile) return null;
         for($i = 0; $i<$content['nPackets']; $i++){
-            $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$i;
+            $partName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$content['hashname'].'_'.$i;
             $partFile = fopen($partName, 'r');
             if(!$partFile) return null;
             $write = fwrite($zipFile, fread($partFile, filesize($partName)));

@@ -93,7 +93,7 @@ class CreationManager
      * @param \Claroline\CoreBundle\Entity\User $user
      *
      */
-     public function createSyncZip(User $user)
+     public function createSyncZip(User $user, $date)
     {
         ini_set('max_execution_time', 0);
         $typeList = array('file', 'directory', 'text', 'claroline_forum'); //TODO ! PAS OPTIMAL !
@@ -108,7 +108,7 @@ class CreationManager
         $domManifest->appendChild($sectManifest);
         
         //Description section
-        $this->writeManifestDescription($domManifest, $sectManifest, $user);           
+        $this->writeManifestDescription($domManifest, $sectManifest, $user, $date);           
 
         $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/';
         // Ca ne fonctionne pas chez moi
@@ -731,7 +731,7 @@ class CreationManager
     /*
     *   Create the description of the manifest.
     */
-    private function writeManifestDescription($domManifest, $sectManifest, User $user)
+    private function writeManifestDescription($domManifest, $sectManifest, User $user, $date)
     {
         // $dateSync = $this->userSynchronizedRepo->findUserSynchronized($user);
         // $user_tmp = $dateSync[0]->getLastSynchronization(); 
@@ -744,9 +744,10 @@ class CreationManager
         $descCreation->value = time();   
         $sectDescription->appendChild($descCreation);
         
-        $userSync = $this->userSynchronizedRepo->findUserSynchronized($user);
+        // $userSync = $this->userSynchronizedRepo->findUserSynchronized($user);
         $descReference = $domManifest->createAttribute('synchronization_date');
-        $descReference->value = $userSync[0]->getLastSynchronization()->getTimestamp();   
+        // $descReference->value = $userSync[0]->getLastSynchronization()->getTimestamp();   
+        $descReference->value = $date;
         $sectDescription->appendChild($descReference);
         
         $descPseudo = $domManifest->createAttribute('username');

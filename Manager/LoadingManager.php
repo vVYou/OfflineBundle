@@ -148,7 +148,7 @@ class LoadingManager
             //Extract the Hashname of the ZIP from the path (length of hashname = 32 char).
             $zip_hashname = substr($zipPath, strlen($zipPath)-40, 36);
             $this->path = SyncConstant::DIRZIP.'/'.$zip_hashname.'/';
-            echo 'J extrait dans ce path : '.$this->path.'<br/>';
+            // echo 'J extrait dans ce path : '.$this->path.'<br/>';
             $tmpdirectory = $archive->extractTo($this->path);
             
             //Call LoadXML
@@ -192,7 +192,10 @@ class LoadingManager
             throw new \Exception('Impossible to load the zip file');
         }
         
-        return $this->syncInfoArray;
+        return array(
+        'infoArray' => $this->syncInfoArray,
+        'synchronizationDate' => $this->synchronizationDate
+        );
     }
 
     public function loadPublicWorkspaceList($allWorkspace)
@@ -258,9 +261,9 @@ class LoadingManager
         foreach($descriptions as $description)
         {
             $this->user = $this->userRepo->findOneBy(array('username' => $description->getAttribute('username'), 'mail' => $description->getAttribute('user_mail')));
-            echo 'My user : '.$this->user->getFirstName().'<br/>';
+            // echo 'My user : '.$this->user->getFirstName().'<br/>';
             $this->synchronizationDate = $description->getAttribute('synchronization_date');
-            echo 'My sync date : '.$this->synchronizationDate.'<br/>';
+            // echo 'My sync date : '.$this->synchronizationDate.'<br/>';
         }
     }
     
@@ -285,7 +288,7 @@ class LoadingManager
             
             if(count($workspace) >= 1)
             {
-                echo 'Mon Workspace : '.$workspace->getGuid().'<br/>';
+                // echo 'Mon Workspace : '.$workspace->getGuid().'<br/>';
                 
                 /*  
                 *   When a workspace with the same guid is found, we can update him if it's required.
@@ -297,7 +300,7 @@ class LoadingManager
                 //echo 'I need to update my workspace!'.'<br/>';
                 $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
                 // TODO Mettre à jour la date de modification et le nom du directory
-                echo 'Mon Workspace Node '.$NodeWorkspace->getName().'<br/>';
+                // echo 'Mon Workspace Node '.$NodeWorkspace->getName().'<br/>';
                 $node_modif_date = $NodeWorkspace->getModificationDate()->getTimestamp();
                 $modif_date = $work->getAttribute('modification_date');
                 
@@ -313,18 +316,17 @@ class LoadingManager
             
             else
             {
-              //  echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
+                // echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
                 $workspace_creator = $this->userRepo->findOneBy(array('id' => $work->getAttribute('creator')));
-                echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
+                // echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
                 $workspace = $this->createWorkspace($work, $workspace_creator);
                 //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
             }
             
-            echo 'En route pour les ressources!'.'<br/>';
+            // echo 'En route pour les ressources!'.'<br/>';
             $info = $this->importWorkspace($work->childNodes, $workspace);
             $this->syncInfoArray[] = $info;
 
-            
         }
     }
     
@@ -375,7 +377,7 @@ class LoadingManager
     */   
     private function updateResource($resource, $node, $workspace, $wsInfo)
     {
-        echo 'I need to update my resource!'.'<br/>';
+        // echo 'I need to update my resource!'.'<br/>';
         
 
         // Load the required informations from the XML file.
@@ -389,7 +391,7 @@ class LoadingManager
         switch($type->getId())
         {
             case SyncConstant::DIR :
-                echo 'It s a directory!'.'<br/>';
+                // echo 'It s a directory!'.'<br/>';
                 if($node_modif_date < $modif_date)
                 {
                     // TODO Mettre à jour la date de modification et le nom du directory
@@ -399,11 +401,11 @@ class LoadingManager
                 }
                 else
                 {
-                    echo 'Already in Database'.'<br/>';
+                    // echo 'Already in Database'.'<br/>';
                 }
                 break;
             case SyncConstant::FORUM :
-                echo 'It s a forum!'.'<br/>';
+                // echo 'It s a forum!'.'<br/>';
                 if($node_modif_date < $modif_date)
                 {
                     // TODO Mettre à jour la date de modification et le nom du directory
@@ -413,7 +415,7 @@ class LoadingManager
                 }
                 break;
             default :
-                echo 'It s a file or a text!'.'<br/>';
+                // echo 'It s a file or a text!'.'<br/>';
                 
                 /*  
                 *   When a resource with the same hashname is found, we can update him if it's required.
@@ -442,7 +444,7 @@ class LoadingManager
                     
                     else
                     {
-                        echo 'Already in Database'.'<br/>';
+                        // echo 'Already in Database'.'<br/>';
                     }
                 }
                 break;
@@ -472,7 +474,7 @@ class LoadingManager
         if(count($parent_node) < 1)
         {
             // If the parent node doesn't exist anymore, workspace will be the parent.
-            echo 'Mon parent est mort ! '.'<br/>';
+            // echo 'Mon parent est mort ! '.'<br/>';
             $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
         
@@ -541,7 +543,7 @@ class LoadingManager
         if(count($parent_node) < 1)
         {
             // If the parent node doesn't exist anymore, workspace will be the parent.
-            echo 'Mon parent est mort ! '.'<br/>';
+            // echo 'Mon parent est mort ! '.'<br/>';
             $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
         
@@ -619,7 +621,7 @@ class LoadingManager
     private function createWorkspace($workspace, $user)
     {   
         // Use the create method from WorkspaceManager.
-        echo 'Je cree mon Workspace!'.'<br/>';
+        // echo 'Je cree mon Workspace!'.'<br/>';
         $creation_date = new DateTime();
         $modification_date = new DateTime();
         $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('id' => $workspace->getAttribute('creator')));
@@ -724,7 +726,7 @@ class LoadingManager
     */
     private function createCategory($category)
     {
-        echo 'Category created'.'<br/>';
+        // echo 'Category created'.'<br/>';
         
         $node_forum = $this->resourceNodeRepo->findOneBy(array('hashName' => $category->getAttribute('forum_node')));
         $forum = $this->resourceManager->getResourceFromNode($node_forum);
@@ -751,7 +753,7 @@ class LoadingManager
             }
         }
         
-        echo 'Category already in DB!'.'<br/>';
+        // echo 'Category already in DB!'.'<br/>';
     }
     
     /*
@@ -759,7 +761,7 @@ class LoadingManager
     */
     private function createSubject($subject)
     {
-        echo 'Subject created'.'<br/>';
+        // echo 'Subject created'.'<br/>';
         
         $category = $this->categoryRepo->findOneBy(array('hashName' => $subject->getAttribute('category')));
         $creator = $this->userRepo->findOneBy(array('id' => $subject->getAttribute('creator_id')));
@@ -790,7 +792,7 @@ class LoadingManager
             }
         }
         
-        echo 'Subject already in DB!'.'<br/>';
+        // echo 'Subject already in DB!'.'<br/>';
     }
     
     /*
@@ -801,7 +803,7 @@ class LoadingManager
         $creation_date = new DateTime();
         $creation_date->setTimestamp($message->getAttribute('creation_date'));
         // Message Creation      
-        echo 'Message created'.'<br/>';
+        // echo 'Message created'.'<br/>';
         
         $subject = $this->subjectRepo->findOneBy(array('hashName' => $message->getAttribute('subject')));
         $creator = $this->userRepo->findOneBy(array('id' => $message->getAttribute('creator_id')));
@@ -832,7 +834,7 @@ class LoadingManager
             }
         }
         
-        echo 'Message already in DB!'.'<br/>';
+        // echo 'Message already in DB!'.'<br/>';
             
     }
     
@@ -869,7 +871,7 @@ class LoadingManager
     
     private function changeDate($node, $creation_date, $modification_date)
     {
-        echo 'I update my date!'.$node->getName().'<br/>';
+        // echo 'I update my date!'.$node->getName().'<br/>';
         /*
         $this->om->startFlushSuite();
         $node->setCreationDate($creation_date);

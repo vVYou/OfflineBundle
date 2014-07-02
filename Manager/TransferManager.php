@@ -217,7 +217,7 @@ class TransferManager
     public function processSyncRequest($content, $createSync)
     {
         //TODO Verifier le fichier entrant (dependency injections)
-        //TODO, verification de l'existance du dossier
+        //TODO verification de l'existance du dossier
         $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
         $partName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$content['hashname'].'_'.$content['packetNum'];
         $partFile = fopen($partName, 'w+');
@@ -238,11 +238,10 @@ class TransferManager
         if($zipName != null){
             //Load archive
             $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token'])); //loadUserByUsername($content['username']);
-            //TODO LOAD when patch
-            // $this->loadingManager->loadZip($zipName, $user);
+            $loadingResponse = $this->loadingManager->loadZip($zipName, $user);
             if($createSync){
                 //Create synchronisation
-                $toSend = $this->creationManager->createSyncZip($user);
+                $toSend = $this->creationManager->createSyncZip($user, $loadingResponse['synchronizationDate']);
                 $this->userSynchronizedManager->updateUserSynchronized($user);
                 $metaDataArray = $this->getMetadataArray($user, $toSend);
                 $metaDataArray["status"] = 200;

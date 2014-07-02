@@ -32,6 +32,7 @@ class SynchronisationManager
     private $transferManager;
     private $userSyncManager;
     private $loadingManager;
+    private $userSynchronizedRepo;
 
     /**
      * Constructor.
@@ -56,6 +57,7 @@ class SynchronisationManager
         $this->transferManager = $transferManager;
         $this->userSyncManager = $userSyncManager;
         $this->loadingManager = $loadingManager;
+        $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
     }
     
     /*
@@ -95,7 +97,7 @@ class SynchronisationManager
     public function step1Create(User $user, UserSynchronized $userSync)
     {
         echo "I 'm at step 1<br/>";
-        $toUpload = $this->creationManager->createSyncZip($user);
+        $toUpload = $this->creationManager->createSyncZip($user, $userSync->getLastSynchronization()->getTimestamp());
         $userSync->setFilename($toUpload);
         $userSync->setStatus(UserSynchronized::STARTED_UPLOAD);
         $this->userSyncManager->updateUserSync($userSync);

@@ -32,6 +32,7 @@ class SynchronisationManager
     private $transferManager;
     private $userSyncManager;
     private $loadingManager;
+    private $userSynchronizedRepo;
 
     /**
      * Constructor.
@@ -56,6 +57,7 @@ class SynchronisationManager
         $this->transferManager = $transferManager;
         $this->userSyncManager = $userSyncManager;
         $this->loadingManager = $loadingManager;
+        $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
     }
     
     /*
@@ -95,7 +97,7 @@ class SynchronisationManager
     public function step1Create(User $user, UserSynchronized $userSync)
     {
         echo "I 'm at step 1<br/>";
-        $toUpload = $this->creationManager->createSyncZip($user);
+        $toUpload = $this->creationManager->createSyncZip($user, $userSync->getLastSynchronization()->getTimestamp());
         $userSync->setFilename($toUpload);
         $userSync->setStatus(UserSynchronized::STARTED_UPLOAD);
         $this->userSyncManager->updateUserSync($userSync);
@@ -106,12 +108,14 @@ class SynchronisationManager
     public function step2Upload(User $user, UserSynchronized $userSync, $filename, $packetNum = 0)
     {
         echo "I 'm at step 2 ".$packetNum."<br/>";
+        $userSync = $this->userSyncManager->updateSentTime($user);
         $toDownload = $this->transferManager->uploadZip($filename, $user, $packetNum);
         $userSync->setFilename($toDownload['hashname']);
         $userSync->setStatus(UserSynchronized::SUCCESS_UPLOAD);
         $this->userSyncManager->updateUserSync($userSync);
         echo "je vais telecharger ceci ".$toDownload['hashname']."<br/>";
         $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['nPackets']);
+        unlink($filename);
     }
     
     public function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = null, $packetNum = 0)
@@ -123,12 +127,14 @@ class SynchronisationManager
         if($nPackets == -1){
             //TODO Change status to fail ? => problem with filename
             $this->step1Create($user, $userSync);
+        }else{
+            $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $packetNum, $user);
+            $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
+            $this->userSyncManager->updateUserSync($userSync);
+            echo "il me reste donc ceci a charger ".$toLoad."<br/>";
+            $this->step4Load($user, $userSync, $toLoad);
+            unlink($toLoad);
         }
-        $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $packetNum, $user);
-        $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
-        $this->userSyncManager->updateUserSync($userSync);
-        echo "il me reste donc ceci a charger ".$toLoad."<br/>";
-        $this->step4Load($user, $userSync, $toLoad);
     }
     
     public function step4Load(User $user, UserSynchronized $userSync, $filename)
@@ -136,8 +142,7 @@ class SynchronisationManager
         echo "I 'm at step 4<br/> with filename ".$filename.'<br/>';
         $this->loadingManager->loadZip($filename, $user);
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
-        $now = new DateTime();
-        $userSync->setLastSynchronization($now);
+        $userSync->setLastSynchronization($userSync->getSentTime());
         $this->userSyncManager->updateUserSync($userSync);
     }
     

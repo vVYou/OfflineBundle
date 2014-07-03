@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Claroline\CoreBundle\Entity\AbstractRoleSubject;
 use Claroline\CoreBundle\Entity\User;
 use Gedmo\Mapping\Annotation as Gedmo;
+use \DateTime;
 
 /**
  * @ORM\Entity(repositoryClass="Claroline\OfflineBundle\Repository\UserSynchronizedRepository")
@@ -74,7 +75,9 @@ class UserSynchronized
     public function __construct(User $user)
     {
         $this->user = $user;
-        $this->status = SUCCESS_SYNC;
+        $this->lastSynchronization = new DateTime('@0');
+        $this->sentTime = new DateTime('@0');
+        $this->status = UserSynchronized::SUCCESS_SYNC;
     }
     
     /**

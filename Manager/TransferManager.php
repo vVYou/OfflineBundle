@@ -112,9 +112,9 @@ class TransferManager
             // echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
             
             //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
-            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip/'.$user->getId(), array(), json_encode($requestContent));    
+            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip', array(), json_encode($requestContent));    
             $responseContent = $reponse->getContent();
-            echo 'CONTENT : <br/>'.$responseContent.'<br/>';
+            // echo 'CONTENT : <br/>'.$responseContent.'<br/>';
             $status = $reponse->getStatusCode();
             $responseContent = (array)json_decode($responseContent);
             $packetNumber ++;
@@ -139,6 +139,10 @@ class TransferManager
                 echo "method failure <br/>";
                 //erreur 424 = read - write ou checksum
                 return false;
+            case 500:
+                echo "method failure <br/>";
+            //TODO attention erreur 500 (erreur sur la plateforme d'envoi)
+                return false;
             default:
                 return true;
         }
@@ -149,8 +153,8 @@ class TransferManager
         $packetNum = 0;
         $browser = $this->getBrowser();
         $requestContent = array(
-            'id' => $user->getId(),
-            'username' => $user->getUsername(), 
+            // 'id' => $user->getId(),
+            // 'username' => $user->getUsername(), 
             'token' => $user->getExchangeToken(),
             'hashname' => $hashToGet,
             'nPackets' => $numPackets,
@@ -158,11 +162,11 @@ class TransferManager
         $processContent = null;
         $status = 200;
         while($packetNum < $numPackets && $status == 200){
-            echo 'doing packet '.$packetNum.'<br/>';
+            // echo 'doing packet '.$packetNum.'<br/>';
             $requestContent['packetNum'] = $packetNum;
-            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip/'.$user->getId(), array(), json_encode($requestContent));
+            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip', array(), json_encode($requestContent));
             $content = $reponse->getContent();
-            echo "CONTENT received : ".$content."<br/>";
+            // echo "CONTENT received : ".$content."<br/>";
             $status = $reponse->getStatusCode();
             $processContent = $this->processSyncRequest((array)json_decode($content), false);
             $packetNum++;
@@ -186,8 +190,8 @@ class TransferManager
     public function getMetadataArray($user, $filename)
     {
         return array(
-            'id' => $user->getId(),
-            'username' => $user->getUsername(), 
+            // 'id' => $user->getId(),
+            // 'username' => $user->getUsername(), 
             'token' => $user->getExchangeToken(),
             'hashname' => substr($filename, strlen($filename)-40, 36),
             'nPackets' => $this->getNumberOfParts($filename),
@@ -218,8 +222,9 @@ class TransferManager
     public function processSyncRequest($content, $createSync)
     {
         //TODO Verifier le fichier entrant (dependency injections)
-        //TODO, verification de l'existance du dossier
-        $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$content['packetNum'];
+        //TODO verification de l'existance du dossier
+        $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
+        $partName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$content['hashname'].'_'.$content['packetNum'];
         $partFile = fopen($partName, 'w+');
         if(!$partFile) return array("status" => 424);
         $write = fwrite($partFile, base64_decode($content['file']));
@@ -237,12 +242,11 @@ class TransferManager
         $zipName = $this->assembleParts($content);
         if($zipName != null){
             //Load archive
-            $user = $this->userRepo->loadUserByUsername($content['username']);
-            //TODO LOAD when patch
-            // $this->loadingManager->loadZip($zipName, $user);
+            $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token'])); //loadUserByUsername($content['username']);
+            $loadingResponse = $this->loadingManager->loadZip($zipName, $user);
             if($createSync){
                 //Create synchronisation
-                $toSend = $this->creationManager->createSyncZip($user);
+                $toSend = $this->creationManager->createSyncZip($user, $loadingResponse['synchronizationDate']);
                 $this->userSynchronizedManager->updateUserSynchronized($user);
                 $metaDataArray = $this->getMetadataArray($user, $toSend);
                 $metaDataArray["status"] = 200;
@@ -262,11 +266,12 @@ class TransferManager
     
     public function assembleParts($content)
     {
-        $zipName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/sync_'.$content['hashname'].'.zip';
+        $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
+        $zipName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$content['hashname'].'.zip';
         $zipFile = fopen($zipName, 'w+');
         if(!$zipFile) return null;
         for($i = 0; $i<$content['nPackets']; $i++){
-            $partName = SyncConstant::SYNCHRO_UP_DIR.$content['id'].'/'.$content['hashname'].'_'.$i;
+            $partName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$content['hashname'].'_'.$i;
             $partFile = fopen($partName, 'r');
             if(!$partFile) return null;
             $write = fwrite($zipFile, fread($partFile, filesize($partName)));
@@ -340,8 +345,13 @@ class TransferManager
             'hashname' => substr($filename, strlen($filename)-40, 36)
         );
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/lastUploaded', array(), json_encode($contentArray));
-        $responseArray = (array)json_decode($response->getContent());
-        return $responseArray['lastUpload'];
+        // echo "CONTENT received : ".$response->getContent()."<br/>";
+        if($this->analyseStatusCode($response->getStatusCode())){
+            $responseArray = (array)json_decode($response->getContent());
+            return $responseArray['lastUpload'];
+        }else{
+            return -1;
+        }
     }
     
     public function getOnlineNumberOfPackets($filename, $user)

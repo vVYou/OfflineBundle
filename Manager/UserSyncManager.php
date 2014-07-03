@@ -65,14 +65,13 @@ class UserSyncManager
      */
     public function updateUserSynchronized(User $user)
     {
-        $userSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $userSyncTab = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
         $this->om->startFlushSuite();
-        
-        $now = new DateTime();
-        $userSync[0]->setLastSynchronization($now);
-        
-        $this->om->persist($userSync[0]);
+        $userSync = $userSyncTab[0];
+        $userSync->setLastSynchronization($userSync->getSentTime());
+        $this->om->persist($userSync);
         $this->om->endFlushSuite();
+        return $userSync;
     }
 
     /*
@@ -80,14 +79,14 @@ class UserSyncManager
      */
     public function updateSentTime(User $user)
     {
-        $userSync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $userSyncTab = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
         $this->om->startFlushSuite();
-        
+        $userSync = $userSyncTab[0];
         $now = new DateTime();
-        $userSync[0]->setSentTime($now);
-        
-        $this->om->persist($userSync[0]);
+        $userSync->setSentTime($now);
+        $this->om->persist($userSync);
         $this->om->endFlushSuite();
+        return $userSync;
     }
     
     /*

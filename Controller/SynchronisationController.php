@@ -13,32 +13,50 @@ use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Library\Security\Authenticator;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Repository\UserRepository;
 use Claroline\OfflineBundle\SyncConstant;
+use Claroline\OfflineBundle\Entity\Credential;
+use Claroline\OfflineBundle\Form\OfflineFormType;
+use Claroline\CoreBundle\Persistence\ObjectManager;
 use \DateTime;
 use \ZipArchive;
 
 class SynchronisationController extends Controller
 {    
-
+    private $om;
     private $authenticator;
+    private $request;
+    private $userRepository;
+    private $userManager;
     
      /**
      * @DI\InjectParams({
-     *     "authenticator"  = @DI\Inject("claroline.authenticator")
+     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
+     *     "authenticator"  = @DI\Inject("claroline.authenticator"),
+     *     "userManager"   = @DI\Inject("claroline.manager.user_manager"),
+     *     "request"            = @DI\Inject("request")
      * })
      */
     public function __construct(
-        Authenticator $authenticator
+        ObjectManager $om,
+        Authenticator $authenticator,       
+        UserManager $userManager,
+        Request $request
     )
     {
+        $this->om = $om;
         $this->authenticator = $authenticator;
+        $this->userManager = $userManager;
+        $this->request = $request;
+        $this->userRepository = $om->getRepository('ClarolineCoreBundle:User');
+    
     }
     // TODO Security voir workspace controller.
 
     private function getUserFromID($user)
     {
-        $em = $this->getDoctrine()->getManager();
+        
         $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
         return $arrayRepo[0];
     }
@@ -68,6 +86,10 @@ class SynchronisationController extends Controller
         // echo "CONTENT received : ".$content."<br/>";
         $informationsArray = (array)json_decode($content);
         // echo "Packet Number : ".$informationsArray['packetNum'].'<br/>';
+        
+        // echo 'j" identifie le bon user avec le token<br/>';
+        // $user = $this->userRepository->findOneBy($informationsArray['token']);
+        // echo 'ceci est le nom de mon user chargé avec le token <br/>'.$user->getName().'<br/>';
         
         $status = $this->authenticator->authenticateWithToken($informationsArray['username'], $informationsArray['token']) ? 200 : 401;
         // echo "STATUS : ".$status."<br/>";
@@ -200,6 +222,77 @@ class SynchronisationController extends Controller
             );
         }
         return new JsonResponse($content, $status);
+    }
+          
+    /**
+    *   First Connection of the user
+    *
+    *   @EXT\Route(
+    *       "/sync/config",
+    *       name="claro_sync_config"
+    *   )
+    *
+    * @EXT\Template("ClarolineOfflineBundle:Offline:config.html.twig")
+    */
+    public function firstConnectionAction()
+    {
+        $cred = new Credential();
+        $form = $this->createForm(new OfflineFormType(), $cred);
+        
+        $form->handleRequest($this->request);
+        if($form->isValid()) {
+            /*
+            *   Check if the user exists on the distant database
+            */
+            $profil = $this->get('claroline.manager.transfer_manager')->getUserInfo($cred->getName(), $cred->getPassword());
+            if($profil !== false)
+            {
+                // The array contains informations, meaning that the user exist in the database
+                // We need to recreate the user in the local database then start the first synchronisation.
+                // return $this->redirect($this->generateUrl('claro_sync_config_ok'));
+            }
+            else
+            {
+                // return $this->redirect($this->generateUrl('claro_sync_config_nok'));
+            }
+        }
+        return array(
+           'form' => $form->createView()
+        );
+    }
+
+    /**
+    *   User found online.
+    *
+    *   @EXT\Route(
+    *       "/sync/config/ok",
+    *       name="claro_sync_config_ok"
+    *   )
+    *
+    * @EXT\Template("ClarolineOfflineBundle:Offline:config.html.twig")
+    */
+    public function firstConnectionOkAction()
+    {
+        echo 'It works!';
+        return array(
+        );
+    }
+
+    /**
+    *   User doesn't exist online.
+    *
+    *   @EXT\Route(
+    *       "/sync/config/nok",
+    *       name="claro_sync_config_nok"
+    *   )
+    *
+    * @EXT\Template("ClarolineOfflineBundle:Offline:config.html.twig")
+    */
+    public function firstConnectionNokAction()
+    {
+        echo '404 not found';
+        return array(
+        );
     }
     
     /**

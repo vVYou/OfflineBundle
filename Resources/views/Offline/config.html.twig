@@ -1,5 +1,14 @@
 {% from _self import renderPager %}
 
+{% set layout = "ClarolineOfflineBundle:Offline:content.html.twig" %}
 
+{% extends layout%}
 
-{{ form(form) }}
+{% block content %}
+    {{ 'sync_config'|trans({}, 'offline') }}
+    {{form_start(form) }}
+        {{ form_row(form.name) }}
+        {{ form_row(form.password) }}
+        <input type="submit" />
+    {{form_end(form) }}
+{% endblock %}

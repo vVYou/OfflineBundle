@@ -28,7 +28,6 @@ use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\ResourceNode;
 use Claroline\CoreBundle\Controller\FileController;
 use Claroline\OfflineBundle\SyncConstant;
-use Claroline\OfflineBunde\Entity\Credential;
 use \DateTime;
 use \ZipArchive;
 use \Buzz\Browser;
@@ -42,17 +41,21 @@ use \Buzz\Client\FileGetContents;
 class OfflineController extends Controller
 {
     private $router;
+    private $request;
     
     /**
     * @DI\InjectParams({
-    *      "router"             = @DI\Inject("router")
+    *      "router"             = @DI\Inject("router"),
+    *     "request"            = @DI\Inject("request")
     * })
     */
     public function __construct(
-        UrlGeneratorInterface $router
+        UrlGeneratorInterface $router,
+        Request $request
     )
     {
        $this->router = $router;
+       $this->request = $request;
     }
     
     
@@ -88,26 +91,6 @@ class OfflineController extends Controller
                 'user' => $username
             ) );
         }
-    }
-    
-    /**
-    *   First Connection of the user
-    *
-    *   @EXT\Route(
-    *       "/sync/config",
-    *       name="claro_sync_config"
-    *   )
-    *
-    * @EXT\Template("ClarolineOfflineBundle:Offline:config.html.twig")
-    */
-    public function firstConnectionAction()
-    {
-        $cred = new Credential();
-        $form = $this->createForm(new OfflineFormType(), $cred);
-        return array(
-            // 'user' => 'popeye'
-            'form' => $form->createView()
-         );
     }
     
     /**

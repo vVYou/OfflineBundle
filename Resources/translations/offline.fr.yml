@@ -6,3 +6,4 @@ offline_mode: Mode deconnecte
 offline_presentation: Vous pouvez teleharger Claroline sur votre ordinateur pour y avoir acces lorsque vous ne pouvez pas vous connecter a internet. Une fois Claroline installe sur votre machine vous devrez synchroniser votre machine pour partager votre travail et obtenir les mises a jours de vos espaces d'activites.
 sync_confirmation: Voulez-vous synchroniser ?
 sync_hello: Bonjour {{user}} voulez-vous synchroniser votre plateforme claroline pour l'utiliser hors-ligne ?
+sync_config : Il semble qu'il s'agisse de votre première connection. Veuillez indiquer votre nom d'utilisateur et mot de passe afin que l'application puisse recuperer votre profil sur la plateforme en ligne.

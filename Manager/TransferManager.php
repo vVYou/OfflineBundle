@@ -22,6 +22,7 @@ use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Manager\LoadingManager;
 use Claroline\OfflineBundle\Manager\CreationManager;
 use Claroline\OfflineBundle\Manager\UserSyncManager;
+use Claroline\OfflineBundle\Manager\FirstConnectionManager;
 use Claroline\OfflineBundle\SyncConstant;
 use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -47,6 +48,7 @@ class TransferManager
     private $resourceManager;
     private $creationManager;
     private $userSynchronizedManager;
+    private $firstConnectionManager;
     private $ut;
     
     /**
@@ -59,6 +61,7 @@ class TransferManager
      *     "creationManager"    = @DI\Inject("claroline.manager.creation_manager"),
      *     "loadingManager" = @DI\Inject("claroline.manager.loading_manager"),
      *     "userSyncManager" = @DI\Inject("claroline.manager.user_sync_manager"),
+     *     "firstConnectionmanager" = @DI\Inject("claroline.manager.first_connection_manager"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
@@ -69,6 +72,7 @@ class TransferManager
         CreationManager $creationManager,
         LoadingManager $loadingManager,
         UserSyncManager $userSyncManager,
+        FirstConnectionManager $firstConnectionManager,
         ClaroUtilities $ut
     )
     {
@@ -80,6 +84,7 @@ class TransferManager
         $this->creationManager = $creationManager;
         $this->loadingManager = $loadingManager;
         $this->userSynchronizedManager = $userSyncManager;
+        $this->firstConnectionManager = $firstConnectionManager;
         $this->ut = $ut;
     }
 
@@ -293,6 +298,8 @@ class TransferManager
     public function getUserInfo($username, $password)
     {
         // The given password has to be clear, without any encryption, the security is made by the HTTPS communication
+        echo $username."<br/>";
+        echo $password."<br/>";
         $browser = $this->getBrowser();
         
         //TODO remove hardcode
@@ -300,11 +307,19 @@ class TransferManager
             'username' => $username,
             'password' => $password
         );
-        echo "content array : ".json_encode($contentArray).'<br/>';
-        $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 
-        //TODO charge user
-        echo "trop cool : ".$reponse->getContent()."<br/>";
-        //TODO return content or create user and return confirm
+        // echo "content array : ".json_encode($contentArray).'<br/>';
+        $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 
+        $status = $this->analyseStatusCode($response->getStatusCode);
+        if($status)
+        {
+            $this->firstConnectionManager->retrieveProfil($username, $password);
+            // $responseArray = (array)json_decode($response->getContent());
+            // return $responseArray;
+        }
+        else
+        {
+            return false;
+        }
     }
     
     private function getBrowser()

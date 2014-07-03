@@ -177,7 +177,7 @@ class InstallOfflineCommand extends ContainerAwareCommand
         return false;
     }    
     
-    public dataBaseCons(ZipArchive $zip)
+    function dataBaseCons(ZipArchive $zip)
     {
         $cmd = "";
         // create a databse = dans mysql > CREATE DATABSE db_name

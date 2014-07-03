@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Claroline\Offline\Form;
+namespace Claroline\OfflineBundle\Form;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -19,8 +19,8 @@ class OfflineFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('Name');
-        $builder->add('Password');
+        $builder->add('name', 'text', array('required' => true));
+        $builder->add('password', 'text', array('required' => true));
    
     }
 

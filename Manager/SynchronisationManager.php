@@ -108,6 +108,7 @@ class SynchronisationManager
     public function step2Upload(User $user, UserSynchronized $userSync, $filename, $packetNum = 0)
     {
         echo "I 'm at step 2 ".$packetNum."<br/>";
+        $userSync = $this->userSyncManager->updateSentTime($user);
         $toDownload = $this->transferManager->uploadZip($filename, $user, $packetNum);
         $userSync->setFilename($toDownload['hashname']);
         $userSync->setStatus(UserSynchronized::SUCCESS_UPLOAD);
@@ -141,8 +142,7 @@ class SynchronisationManager
         echo "I 'm at step 4<br/> with filename ".$filename.'<br/>';
         $this->loadingManager->loadZip($filename, $user);
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
-        $now = new DateTime();
-        $userSync->setLastSynchronization($now);
+        $userSync->setLastSynchronization($userSync->getSentTime());
         $this->userSyncManager->updateUserSync($userSync);
     }
     

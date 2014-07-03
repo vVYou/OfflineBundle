@@ -330,9 +330,13 @@ class TransferManager
             'hashname' => substr($filename, strlen($filename)-40, 36)
         );
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/lastUploaded', array(), json_encode($contentArray));
-        $responseArray = (array)json_decode($response->getContent());
         // echo "CONTENT received : ".$response->getContent()."<br/>";
-        return $responseArray['lastUpload'];
+        if($this->analyseStatusCode($response->getStatusCode())){
+            $responseArray = (array)json_decode($response->getContent());
+            return $responseArray['lastUpload'];
+        }else{
+            return -1;
+        }
     }
     
     public function getOnlineNumberOfPackets($filename, $user)

@@ -7,6 +7,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
@@ -30,20 +32,23 @@ class SynchronisationController extends Controller
     private $request;
     private $userRepository;
     private $userManager;
+    private $router;
     
      /**
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "authenticator"  = @DI\Inject("claroline.authenticator"),
      *     "userManager"   = @DI\Inject("claroline.manager.user_manager"),
-     *     "request"            = @DI\Inject("request")
+     *     "request"            = @DI\Inject("request"),
+     *     "router"             = @DI\Inject("router")
      * })
      */
     public function __construct(
         ObjectManager $om,
         Authenticator $authenticator,       
         UserManager $userManager,
-        Request $request
+        Request $request,
+        UrlGeneratorInterface $router
     )
     {
         $this->om = $om;
@@ -51,6 +56,7 @@ class SynchronisationController extends Controller
         $this->userManager = $userManager;
         $this->request = $request;
         $this->userRepository = $om->getRepository('ClarolineCoreBundle:User');
+        $this->router = $router;
     }
     // TODO Security voir workspace controller.
 
@@ -239,6 +245,7 @@ class SynchronisationController extends Controller
     {
         $cred = new Credential();
         $form = $this->createForm(new OfflineFormType(), $cred);
+        $error = false;
         
         $form->handleRequest($this->request);
         if($form->isValid()) {
@@ -246,19 +253,23 @@ class SynchronisationController extends Controller
             *   Check if the user exists on the distant database
             */
             $profil = $this->get('claroline.manager.transfer_manager')->getUserInfo($cred->getName(), $cred->getPassword());
-            if($profil !== false)
-            {
-                // The array contains informations, meaning that the user exist in the database
-                // We need to recreate the user in the local database then start the first synchronisation.
+            $route = $this->router->generate('claro_sync_config_ok');
+            if($profil){
+                $error = false;
+                // $route = $this->router->generate('claro_sync_config_ok');
                 // return $this->redirect($this->generateUrl('claro_sync_config_ok'));
             }
-            else
-            {
+            else{
+                $error = true;
+                // $route = $this->router->generate('claro_sync_config_nok');
                 // return $this->redirect($this->generateUrl('claro_sync_config_nok'));
             }
+            
+            return new RedirectResponse($route);
         }
         return array(
-           'form' => $form->createView()
+           'form' => $form->createView(),
+           'error' => $error
         );
     }
 
@@ -270,7 +281,7 @@ class SynchronisationController extends Controller
     *       name="claro_sync_config_ok"
     *   )
     *
-    * @EXT\Template("ClarolineOfflineBundle:Offline:config.html.twig")
+    * @EXT\Template("ClarolineOfflineBundle:Offline:connect_ok.html.twig")
     */
     public function firstConnectionOkAction()
     {

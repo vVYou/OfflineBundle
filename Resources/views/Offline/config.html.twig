@@ -5,6 +5,13 @@
 {% extends layout%}
 
 {% block content %}
+    {{ macros.flashBox() }}
+    {% if error %}
+        <div class="alert alert-danger">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            {{ 'login_failure'|trans({}, 'platform') }}
+        </div>
+    {% endif %}
     {{ 'sync_config'|trans({}, 'offline') }}
     {{form_start(form) }}
         {{ form_row(form.name) }}

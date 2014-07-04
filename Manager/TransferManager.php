@@ -22,7 +22,7 @@ use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Manager\LoadingManager;
 use Claroline\OfflineBundle\Manager\CreationManager;
 use Claroline\OfflineBundle\Manager\UserSyncManager;
-use Claroline\OfflineBundle\Manager\FirstConnectionManager;
+use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\OfflineBundle\SyncConstant;
 use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -48,7 +48,7 @@ class TransferManager
     private $resourceManager;
     private $creationManager;
     private $userSynchronizedManager;
-    private $firstConnectionManager;
+    private $userManager;
     private $ut;
     
     /**
@@ -60,8 +60,8 @@ class TransferManager
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
      *     "creationManager"    = @DI\Inject("claroline.manager.creation_manager"),
      *     "loadingManager" = @DI\Inject("claroline.manager.loading_manager"),
+     *     "userManager"   = @DI\Inject("claroline.manager.user_manager"),
      *     "userSyncManager" = @DI\Inject("claroline.manager.user_sync_manager"),
-     *     "firstConnectionmanager" = @DI\Inject("claroline.manager.first_connection_manager"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
@@ -71,8 +71,8 @@ class TransferManager
         ResourceManager $resourceManager,
         CreationManager $creationManager,
         LoadingManager $loadingManager,
+        UserManager $userManager,
         UserSyncManager $userSyncManager,
-        FirstConnectionManager $firstConnectionManager,
         ClaroUtilities $ut
     )
     {
@@ -81,10 +81,10 @@ class TransferManager
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
+        $this->userManager = $userManager;
         $this->creationManager = $creationManager;
         $this->loadingManager = $loadingManager;
         $this->userSynchronizedManager = $userSyncManager;
-        $this->firstConnectionManager = $firstConnectionManager;
         $this->ut = $ut;
     }
 
@@ -314,17 +314,36 @@ class TransferManager
         );
         // echo "content array : ".json_encode($contentArray).'<br/>';
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 
-        $status = $this->analyseStatusCode($response->getStatusCode);
-        if($status)
-        {
-            $this->firstConnectionManager->retrieveProfil($username, $password);
-            // $responseArray = (array)json_decode($response->getContent());
-            // return $responseArray;
+        $status = $this->analyseStatusCode($response->getStatusCode());
+        $result = (array) json_decode($response->getContent());
+        echo sizeof($result);
+        if(sizeof($result) > 1){
+            $this->retrieveProfil($username, $password, $result);
+            return true;
         }
-        else
-        {
+        else{
             return false;
         }
+    }
+    
+    /*
+    *   This method try to catch and create the profil of a user present in the online
+    *   database.
+    */
+    public function retrieveProfil($username, $password, $result)
+    {   
+        $new_user = new User();
+        $new_user->setFirstName($result['first_name']);
+        $new_user->setLastName($result['last_name']);
+        $new_user->setUsername($result['username']);
+        $new_user->setMail($result['mail']);
+        $new_user->setPlainPassword($password);
+        $this->userManager->createUser($new_user);
+        $my_user = $this->userRepo->findOneBy(array('username' => $username));
+        $this->om->startFlushSuite();
+        $my_user->setExchangeToken($result['token']);
+        $this->om->endFlushSuite();
+        $this->userSyncManager->createUserSynchronized($my_user);        
     }
     
     private function getBrowser()

@@ -172,6 +172,10 @@ class SynchronisationController extends Controller
     }
     
    /**
+    *   This function allows the requester to know what was the last part uploaded on the (online) plateform.
+    *   If authentication pass, it returns an array containing the hashname of the file and the last packet upload
+    *   If authentication fails, it returns an HTTP 401 error
+    * 
     *   @EXT\Route(
     *       "/sync/lastUploaded",
     *       name="claro_sync_last_uploaded",
@@ -203,6 +207,11 @@ class SynchronisationController extends Controller
     }
     
    /**
+    *
+    *   This method allows the requester to know the number of packets that he has to download to get the pending synchronized archive
+    *   If authentication pass, it receives an array with the hashname of the file and the number of packet to download
+    *   If authentication fails, it return an HTTP 401 error
+    *
     *   @EXT\Route(
     *       "/sync/numberOfPacketsToDownload",
     *       name="claro_sync_number_of_packets_to_download",

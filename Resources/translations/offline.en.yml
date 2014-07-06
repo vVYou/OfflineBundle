@@ -7,3 +7,6 @@ offline_presentation: You can get Claroline on your computer and use it without 
 sync_confirmation: Do you want to synchronize ?
 sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?
 sync_config : It seems that it is your first connexion. Please enter your username and password so the application can retrieve and load your profil from the online platform.
+sync_first : Account successfully retrieved! Please start your first synchronisation in order to retrieve all your workspaces and content.
+sync_config_fail : The account you have entered doesn't seem to exist.
+sync_launch : Start synchronisation

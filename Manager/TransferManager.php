@@ -52,7 +52,7 @@ class TransferManager
     private $loadingManager;
     private $resourceManager;
     private $creationManager;
-    private $userSynchronizedManager;
+    private $userSyncManager;
     private $userManager;
     private $ut;
     
@@ -89,7 +89,7 @@ class TransferManager
         $this->userManager = $userManager;
         $this->creationManager = $creationManager;
         $this->loadingManager = $loadingManager;
-        $this->userSynchronizedManager = $userSyncManager;
+        $this->userSyncManager = $userSyncManager;
         $this->ut = $ut;
     }
 
@@ -331,7 +331,9 @@ class TransferManager
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 
         $status = $this->analyseStatusCode($response->getStatusCode());
         $result = (array) json_decode($response->getContent());
-        echo sizeof($result);
+        echo sizeof($result).'<br/>';
+        echo $response->getStatusCode().'<br/>';
+        echo $status.'<br/>';
         if(sizeof($result) > 1){
             $this->retrieveProfil($username, $password, $result);
             return true;

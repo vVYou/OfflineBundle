@@ -4,18 +4,17 @@
 
 {% extends layout%}
 
-{% block content %}
-    {{ macros.flashBox() }}
-    {% if error %}
-        <div class="alert alert-danger">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            {{ 'login_failure'|trans({}, 'platform') }}
-        </div>
-    {% endif %}
+{% block title%}
+{% endblock%}
+
+{% block section_content %}
     {{ 'sync_config'|trans({}, 'offline') }}
     {{form_start(form) }}
         {{ form_row(form.name) }}
         {{ form_row(form.password) }}
         <input type="submit" />
     {{form_end(form) }}
+{%block sync%}{%endblock%}
+
+
 {% endblock %}

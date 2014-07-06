@@ -28,4 +28,16 @@ class OfflineFormType extends AbstractType
     {
         return 'offline_form';
     }
+
+    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    {
+        $resolver
+        ->setDefaults(
+            array(
+                'translation_domain' => 'offline',
+                'no_captcha' => true
+                )
+        );
+    }
+    
 }

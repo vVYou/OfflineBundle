@@ -122,10 +122,10 @@ class TransferManager
                 $responseContent = $reponse->getContent();
                 // echo 'CONTENT : <br/>'.$responseContent.'<br/>';
                 $status = $reponse->getStatusCode();
-                $this->analyseStatusCode($status);
                 $responseContent = (array)json_decode($responseContent);
                 $packetNumber ++;
             }
+            $this->analyseStatusCode($status);
             return $responseContent;
         }catch(ClientException $e){
             if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime){
@@ -163,7 +163,7 @@ class TransferManager
         }
     }
     
-    public function getSyncZip($hashToGet, $numPackets, $packetNum, $user)
+    public function getSyncZip($hashToGet, $numPackets, $packetNum, $user, $firstTime = true)
     {
         $packetNum = 0;
         $browser = $this->getBrowser();
@@ -176,20 +176,27 @@ class TransferManager
             'packetNum' => 0);
         $processContent = null;
         $status = 200;
-        while($packetNum < $numPackets && $status == 200){
-            // echo 'doing packet '.$packetNum.'<br/>';
-            $requestContent['packetNum'] = $packetNum;
-            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip', array(), json_encode($requestContent));
-            $content = $reponse->getContent();
-            // echo "CONTENT received : ".$content."<br/>";
-            $status = $reponse->getStatusCode();
-            $processContent = $this->processSyncRequest((array)json_decode($content), false);
-            $packetNum++;
-        }
-        if($status != 200 || $processContent['status'] != 200){
-            return $this->analyseStatusCode($status);
-        }else{
+        try{
+            while($packetNum < $numPackets && $status == 200){
+                // echo 'doing packet '.$packetNum.'<br/>';
+                $requestContent['packetNum'] = $packetNum;
+                $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip', array(), json_encode($requestContent));
+                $content = $reponse->getContent();
+                // echo "CONTENT received : ".$content."<br/>";
+                $status = $reponse->getStatusCode();
+                $processContent = $this->processSyncRequest((array)json_decode($content), false);
+                $packetNum++;
+            }
+            $this->analyseStatusCode($status);
             return $processContent['zip_name'];
+        }catch(ClientException $e){
+            if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime){
+                // echo "Oh mon dieu, un timeout";
+                $this->getSyncZip($hashToGet, $numPackets, $packetNum, $user, false);
+            }
+            else{
+                throw $e;
+            }
         }
     }
     

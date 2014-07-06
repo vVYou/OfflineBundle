@@ -15,3 +15,5 @@ Feature: Search
     And I press "searchButton"
     Then I should see "Search results"
     And I should smile
+    
+  Scenario: Trying to see if it works

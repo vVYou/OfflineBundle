@@ -2,20 +2,29 @@
 
 namespace Claroline\OfflineBundle\Tests\Integration\Context;
 
-use Behat\Behat\Context\Step;
-use Behat\Behat\Event\ScenarioEvent;
-use Behat\Gherkin\Node\TableNode;
-use Behat\Mink\Exception\ElementNotFoundException;
-use Behat\Mink\Exception\ExpectationException;
-use Behat\Symfony2Extension\Context\KernelDictionary;
+use Symfony\Component\HttpKernel\KernelInterface;
+use Behat\Symfony2Extension\Context\KernelAwareInterface;
 use Behat\MinkExtension\Context\MinkContext;
-use Goutte\Client;
+
+use Behat\Behat\Context\BehatContext,
+    Behat\Behat\Exception\PendingException;
+use Behat\Gherkin\Node\PyStringNode,
+    Behat\Gherkin\Node\TableNode;
+
+//
+// Require 3rd-party libraries here:
+//
+//   require_once 'PHPUnit/Autoload.php';
+//   require_once 'PHPUnit/Framework/Assert/Functions.php';
+//
 
 /**
  * Feature context.
  */
 class FeatureContext extends MinkContext
+                  implements KernelAwareInterface
 {
+    private $kernel;
     private $parameters;
 
     /**
@@ -28,6 +37,16 @@ class FeatureContext extends MinkContext
         $this->parameters = $parameters;
     }
 
+    /**
+     * Sets HttpKernel instance.
+     * This method will be automatically called by Symfony2Extension ContextInitializer.
+     *
+     * @param KernelInterface $kernel
+     */
+    public function setKernel(KernelInterface $kernel)
+    {
+        $this->kernel = $kernel;
+    }
     /**
      * @Then /^I should smile$/
      */

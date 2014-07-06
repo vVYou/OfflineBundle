@@ -112,12 +112,19 @@ class TransferManager
             // echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
             
             //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
-            $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip', array(), json_encode($requestContent));    
-            $responseContent = $reponse->getContent();
-            // echo 'CONTENT : <br/>'.$responseContent.'<br/>';
-            $status = $reponse->getStatusCode();
-            $responseContent = (array)json_decode($responseContent);
-            $packetNumber ++;
+            try{
+                echo "J'essaye de try";
+                $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip', array(), json_encode($requestContent));    
+                $responseContent = $reponse->getContent();
+                // echo 'CONTENT : <br/>'.$responseContent.'<br/>';
+                $status = $reponse->getStatusCode();
+                $responseContent = (array)json_decode($responseContent);
+                $packetNumber ++;
+            // }catch(Exception $e){
+            }catch(ClientException $e){
+                echo "PLOUF";
+                echo 'Exception reçue : ',  $e->getMessage(), "\n";
+            }
         }
         if($status != 200){
             return $this->analyseStatusCode($status);

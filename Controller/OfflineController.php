@@ -209,7 +209,9 @@ class OfflineController extends Controller
     */
     public function seekAction(User $user)
     {
-        $test = $this->get('claroline.manager.creation_manager')->createSyncZip($user);
+        $em = $this->getDoctrine()->getManager();
+        $userSyncTab = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $test = $this->get('claroline.manager.creation_manager')->createSyncZip($user, ''.$userSyncTab[0]->getlastSynchronization()->getTimestamp());
         $username = $user->getFirstName() . ' ' . $user->getLastName(); 
         echo 'Congratulations '.$username.'! '."<br/>".'You are now synchronized!';
         echo ''.$test;   

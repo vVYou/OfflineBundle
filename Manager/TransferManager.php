@@ -22,6 +22,10 @@ use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Manager\LoadingManager;
 use Claroline\OfflineBundle\Manager\CreationManager;
 use Claroline\OfflineBundle\Manager\UserSyncManager;
+use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
+use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
+use Claroline\OfflineBundle\Manager\Exception\ServeurException;
+use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
 use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\OfflineBundle\SyncConstant;
 use Symfony\Component\Translation\TranslatorInterface;
@@ -32,6 +36,7 @@ use \DateTime;
 use \Buzz\Browser;
 use \Buzz\Client\Curl;
 use \Buzz\Client\FileGetContents;
+use \Buzz\Exception\ClientException;
 
 
 /**
@@ -92,7 +97,7 @@ class TransferManager
     /*
     *   @param User $user
     */
-    public function uploadZip($toTransfer, User $user, $packetNumber)    
+    public function uploadZip($toTransfer, User $user, $packetNumber, $firstTime = true)    
     {  /*
         *   L'objectif de cette fonction est de transférer le fichier en paramètre à la plateforme dans l'URL est sauvegardée dans les constantes
         *   Ce transfer s'effectue en plusieurs paquets
@@ -105,31 +110,31 @@ class TransferManager
         $responseContent = "";
         $status = 200;
         
-        while($packetNumber < $numberOfPackets && $status == 200)
-        {
-            $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $toTransfer));
-            $requestContent['packetNum'] = $packetNumber;
-            // echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
-            
-            //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
-            try{
-                echo "J'essaye de try";
+        try{
+            while($packetNumber < $numberOfPackets && $status == 200)
+            {
+                $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $toTransfer));
+                $requestContent['packetNum'] = $packetNumber;
+                // echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
+                
+                //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
                 $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip', array(), json_encode($requestContent));    
                 $responseContent = $reponse->getContent();
                 // echo 'CONTENT : <br/>'.$responseContent.'<br/>';
                 $status = $reponse->getStatusCode();
+                $this->analyseStatusCode($status);
                 $responseContent = (array)json_decode($responseContent);
                 $packetNumber ++;
-            // }catch(Exception $e){
-            }catch(ClientException $e){
-                echo "PLOUF";
-                echo 'Exception reçue : ',  $e->getMessage(), "\n";
             }
-        }
-        if($status != 200){
-            return $this->analyseStatusCode($status);
-        }else{
             return $responseContent;
+        }catch(ClientException $e){
+            if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime){
+                // echo "Oh mon dieu, un timeout";
+                $this->uploadZip($toTransfer, $user, $packetNumber, false);
+            }
+            else{
+                throw $e;
+            }
         }
     }
     
@@ -141,14 +146,17 @@ class TransferManager
                 return true;
             case 401:
                 echo "error authentication <br/>";
+                throw new AuthenticationException();
                 return false;
+            case 404:
+                throw new PageNotFoundException();
             case 424:
                 echo "method failure <br/>";
-                //erreur 424 = read - write ou checksum
+                throw new ProcessSyncException();
                 return false;
             case 500:
                 echo "method failure <br/>";
-            //TODO attention erreur 500 (erreur sur la plateforme d'envoi)
+                throw new ServeurException();
                 return false;
             default:
                 return true;

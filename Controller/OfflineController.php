@@ -74,23 +74,27 @@ class OfflineController extends Controller
      */
     public function helloAction(User $user)
     {
-        $em = $this->getDoctrine()->getManager();
-        $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        // $em = $this->getDoctrine()->getManager();
+        // $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
          
-        $username = $user->getFirstName() . ' ' . $user->getLastName();
+        // $username = $user->getFirstName() . ' ' . $user->getLastName();
         
-        if ($userSync) {
-        //TODO Liens vers la route de synchronisation
-            return $this->render('ClarolineOfflineBundle:Offline:sync.html.twig', array(
-                'user' => $username,
-                'user_sync_date' => $userSync[0]->getLastSynchronization()
-            ) );
-        }else{
-        //TODO Methode d'installation
-            return $this->render('ClarolineOfflineBundle:Offline:first_sync.html.twig', array(
-                'user' => $username
-            ) );
-        }
+        // if ($userSync) {
+        // TODO Liens vers la route de synchronisation
+            // return $this->render('ClarolineOfflineBundle:Offline:sync.html.twig', array(
+                // 'user' => $username,
+                // 'user_sync_date' => $userSync[0]->getLastSynchronization()
+            // ) );
+        // }else{
+        // TODO Methode d'installation
+            // return $this->render('ClarolineOfflineBundle:Offline:first_sync.html.twig', array(
+                // 'user' => $username
+            // ) );
+        // }
+        
+        
+        
+        
     }
     
     /**

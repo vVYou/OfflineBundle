@@ -16,6 +16,7 @@ use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Library\Security\Authenticator;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\UserManager;
+use Claroline\OfflineBundle\Manager\TransferManager;
 use Claroline\CoreBundle\Repository\UserRepository;
 use Claroline\OfflineBundle\SyncConstant;
 use Claroline\OfflineBundle\Entity\Credential;
@@ -32,6 +33,7 @@ class SynchronisationController extends Controller
     private $request;
     private $userRepository;
     private $userManager;
+    private $transferManager;
     private $router;
     
      /**
@@ -39,6 +41,7 @@ class SynchronisationController extends Controller
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "authenticator"  = @DI\Inject("claroline.authenticator"),
      *     "userManager"   = @DI\Inject("claroline.manager.user_manager"),
+     *     "transferManager" = @DI\Inject("claroline.manager.transfer_manager"),
      *     "request"            = @DI\Inject("request"),
      *     "router"             = @DI\Inject("router")
      * })
@@ -47,6 +50,7 @@ class SynchronisationController extends Controller
         ObjectManager $om,
         Authenticator $authenticator,       
         UserManager $userManager,
+        TransferManager $transferManager,
         Request $request,
         UrlGeneratorInterface $router
     )
@@ -54,6 +58,7 @@ class SynchronisationController extends Controller
         $this->om = $om;
         $this->authenticator = $authenticator;
         $this->userManager = $userManager;
+        $this->transferManager = $transferManager;
         $this->request = $request;
         $this->userRepository = $om->getRepository('ClarolineCoreBundle:User');
         $this->router = $router;
@@ -245,31 +250,41 @@ class SynchronisationController extends Controller
     {
         $cred = new Credential();
         $form = $this->createForm(new OfflineFormType(), $cred);
-        $error = false;
+        // $error = false;
         
         $form->handleRequest($this->request);
         if($form->isValid()) {
             /*
             *   Check if the user exists on the distant database
             */
-            $profil = $this->get('claroline.manager.transfer_manager')->getUserInfo($cred->getName(), $cred->getPassword());
-            $route = $this->router->generate('claro_sync_config_ok');
+            $profil = $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword());
+
             if($profil){
-                $error = false;
+                // $error = false;
+                $first_sync = true;
+                //Auto-log?
+
+                // TRUE route if auto-log.
+                // $route = $this->router->generate('claro_sync');  
+
+                // Route for test
+                $route = $this->router->generate('claro_sync_config_ok');
+                
+                return new RedirectResponse($route);
                 // $route = $this->router->generate('claro_sync_config_ok');
                 // return $this->redirect($this->generateUrl('claro_sync_config_ok'));
             }
             else{
-                $error = true;
+                // $error = true;
+                $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
+                $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
                 // $route = $this->router->generate('claro_sync_config_nok');
                 // return $this->redirect($this->generateUrl('claro_sync_config_nok'));
             }
-            
-            return new RedirectResponse($route);
+
         }
         return array(
-           'form' => $form->createView(),
-           'error' => $error
+           'form' => $form->createView()
         );
     }
 
@@ -281,13 +296,18 @@ class SynchronisationController extends Controller
     *       name="claro_sync_config_ok"
     *   )
     *
-    * @EXT\Template("ClarolineOfflineBundle:Offline:connect_ok.html.twig")
     */
     public function firstConnectionOkAction()
     {
-        echo 'It works!';
-        return array(
-        );
+        $first_sync = true;
+        return $this->render('ClarolineOfflineBundle:Offline:connect_ok.html.twig', array(
+            'first_sync' => $first_sync
+        ) );
+
+        // echo 'It works!';
+        // return array(
+            // $first_sync = true
+        // );
     }
 
     /**

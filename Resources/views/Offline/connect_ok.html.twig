@@ -1,3 +1,25 @@
-<p>
-yeah!
-<p/>
+{% from _self import renderPager %}
+
+{% set layout = "ClarolineOfflineBundle::layout.html.twig" %}
+
+{% extends layout%}
+
+{% block title%}
+{% endblock%}
+
+{% block section_content %}
+    {{ macros.flashBox() }}
+        {% if first_sync %}
+            <div class="alert alert-danger">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                {{ 'sync_first'|trans({}, 'offline') }}
+            </div>
+        {% endif %}
+        
+<h1>{{ 'offline_mode'|trans({}, 'offline') }}</h1>
+<p>{{ 'offline_presentation'|trans({}, 'offline') }}</p>
+<button type="button" class="btn btn-primary" tabindex="3">{{ 'sync_launch'|trans({}, 'offline') }}</button>
+{%block sync%}{%endblock%}
+
+
+{% endblock %}

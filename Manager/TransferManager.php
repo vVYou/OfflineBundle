@@ -120,7 +120,7 @@ class TransferManager
                 //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
                 $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip', array(), json_encode($requestContent));    
                 $responseContent = $reponse->getContent();
-                // echo 'CONTENT : <br/>'.$responseContent.'<br/>';
+                echo 'CONTENT : <br/>'.$responseContent.'<br/>';
                 $status = $reponse->getStatusCode();
                 $responseContent = (array)json_decode($responseContent);
                 $packetNumber ++;
@@ -145,17 +145,17 @@ class TransferManager
             case 200:
                 return true;
             case 401:
-                echo "error authentication <br/>";
+                // echo "error authentication <br/>";
                 throw new AuthenticationException();
                 return false;
             case 404:
                 throw new PageNotFoundException();
             case 424:
-                echo "method failure <br/>";
+                // echo "method failure <br/>";
                 throw new ProcessSyncException();
                 return false;
             case 500:
-                echo "method failure <br/>";
+                // echo "method failure <br/>";
                 throw new ServeurException();
                 return false;
             default:
@@ -269,7 +269,7 @@ class TransferManager
             if($createSync){
                 //Create synchronisation
                 $toSend = $this->creationManager->createSyncZip($user, $loadingResponse['synchronizationDate']);
-                $this->userSynchronizedManager->updateUserSynchronized($user);
+                $this->userSyncManager->updateUserSynchronized($user);
                 $metaDataArray = $this->getMetadataArray($user, $toSend);
                 $metaDataArray["status"] = 200;
                 return $metaDataArray;
@@ -322,7 +322,7 @@ class TransferManager
         }
     }
     
-    public function getUserInfo($username, $password)
+    public function getUserInfo($username, $password, $firstTime = true)
     {
         // The given password has to be clear, without any encryption, the security is made by the HTTPS communication
         echo $username."<br/>";
@@ -335,18 +335,28 @@ class TransferManager
             'password' => $password
         );
         // echo "content array : ".json_encode($contentArray).'<br/>';
-        $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 
-        $status = $this->analyseStatusCode($response->getStatusCode());
-        $result = (array) json_decode($response->getContent());
-        echo sizeof($result).'<br/>';
-        echo $response->getStatusCode().'<br/>';
-        echo $status.'<br/>';
-        if(sizeof($result) > 1){
+        try{
+            $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray)); 
+            $status = $this->analyseStatusCode($response->getStatusCode());
+            $result = (array) json_decode($response->getContent());
+            echo sizeof($result).'<br/>';
+            echo $response->getStatusCode().'<br/>';
+            echo $status.'<br/>';
+            // if(sizeof($result) > 1){
             $this->retrieveProfil($username, $password, $result);
-            return true;
-        }
-        else{
-            return false;
+                // return true;
+            // }
+            // else{
+                // return false;
+            // }
+        }catch(ClientException $e){
+            if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime){
+                // echo "Oh mon dieu, un timeout";
+                $this->getUserInfo($username, $password, false);
+            }
+            else{
+                throw $e;
+            }
         }
     }
     

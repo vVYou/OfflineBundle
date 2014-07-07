@@ -411,13 +411,38 @@ class TransferManager
     {
         $browser = $this->getBrowser();
         $contentArray = array(
-            'username' => $user->getUsername(),
-            'id' => $user->getId(),
+            // 'username' => $user->getUsername(),
+            // 'id' => $user->getId(),
             'token' => $user->getExchangeToken(),
             'hashname' => $filename
         );
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/numberOfPacketsToDownload', array(), json_encode($contentArray));
+        $this->analyseStatusCode($response->getStatusCode());
         $responseArray = (array)json_decode($response->getContent());
         return $responseArray['nPackets'];
+    }
+    
+    public function unlinkSynchronisationFile($content, $user)
+    {
+        // echo 'je delete : '.$content['dir'].$user->getId().'/sync_'.$content['hashname'].'.zip<br/>';
+        unlink($content['dir'].$user->getId().'/sync_'.$content['hashname'].'.zip');
+        $content['status'] = 200;
+        return $content;
+    }
+    
+    
+    
+    public function deleteFile($user, $filename, $dir)
+    {
+        $browser = $this->getBrowser();
+        $contentArray = array(
+            'token' => $user->getExchangeToken(),
+            'hashname' => $filename,
+            'dir' => $dir
+        );
+        // echo "Je tente de delete ".$filename." dans ".$dir." pour ".$user->getExchangeToken()."<br/>";
+        $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/unlink', array(), json_encode($contentArray));
+        $this->analyseStatusCode($response->getStatusCode());
+        // echo "Here is my response ".$response->getContent().'<br/>';
     }
 }

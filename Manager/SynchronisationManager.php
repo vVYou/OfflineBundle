@@ -115,6 +115,7 @@ class SynchronisationManager
         $this->userSyncManager->updateUserSync($userSync);
         echo "je vais telecharger ceci ".$toDownload['hashname']."<br/>";
         $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['nPackets']);
+        $this->transferManager->deleteFile($user,substr($filename, strlen($filename)-40, 36), SyncConstant::SYNCHRO_UP_DIR);
         unlink($filename);
     }
     
@@ -133,6 +134,7 @@ class SynchronisationManager
             $this->userSyncManager->updateUserSync($userSync);
             echo "il me reste donc ceci a charger ".$toLoad."<br/>";
             $this->step4Load($user, $userSync, $toLoad);
+            $this->transferManager->deleteFile($user, $filename, SyncConstant::SYNCHRO_DOWN_DIR);
             unlink($toLoad);
         }
     }
@@ -151,7 +153,6 @@ class SynchronisationManager
         * Cette fonction doit retourner le dernier paquet téléchargé sur l'ordinateur;
         * Si aucun fichier n'est trouvé avec le nom envoyé, -1 est retourné
         */
-        
         $stop = true;
         $index = -1;
         while($stop)

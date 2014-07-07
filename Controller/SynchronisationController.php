@@ -179,7 +179,7 @@ class SynchronisationController extends Controller
             $em = $this->getDoctrine()->getManager();
             $content = $this->get('claroline.manager.transfer_manager')->getMetadataArray($user, $fileName);
             $content['packetNum']=$informationsArray['packetNum'];
-            $data = $this->get('claroline.manager.transfer_manager')->getPacket($informationsArray['packetNum'], $fileName);
+            $data = $this->get('claroline.manager.transfer_manager')->getPacket($informationsArray['packetNum'], $fileName, $user);
             if($data == null){
                 $status = 424;
             }else{

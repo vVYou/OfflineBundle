@@ -132,7 +132,7 @@ class SynchronisationManager
             $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $packetNum, $user);
             $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
             $this->userSyncManager->updateUserSync($userSync);
-            echo "il me reste donc ceci a charger ".$toLoad."<br/>";
+            // echo "il me reste donc ceci a charger ".$toLoad."<br/>";
             $this->step4Load($user, $userSync, $toLoad);
             $this->transferManager->deleteFile($user, $filename, SyncConstant::SYNCHRO_DOWN_DIR);
             unlink($toLoad);

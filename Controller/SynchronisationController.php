@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
@@ -22,8 +23,13 @@ use Claroline\OfflineBundle\SyncConstant;
 use Claroline\OfflineBundle\Entity\Credential;
 use Claroline\OfflineBundle\Form\OfflineFormType;
 use Claroline\CoreBundle\Persistence\ObjectManager;
+use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
+use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
+use Claroline\OfflineBundle\Manager\Exception\ServeurException;
+use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
 use \DateTime;
 use \ZipArchive;
+use \Buzz\Exception\ClientException;
 
 
 class SynchronisationController extends Controller
@@ -35,6 +41,7 @@ class SynchronisationController extends Controller
     private $userManager;
     private $transferManager;
     private $router;
+    private $session;
     
      /**
      * @DI\InjectParams({
@@ -43,7 +50,8 @@ class SynchronisationController extends Controller
      *     "userManager"   = @DI\Inject("claroline.manager.user_manager"),
      *     "transferManager" = @DI\Inject("claroline.manager.transfer_manager"),
      *     "request"            = @DI\Inject("request"),
-     *     "router"             = @DI\Inject("router")
+     *     "router"             = @DI\Inject("router"),
+     *     "session"            = @DI\Inject("session")
      * })
      */
     public function __construct(
@@ -52,7 +60,8 @@ class SynchronisationController extends Controller
         UserManager $userManager,
         TransferManager $transferManager,
         Request $request,
-        UrlGeneratorInterface $router
+        UrlGeneratorInterface $router,
+        SessionInterface $session
     )
     {
         $this->om = $om;
@@ -62,6 +71,7 @@ class SynchronisationController extends Controller
         $this->request = $request;
         $this->userRepository = $om->getRepository('ClarolineCoreBundle:User');
         $this->router = $router;
+        $this->session = $session;
     }
     // TODO Security voir workspace controller.
 
@@ -277,9 +287,28 @@ class SynchronisationController extends Controller
             /*
             *   Check if the user exists on the distant database
             */
-            $profil = $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword());
+            // $profil = $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword());
 
-            if($profil){
+            // if($profil){
+                // $error = false;
+                // $first_sync = true;
+                //Auto-log?
+
+                // TRUE route if auto-log.
+                // $route = $this->router->generate('claro_sync');  
+
+                // Route for test
+                // $route = $this->router->generate('claro_sync_config_ok');
+                
+                // return new RedirectResponse($route);
+            // }
+            // else{
+                // $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
+                // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+            // }
+            
+            try{
+                $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword());
                 // $error = false;
                 $first_sync = true;
                 //Auto-log?
@@ -291,16 +320,38 @@ class SynchronisationController extends Controller
                 $route = $this->router->generate('claro_sync_config_ok');
                 
                 return new RedirectResponse($route);
-                // $route = $this->router->generate('claro_sync_config_ok');
-                // return $this->redirect($this->generateUrl('claro_sync_config_ok'));
+                
             }
-            else{
-                // $error = true;
-                $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
+            catch(AuthenticationException $e){                
+                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
                 $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
-                // $route = $this->router->generate('claro_sync_config_nok');
-                // return $this->redirect($this->generateUrl('claro_sync_config_nok'));
             }
+            catch(ProcessSyncException $e){
+                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
+                $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+            }
+            catch(ServeurException $e){
+                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
+                $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+            }
+            catch(PageNotFoundException $e){
+                $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
+                $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+            }
+            catch(ClientException $e){
+                $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
+                $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+            }
+            
+            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+            // finally{
+                // echo 'nananananananannaa BATMAN!';
+                // $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
+                // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+                // $route = $this->router->generate('claro_sync_config_ok');
+                
+                // return new RedirectResponse($route);
+            // }
 
         }
         return array(

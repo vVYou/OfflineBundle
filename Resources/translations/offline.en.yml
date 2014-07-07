@@ -9,4 +9,7 @@ sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?
 sync_config : It seems that it is your first connexion. Please enter your username and password so the application can retrieve and load your profil from the online platform.
 sync_first : Account successfully retrieved! Please start your first synchronisation in order to retrieve all your workspaces and content.
 sync_config_fail : The account you have entered doesn't seem to exist.
+sync_unreach : Server unreachable. Please check your internet connection and check if you can reach the website of your platform. If you can please check your SyncConstant file.
+sync_server_fail : A problem has been encounter on the server side. Please retry later.
+sync_client_fail : An error occurs while trying to contact the distant server. Please retry later.
 sync_launch : Start synchronisation

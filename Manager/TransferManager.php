@@ -121,7 +121,7 @@ class TransferManager
                 //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
                 $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip', array(), json_encode($requestContent));    
                 $responseContent = $reponse->getContent();
-                // echo 'CONTENT : <br/>'.$responseContent.'<br/>';
+                echo 'CONTENT : <br/>'.$responseContent.'<br/>';
                 $status = $reponse->getStatusCode();
                 $responseContent = (array)json_decode($responseContent);
                 $packetNumber ++;
@@ -256,7 +256,11 @@ class TransferManager
         //TODO Verifier le fichier entrant (dependency injections)
         //TODO verification de l'existance du dossier
         $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
-        $partName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$content['hashname'].'_'.$content['packetNum'];
+        $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId();
+        if(!is_dir($dir)){
+            mkdir($dir, 0777);
+        }
+        $partName = $dir.'/'.$content['hashname'].'_'.$content['packetNum'];
         $partFile = fopen($partName, 'w+');
         if(!$partFile) return array("status" => 424);
         $write = fwrite($partFile, base64_decode($content['file']));

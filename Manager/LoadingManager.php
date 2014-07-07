@@ -14,6 +14,7 @@ namespace Claroline\OfflineBundle\Manager;
 use JMS\DiExtraBundle\Annotation as DI;
 use Claroline\CoreBundle\Manager\WorkspaceManager;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Manager\RoleManager;
 use Claroline\ForumBundle\Manager\Manager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\File;
@@ -64,8 +65,10 @@ class LoadingManager
     private $subjectRepo;
     private $messageRepo;
     private $forumRepo;
+    private $roleRepo;
     private $resourceManager;
     private $workspaceManager;
+    private $roleManager;
     private $forumManager;
     private $templateDir;
     private $user;
@@ -87,6 +90,7 @@ class LoadingManager
      *     "wsManager"      = @DI\Inject("claroline.manager.workspace_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
      *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
+     *     "roleManager"    =   @DI\Inject("claroline.manager.role_manager"),
      *     "forumManager"   = @DI\Inject("claroline.manager.forum_manager"),
      *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc"),
@@ -102,6 +106,7 @@ class LoadingManager
         WorkspaceManager $wsManager,
         ResourceManager $resourceManager,
         WorkspaceManager $workspaceManager,
+        RoleManager $roleManager,
         Manager $forumManager,
         $templateDir,
         ClaroUtilities $ut,
@@ -121,10 +126,12 @@ class LoadingManager
         $this->subjectRepo = $om->getRepository('ClarolineForumBundle:Subject');
         $this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
         $this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
+        $this->roleRepo = $om->getRepository('ClarolineCoreBundle:Role');
         $this->translator = $translator;
         $this->wsManager = $wsManager;
         $this->resourceManager = $resourceManager;
         $this->workspaceManager = $workspaceManager;
+        $this->roleManager = $roleManager;
         $this->forumManager = $forumManager;
         $this->templateDir = $templateDir;
         $this->ut = $ut;
@@ -153,7 +160,7 @@ class LoadingManager
             $tmpdirectory = $archive->extractTo($this->path);
             
             //Call LoadXML
-            $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getId().'.xml');
+            $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getUsername().'.xml');
 
             // $this->loadXML('manifest_test_x.xml'); //Actually used for test.
             
@@ -318,9 +325,9 @@ class LoadingManager
             else
             {
                 // echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
-                $workspace_creator = $this->userRepo->findOneBy(array('exchangeToken' => $work->getAttribute('creator')));
+                // $workspace_creator = $this->userRepo->findOneBy(array('exchangeToken' => $work->getAttribute('creator')));
                 // echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
-                $workspace = $this->createWorkspace($work, $workspace_creator);
+                $workspace = $this->createWorkspace($work, $user);
                 //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
             }
             
@@ -625,7 +632,7 @@ class LoadingManager
         // echo 'Je cree mon Workspace!'.'<br/>';
         $creation_date = new DateTime();
         $modification_date = new DateTime();
-        $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('exchangeToken' => $workspace->getAttribute('creator')));
+        // $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('exchangeToken' => $workspace->getAttribute('creator')));
         $ds = DIRECTORY_SEPARATOR;
 
         $type = Configuration::TYPE_SIMPLE;
@@ -639,24 +646,32 @@ class LoadingManager
         $config->setSelfRegistration($workspace->getAttribute('selfregistration'));
         $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
         $config->setGuid($workspace->getAttribute('guid'));
-        $user = $this->security->getToken()->getUser();
+        // $user = $this->security->getToken()->getUser();
         
-        $this->workspaceManager->create($config, $creator);   
-        $this->tokenUpdater->update($this->security->getToken());
-        //$route = $this->router->generate('claro_workspace_list');
-               
-        $my_ws = $this->workspaceRepo->findOneBy(array('code' => $workspace->getAttribute('code')));
+        // $my_ws = $this->workspaceManager->create($config, $creator);           
+        $my_ws = $this->workspaceManager->create($config, $user);   
+        // $this->tokenUpdater->update($this->security->getToken());
+        //$route = $this->router->generate('claro_workspace_list'); 
+        
+        if(!($workspace->getAttribute('creator') == $user->getExchangeToken())){
+            //Risque d'être un tableau.
+            $role = $this->roleRepo->findByUserAndWorkspace($user, $my_ws);
+            $this->roleManager->dissociateUserRole($user, $role);
+            $role = $this->roleRepo->findOneBy(array(('name' => $workspace->getAttribute('role')));
+            $this->roleManager->associateUserRole($user, $role);
+        }
+        
         $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $my_ws));                       
         
         $this->om->startFlushSuite();
         $creation_date->setTimestamp($workspace->getAttribute('creation_date'));
         $modification_date->setTimestamp($workspace->getAttribute('modification_date'));      
         
-        $NodeWorkspace->setCreator($creator);
+        $NodeWorkspace->setCreator($user);
         $NodeWorkspace->setCreationDate($creation_date);
         $NodeWorkspace->setModificationDate($modification_date);
         $NodeWorkspace->setNodeHashName($workspace->getAttribute('hashname_node'));
-        $this->om->endFlushSuite();  
+        $this->om->endFlushSuite();
         
         return $my_ws;
 

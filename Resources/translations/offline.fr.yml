@@ -15,5 +15,6 @@ sync_server_fail : Une erreur est survenue du côté du serveur, veuillez réess
 sync_client_fail : Une erreur est survenue en contactant le serveur distant. Veuillez réessayer plus tard.
 sync_launch : Lancer la synchronisation
 sync_ok : Votre compte a été récupéré avec succès! Nous vous invitons à vous connecter et lancer votre première synchronisation afin de récupérer l'ensemble de vos cours.
+sync_fail : Le processus a échoué. Veuillez réessayer.
 sync_name : Nom d'utilisateur
 sync_pwd : Mot de passe

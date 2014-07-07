@@ -92,7 +92,9 @@ class OfflineController extends Controller
             // ) );
         // }
         
+        $route = $this->router->generate('claro_sync_exchange');
         
+        return new RedirectResponse($route);
         
         
     }
@@ -156,7 +158,7 @@ class OfflineController extends Controller
     *   Create userSyncrhonized entity
     *   
     *   @EXT\Route(
-    *       "/sync/exchange/{user}",
+    *       "/sync/exchange",
     *       name="claro_sync_exchange"
     *   )
     *
@@ -166,34 +168,49 @@ class OfflineController extends Controller
     * @param User $authUser
     * @return Response
     */
-    public function syncAction($user, User $authUser)
+    public function syncAction(User $authUser)
     {  /** 
         *   TODO MODIFY return with render different twig donc redirect plutot que le boolean true false
         */
         
-        if($user != $authUser->getId())
-        {
-            $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
-            return array(
-                'user' => $username,
-                'succeed' => false
-            );
-        }
-        else
-        {
-            $em = $this->getDoctrine()->getManager();
-            $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($authUser);
+        $em = $this->getDoctrine()->getManager();
+        $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($authUser);
+        try{
             $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
-            // $i = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop("24F0DCDC-3B64-4019-8D6A-80FBCEA68AF9", $authUser);
-            // echo "last download : ".$i."<br/>";
-            
-            //Format the view
-            $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
-            return array(
-                'user' => $username,
-                'succeed' => true
-             );
         }
+        catch(AuthenticationException $e){                
+            $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
+            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+        }
+        catch(ProcessSyncException $e){
+            $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
+            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+        }
+        catch(ServeurException $e){
+            $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
+            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+        }
+        catch(PageNotFoundException $e){
+            $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
+            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+        }
+        catch(ClientException $e){
+            $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
+            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+        }
+        catch(SynchronisationFailsException $e){
+            $msg = $this->get('translator')->trans('sync_fail', array(), 'offline');
+        }       
+        // $i = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop("24F0DCDC-3B64-4019-8D6A-80FBCEA68AF9", $authUser);
+        // echo "last download : ".$i."<br/>";
+        
+        //Format the view
+        $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
+        return array(
+            'user' => $username,
+            'succeed' => true
+         );
+    
     }
 
     /**

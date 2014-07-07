@@ -50,6 +50,7 @@ class CreationManager
     private $categoryRepo;
     private $resourceManager;
     private $workspaceRepo;
+    private $roleRepo;
     private $ut;
 
     /**
@@ -81,6 +82,7 @@ class CreationManager
         $this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
         $this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
         $this->workspaceRepo = $om->getRepository('ClarolineCoreBundle:Workspace\AbstractWorkspace');
+        $this->roleRepo = $om->getRepository('ClarolineCoreBundle:Role');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
@@ -101,7 +103,7 @@ class CreationManager
         $archive = new ZipArchive();        
         $domManifest = new DOMDocument('1.0', "UTF-8");
         $domManifest->formatOutput = true;
-        $manifestName = SyncConstant::MANIFEST.'_'.$user->getId().'.xml';
+        $manifestName = SyncConstant::MANIFEST.'_'.$user->getUsername().'.xml';
         
         // Manifest section
         $sectManifest = $domManifest->createElement('manifest');    
@@ -110,13 +112,14 @@ class CreationManager
         //Description section
         $this->writeManifestDescription($domManifest, $sectManifest, $user, $date);           
 
-        $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/';
+        $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId();
         // Ca ne fonctionne pas chez moi
-        // if(!is_dir($dir)){
-            // mrkdir($dir);
-        // }
+        if(!is_dir($dir)){
+            echo $dir;
+            mkdir($dir, 0777);
+        }
         $hashname_zip = $this->ut->generateGuid(); 
-        $fileName = $dir.'sync_'.$hashname_zip.'.zip';
+        $fileName = $dir.'/sync_'.$hashname_zip.'.zip';
         
         $typeArray = $this->buildTypeArray($typeList);
         $userWS = $this->workspaceRepo->findByUser($user);
@@ -188,7 +191,7 @@ class CreationManager
     {
         foreach($userWS as $element)
         {
-            $domWorkspace = $this->addWorkspaceToManifest($domManifest, $sectManifest, $element);
+            $domWorkspace = $this->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);
             foreach($typeArray as $resType)
             {
                 $ressourcesToSync = array();
@@ -681,12 +684,15 @@ class CreationManager
     /*
     *   Add informations of a specific workspace in the manifest.
     */
-    private function addWorkspaceToManifest($domManifest, $sectManifest, $workspace)
+    private function addWorkspaceToManifest($domManifest, $sectManifest, $workspace, $user)
     {
+        //Risque d'être un tableau.
+        $my_role = $this->roleRepo->findByUserAndWorkspace($user, $workspace);
+        
         $my_res_node = $this->userSynchronizedRepo->findResourceNodeByWorkspace($workspace);
         $creation_time = $my_res_node[0]->getCreationDate()->getTimestamp();  
         $modification_time = $my_res_node[0]->getModificationDate()->getTimestamp(); 
-        
+              
         $domWorkspace = $domManifest->createElement('workspace');
         $sectManifest->appendChild($domWorkspace);
         
@@ -695,7 +701,10 @@ class CreationManager
         $domWorkspace->appendChild($type);        
         $creator = $domManifest->createAttribute('creator');
         $creator->value = $workspace->getCreator()->getExchangeToken();
-        $domWorkspace->appendChild($creator);       
+        $domWorkspace->appendChild($creator);
+        $role = $domManifest->createAttribute('role');
+        $role->value = $my_role->getName();
+        $domWorkspace->appenChild($type);
         $name = $domManifest->createAttribute('name');
         $name->value = $workspace->getName();
         $domWorkspace->appendChild($name);     

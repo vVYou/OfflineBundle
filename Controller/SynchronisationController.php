@@ -136,6 +136,36 @@ class SynchronisationController extends Controller
     
     /**
     *   @EXT\Route(
+    *       "/sync/unlink",
+    *       name="claro_sync_unlink",
+    *   )
+    *
+    *   @EXT\Method("POST")    
+    *
+    *   @return Response
+    */
+    public function unlinkSyncFile()
+    {   /*
+        *   This method is used to clean the files created in the synchronisation directory
+        */
+        $authTab = $this->authWithToken($this->getRequest()->getContent());
+         echo "CONTENT received : ".$this->getRequest()->getContent()."<br/>";
+        $status = $authTab['status'];
+        $user = $authTab['user'];
+        // echo "STATUS : ".$status."<br/>";
+        $content = array();
+        if ($status == 200){
+            $content = $this->get('claroline.manager.transfer_manager')->unlinkSynchronisationFile($authTab['informationsArray'], $user);
+            // echo "what s generate by process request? : ".json_encode($content).'<br/>';
+            echo 'status return '.$status.'<br/>';
+            $status = $content['status'];
+        }
+        return new JsonResponse($content, $status);
+        // return new JsonResponse($content, 200);
+    }
+    
+    /**
+    *   @EXT\Route(
     *       "/transfer/getzip",
     *       name="claro_sync_get_zip",
     *   )
@@ -159,7 +189,7 @@ class SynchronisationController extends Controller
             $em = $this->getDoctrine()->getManager();
             $content = $this->get('claroline.manager.transfer_manager')->getMetadataArray($user, $fileName);
             $content['packetNum']=$informationsArray['packetNum'];
-            $data = $this->get('claroline.manager.transfer_manager')->getPacket($informationsArray['packetNum'], $fileName);
+            $data = $this->get('claroline.manager.transfer_manager')->getPacket($informationsArray['packetNum'], $fileName, $user);
             if($data == null){
                 $status = 424;
             }else{

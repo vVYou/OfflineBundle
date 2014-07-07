@@ -98,4 +98,14 @@ class UserSyncManager
         $this->om->persist($userSync);
         $this->om->endFlushSuite();
     }
+    
+    public function  resetSync($user)
+    {
+        $userSyncTab = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $this->om->startFlushSuite();
+        $userSync = $userSyncTab[0];
+        $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
+        $this->om->persist($userSync);
+        $this->om->endFlushSuite();
+    }
 }

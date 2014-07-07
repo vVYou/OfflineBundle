@@ -26,6 +26,7 @@ use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
 use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
 use Claroline\OfflineBundle\Manager\Exception\ServeurException;
 use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
+use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
 use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\OfflineBundle\SyncConstant;
 use Symfony\Component\Translation\TranslatorInterface;
@@ -113,14 +114,14 @@ class TransferManager
         try{
             while($packetNumber < $numberOfPackets && $status == 200)
             {
-                $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $toTransfer));
+                $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $toTransfer, $user));
                 $requestContent['packetNum'] = $packetNumber;
                 // echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
                 
                 //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
                 $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip', array(), json_encode($requestContent));    
                 $responseContent = $reponse->getContent();
-                echo 'CONTENT : <br/>'.$responseContent.'<br/>';
+                // echo 'CONTENT : <br/>'.$responseContent.'<br/>';
                 $status = $reponse->getStatusCode();
                 $responseContent = (array)json_decode($responseContent);
                 $packetNumber ++;
@@ -211,35 +212,44 @@ class TransferManager
     
     public function getMetadataArray($user, $filename)
     {
-        return array(
-            // 'id' => $user->getId(),
-            // 'username' => $user->getUsername(), 
-            'token' => $user->getExchangeToken(),
-            'hashname' => substr($filename, strlen($filename)-40, 36),
-            'nPackets' => $this->getNumberOfParts($filename),
-            'checksum' => hash_file( "sha256", $filename)
-        );
-    }
-    
-    public function getPacket($packetNumber, $filename)
-    {
-        $fileSize = filesize($filename);
-        $handle = fopen($filename, 'r');
-        if($packetNumber*SyncConstant::MAX_PACKET_SIZE > $fileSize || !$handle){
-            return null;
+        if(!file_exists($filename)){
+            $this->userSyncManager->resetSync($user);
+            throw new SynchronisationFailsException();
         }else{
-            $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
-            fseek($handle, $position);
-            if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE){
-                $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
-            }else{
-                $data = fread($handle, $fileSize-$position);
-            }
-            if(!fclose($handle)) return null;
-            return $data;
+            return array(
+                // 'id' => $user->getId(),
+                // 'username' => $user->getUsername(), 
+                'token' => $user->getExchangeToken(),
+                'hashname' => substr($filename, strlen($filename)-40, 36),
+                'nPackets' => $this->getNumberOfParts($filename),
+                'checksum' => hash_file( "sha256", $filename)
+            );
         }
     }
-  
+    
+    public function getPacket($packetNumber, $filename, $user)
+    {
+        if(!file_exists($filename)){
+            $this->userSyncManager->resetSync($user);
+            throw new SynchronisationFailsException();
+        }else{
+            $fileSize = filesize($filename);
+            $handle = fopen($filename, 'r');
+            if($packetNumber*SyncConstant::MAX_PACKET_SIZE > $fileSize || !$handle){
+                return null;
+            }else{
+                $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
+                fseek($handle, $position);
+                if($fileSize > $position+SyncConstant::MAX_PACKET_SIZE){
+                    $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
+                }else{
+                    $data = fread($handle, $fileSize-$position);
+                }
+                if(!fclose($handle)) return null;
+                return $data;
+            }
+        }
+    }
   
     public function processSyncRequest($content, $createSync)
     {
@@ -411,13 +421,48 @@ class TransferManager
     {
         $browser = $this->getBrowser();
         $contentArray = array(
-            'username' => $user->getUsername(),
-            'id' => $user->getId(),
+            // 'username' => $user->getUsername(),
+            // 'id' => $user->getId(),
             'token' => $user->getExchangeToken(),
             'hashname' => $filename
         );
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/numberOfPacketsToDownload', array(), json_encode($contentArray));
+        $this->analyseStatusCode($response->getStatusCode());
         $responseArray = (array)json_decode($response->getContent());
         return $responseArray['nPackets'];
+    }
+    
+    public function unlinkSynchronisationFile($content, $user)
+    {
+        // echo 'je delete : '.$content['dir'].$user->getId().'/sync_'.$content['hashname'].'.zip<br/>';
+        unlink($content['dir'].$user->getId().'/sync_'.$content['hashname'].'.zip');
+        $content['status'] = 200;
+        return $content;
+    }
+    
+    
+    
+    public function deleteFile($user, $filename, $dir, $firstTime=true)
+    {
+        $browser = $this->getBrowser();
+        $contentArray = array(
+            'token' => $user->getExchangeToken(),
+            'hashname' => $filename,
+            'dir' => $dir
+        );
+        try{
+            // echo "Je tente de delete ".$filename." dans ".$dir." pour ".$user->getExchangeToken()."<br/>";
+            $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/unlink', array(), json_encode($contentArray));
+            $this->analyseStatusCode($response->getStatusCode());
+            // echo "Here is my response ".$response->getContent().'<br/>';
+        }catch(ClientException $e){
+            if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime){
+                // echo "Oh mon dieu, un timeout";
+                $this->deleteFile($user, $filename, $dir, false);
+            }
+            else{
+                throw $e;
+            }
+        }
     }
 }

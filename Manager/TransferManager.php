@@ -269,7 +269,7 @@ class TransferManager
             if($createSync){
                 //Create synchronisation
                 $toSend = $this->creationManager->createSyncZip($user, $loadingResponse['synchronizationDate']);
-                $this->userSyncManager->updateUserSynchronized($user);
+                // $this->userSyncManager->updateUserSynchronized($user);
                 $metaDataArray = $this->getMetadataArray($user, $toSend);
                 $metaDataArray["status"] = 200;
                 return $metaDataArray;

@@ -8,6 +8,13 @@
 {% endblock%}
 
 {% block section_content %}
+    {{ macros.flashBox() }}
+        {% if msg %}
+            <div class="alert alert-danger">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                {{ msg }}
+            </div>
+        {% endif %}
     {{ 'sync_config'|trans({}, 'offline') }}
     {{form_start(form) }}
         {{ form_row(form.name) }}

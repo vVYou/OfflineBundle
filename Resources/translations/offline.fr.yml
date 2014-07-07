@@ -4,6 +4,7 @@ last_sync: Vous vous etes synchronisea derniere fois le
 update: Si vous souhaitez mettre a jour votre plateforme, veuillez cliquer sur le lien si dessous et suivez les instructions.
 offline_mode: Mode deconnecte
 offline_presentation: Vous pouvez teleharger Claroline sur votre ordinateur pour y avoir acces lorsque vous ne pouvez pas vous connecter a internet. Une fois Claroline installe sur votre machine vous devrez synchroniser votre machine pour partager votre travail et obtenir les mises a jours de vos espaces d'activites.
+offline_result : Voici les résultats de la synchronisation :
 sync_confirmation: Voulez-vous synchroniser ?
 sync_hello: Bonjour {{user}} voulez-vous synchroniser votre plateforme claroline pour l'utiliser hors-ligne ?
 sync_config : Il semble qu'il s'agisse de votre première connection. Veuillez indiquer votre nom d'utilisateur et mot de passe afin que l'application puisse recuperer votre profil sur la plateforme en ligne.
@@ -13,3 +14,6 @@ sync_unreach : Impossible d'atteindre le serveur. Vérifier votre connexion inte
 sync_server_fail : Une erreur est survenue du côté du serveur, veuillez réessayer dans quelques instants.
 sync_client_fail : Une erreur est survenue en contactant le serveur distant. Veuillez réessayer plus tard.
 sync_launch : Lancer la synchronisation
+sync_ok : Votre compte a été récupéré avec succès! Nous vous invitons à vous connecter et lancer votre première synchronisation afin de récupérer l'ensemble de vos cours.
+sync_name : Nom d'utilisateur
+sync_pwd : Mot de passe

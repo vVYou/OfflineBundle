@@ -1,0 +1,23 @@
+{% from _self import renderPager %}
+
+{% set layout = "ClarolineOfflineBundle::layout.html.twig" %}
+
+{% extends layout%}
+
+{% block title%}
+{% endblock%}
+
+{% block section_content %}        
+<h1>{{ 'offline_mode'|trans({}, 'offline') }}</h1>
+<p>{{ 'offline_result'|trans({}, 'offline') }}</p>
+<ul>
+    {% for elem in results %}
+        {% for elem in results %}
+            <li>{{ elem }}</li>
+    {% endfor %}
+</ul>
+<button type="button" class="btn btn-primary" tabindex="3">{{ 'sync_launch'|trans({}, 'offline') }}</button>
+{%block sync%}{%endblock%}
+
+
+{% endblock %}

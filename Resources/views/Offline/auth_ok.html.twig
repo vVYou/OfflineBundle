@@ -1,0 +1,15 @@
+{% from _self import renderPager %}
+
+{% set layout = "ClarolineOfflineBundle::layout.html.twig" %}
+
+{% extends layout%}
+
+{% block title%}
+{% endblock%}
+
+{% block section_content %}        
+<p>{{ 'sync_ok'|trans({}, 'offline') }}</p>
+{%block sync%}{%endblock%}
+
+
+{% endblock %}

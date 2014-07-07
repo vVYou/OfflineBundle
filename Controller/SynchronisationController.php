@@ -280,6 +280,7 @@ class SynchronisationController extends Controller
     {
         $cred = new Credential();
         $form = $this->createForm(new OfflineFormType(), $cred);
+        $msg = '';
         // $error = false;
         
         $form->handleRequest($this->request);
@@ -312,36 +313,39 @@ class SynchronisationController extends Controller
                 // $error = false;
                 $first_sync = true;
                 //Auto-log?
-
+                echo 'badadoum';
                 // TRUE route if auto-log.
                 // $route = $this->router->generate('claro_sync');  
 
                 // Route for test
-                $route = $this->router->generate('claro_sync_config_ok');
+                // $route = $this->router->generate('claro_sync_config_ok');
                 
-                return new RedirectResponse($route);
+                // return new RedirectResponse($route);              
+                $msg = $this->get('translator')->trans('sync_ok', array(), 'offline');
+                
                 
             }
             catch(AuthenticationException $e){                
-                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+                $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
+                // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
             }
             catch(ProcessSyncException $e){
                 $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+                // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
             }
             catch(ServeurException $e){
                 $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+                // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
             }
             catch(PageNotFoundException $e){
                 $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
-                $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+                // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
             }
             catch(ClientException $e){
                 $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
-                $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
+                // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
             }
+            
             
             // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
             // finally{
@@ -355,7 +359,8 @@ class SynchronisationController extends Controller
 
         }
         return array(
-           'form' => $form->createView()
+           'form' => $form->createView(),
+           'msg' => $msg
         );
     }
 

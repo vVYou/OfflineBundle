@@ -4,6 +4,7 @@ last_sync: The last time you synchronize was
 update: If you want to update your plateform, please click on the following link and follow the instructions.
 offline_mode: Offline mode
 offline_presentation: You can get Claroline on your computer and use it without internet connexion. Once you download claroline on your computer, you will have to synchronize it periodically to share your work online and to get the new updates.
+offline_result : Here is your synchronisation result :
 sync_confirmation: Do you want to synchronize ?
 sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?
 sync_config : It seems that it is your first connexion. Please enter your username and password so the application can retrieve and load your profil from the online platform.
@@ -13,3 +14,6 @@ sync_unreach : Server unreachable. Please check your internet connection and che
 sync_server_fail : A problem has been encounter on the server side. Please retry later.
 sync_client_fail : An error occurs while trying to contact the distant server. Please retry later.
 sync_launch : Start synchronisation
+sync_ok : Account successfully retrieved! Please connect and launch your first synchronisation in order to retrieve all your workspaces and content.
+sync_name : Username
+sync_pwd : Password

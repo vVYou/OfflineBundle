@@ -1,0 +1,51 @@
+{% from _self import renderPager %}
+
+{% set layout = "ClarolineOfflineBundle:Offline:content.html.twig" %}
+
+{% extends layout%}
+
+{% block title %}{{ parent() ~ ' - ' ~ 'sync_mode' | trans({}, 'offline') | striptags | raw }}{% endblock %}
+
+
+{% block content %}      
+    <div class='panel panel-default'>       
+        <div class="panel-heading">
+            <h3 class="panel-title">{{ 'sync_mode_result'|trans({}, 'offline') }}</h3>
+        </div>
+        <div class="panel-body">
+            <p>{{ 'sync_result'|trans({}, 'offline') }}</p>
+            {% for obj in results %}
+                <ul>   
+                    <li>{{ 'sync_ws'|trans({}, 'offline') }} {{ obj.getWorkspace() }}</li>
+                    <ul>
+                        <li>{{ 'sync_ws_crea'|trans({}, 'offline') }}</li>
+                        <ul>
+                        {% for elem in obj.getCreate() %}
+                            <li>{{ elem }}</li>
+                        {% endfor %}
+                        </ul>
+                    </ul>
+                    <ul>
+                        <li>{{ 'sync_ws_upd'|trans({}, 'offline') }}</li>
+                        <ul>
+                        {% for elem in obj.getUpdate() %}
+                            <li>{{ elem }}</li>
+                        {% endfor %}
+                        </ul>
+                        </ul>
+                    <ul>
+                        <li>{{ 'sync_ws_doub'|trans({}, 'offline') }}</li>
+                        <ul>
+                        {% for elem in obj.getDoublon() %}
+                            <li>{{ elem }}</li>
+                        {% endfor %}  
+                        </ul> 
+                    </ul>                    
+                </ul>
+            {% endfor %}
+        </div> 
+    </div>
+{%block sync%}{%endblock%}
+
+
+{% endblock %}

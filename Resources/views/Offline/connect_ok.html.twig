@@ -4,21 +4,35 @@
 
 {% extends layout%}
 
-{% block title%}
-{% endblock%}
 
-{% block section_content %}
-    {{ macros.flashBox() }}
-        {% if first_sync %}
-            <div class="alert alert-danger">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                {{ 'sync_first'|trans({}, 'offline') }}
+{% block title %}{{ parent() ~ ' - ' ~ 'sync_mode' | trans({}, 'offline') | striptags | raw }}{% endblock %}
+
+{% block content %}
+
+    <div class='panel panel-default'>
+        {{ macros.flashBox() }}
+            {% if first_sync %}
+                <div class="alert alert-danger">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    {{ 'sync_first'|trans({}, 'offline') }}
+                </div>
+            {% endif %}
+            
+            <div class="panel-heading">
+                <h3 class="panel-title">{{ 'sync_mode'|trans({}, 'offline') }}</h3>
             </div>
-        {% endif %}
-        
-<h1>{{ 'offline_mode'|trans({}, 'offline') }}</h1>
-<p>{{ 'offline_presentation'|trans({}, 'offline') }}</p>
-<button type="button" class="btn btn-primary" tabindex="3">{{ 'sync_launch'|trans({}, 'offline') }}</button>
+             <div class="panel-body">
+                <p>{{ 'offline_presentation'|trans({}, 'offline') }}</p>
+            </div> 
+            <div class="panel-footer">
+                <a class="btn btn-primary" href="{{ path('claro_sync') }}" role="button">
+                    {{ 'sync_launch'|trans({}, 'offline') }}
+                </a>
+            </div>
+
+
+
+    </div>           
 {%block sync%}{%endblock%}
 
 

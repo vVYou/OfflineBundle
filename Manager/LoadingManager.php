@@ -657,7 +657,7 @@ class LoadingManager
             //Risque d'être un tableau.
             $role = $this->roleRepo->findByUserAndWorkspace($user, $my_ws);
             $this->roleManager->dissociateUserRole($user, $role);
-            $role = $this->roleRepo->findOneBy(array(('name' => $workspace->getAttribute('role')));
+            $role = $this->roleRepo->findOneBy(array('name' => $workspace->getAttribute('role')));
             $this->roleManager->associateUserRole($user, $role);
         }
         

@@ -4,23 +4,34 @@
 
 {% extends layout%}
 
-{% block title%}
-{% endblock%}
+{% block title %}{{ parent() ~ ' - ' ~ 'sync_mode' | trans({}, 'offline') | striptags | raw }}{% endblock %}
 
-{% block section_content %}
-    {{ macros.flashBox() }}
-        {% if msg %}
-            <div class="alert alert-danger">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                {{ msg }}
+
+{% block content %}  
+    <div class="col-md-offset-3 col-md-5">
+        <div class='panel panel-default'>
+            {{ macros.flashBox() }}
+                {% if msg %}
+                    <div class="alert alert-danger">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                        {{ msg }}
+                    </div>
+                {% endif %}
+              
+            <div class="panel-heading">
+                <h3 class="panel-title">{{ 'sync_mode_config'|trans({}, 'offline') }}</h3>
             </div>
-        {% endif %}
-    {{ 'sync_config'|trans({}, 'offline') }}
-    {{form_start(form) }}
-        {{ form_row(form.name) }}
-        {{ form_row(form.password) }}
-        <input type="submit" />
-    {{form_end(form) }}
+            {{form_start(form) }}
+                <div class="panel-body">
+                    <p>{{ 'sync_config'|trans({}, 'offline') }}</p>
+                    {{ form_widget(form) }}
+                </div> 
+                <div class="panel-footer">
+                    <button type="submit" class="btn btn-primary">{{ 'sync_retrieve'|trans({}, 'offline') }}</button>
+                </div>
+            {{form_end(form) }}
+        </div>
+    </div>
 {%block sync%}{%endblock%}
 
 

@@ -14,7 +14,17 @@ sync_unreach : Server unreachable. Please check your internet connection and che
 sync_server_fail : A problem has been encounter on the server side. Please retry later.
 sync_client_fail : An error occurs while trying to contact the distant server. Please retry later.
 sync_launch : Start synchronisation
+sync_retrieve : Retrieve profil
 sync_ok : Account successfully retrieved! Please connect and launch your first synchronisation in order to retrieve all your workspaces and content.
 sync_fail : The process fail! Please retry!
 sync_name : Username
 sync_pwd : Password
+sync_mode : Claroffline
+sync_mode_config : Claroffline - Configuration
+sync_mode_result : Claroffline - Résultats
+sync_already : The account of this user has already been retrieved!
+sync_result : Platform synchronised ! Here's the results :
+sync_ws : In the workspace :
+sync_ws_crea : The following resources have been created :
+sync_ws_upd : The following resources have been updated :
+sync_ws_doub : For the following resources a doublon has been created : 

@@ -391,7 +391,11 @@ class TransferManager
         $this->om->startFlushSuite();
         $my_user->setExchangeToken($result['token']);
         $this->om->endFlushSuite();
-        $this->userSyncManager->createUserSynchronized($my_user);        
+        $this->userSyncManager->createUserSynchronized($my_user);   
+
+        // Creation of the file inside the offline database
+        file_put_contents(SyncConstant::PLAT_CONF, $result['username']);
+        
     }
     
     private function getBrowser()

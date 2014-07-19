@@ -7,14 +7,24 @@ offline_presentation: Vous pouvez teleharger Claroline sur votre ordinateur pour
 offline_result : Voici les résultats de la synchronisation :
 sync_confirmation: Voulez-vous synchroniser ?
 sync_hello: Bonjour {{user}} voulez-vous synchroniser votre plateforme claroline pour l'utiliser hors-ligne ?
-sync_config : Il semble qu'il s'agisse de votre première connection. Veuillez indiquer votre nom d'utilisateur et mot de passe afin que l'application puisse recuperer votre profil sur la plateforme en ligne.
+sync_config : Il semble qu'il s'agisse de votre première connexion hors-ligne. Veuillez indiquer votre nom d'utilisateur et mot de passe afin que l'application puisse recuperer votre profil sur la plateforme en ligne.
 sync_first : Votre compte a été récupéré avec succès! Nous vous invitons à lancer votre première synchronisation afin de récupérer l'ensemble de vos cours.
 sync_config_fail : Le compte que vous avez entré ne semble pas exister.
 sync_unreach : Impossible d'atteindre le serveur. Vérifier votre connexion internet et vérifier que vous pouvez atteindre la plateforme. Si cela est le cas, vérifier votre fichier SyncConstant.
 sync_server_fail : Une erreur est survenue du côté du serveur, veuillez réessayer dans quelques instants.
 sync_client_fail : Une erreur est survenue en contactant le serveur distant. Veuillez réessayer plus tard.
 sync_launch : Lancer la synchronisation
+sync_retrieve : Récupérer le profil
 sync_ok : Votre compte a été récupéré avec succès! Nous vous invitons à vous connecter et lancer votre première synchronisation afin de récupérer l'ensemble de vos cours.
 sync_fail : Le processus a échoué. Veuillez réessayer.
 sync_name : Nom d'utilisateur
 sync_pwd : Mot de passe
+sync_mode : Claroffline
+sync_mode_config : Claroffline - Configuration
+sync_mode_result : Claroffline - Résultats
+sync_already : Le compte de cet utilisateur a déjà été récupéré!
+sync_result : Plate-forme synchronisée ! Voici les résultats :
+sync_ws : Dans l'espace d'activités :
+sync_ws_crea : Les ressources suivantes ont été créées :
+sync_ws_upd : Les ressources suivantes ont été mise à jour :
+sync_ws_doub : Un doublon a été créé pour les ressources suivantes : 

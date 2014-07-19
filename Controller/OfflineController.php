@@ -28,6 +28,7 @@ use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\ResourceNode;
 use Claroline\CoreBundle\Controller\FileController;
 use Claroline\OfflineBundle\SyncConstant;
+use Claroline\OfflineBundle\SyncInfo;
 use \DateTime;
 use \ZipArchive;
 use \Buzz\Browser;
@@ -68,6 +69,7 @@ class OfflineController extends Controller
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
      * 
+     * @EXT\Template("ClarolineOfflineBundle:Offline:connect_ok.html.twig")
      * @param User $user
      *
      * @return Response
@@ -92,10 +94,58 @@ class OfflineController extends Controller
             // ) );
         // }
         
-        $route = $this->router->generate('claro_sync_exchange');
+        // $route = $this->router->generate('claro_sync_exchange');
         
-        return new RedirectResponse($route);
+        // return new RedirectResponse($route);
         
+        $first_sync = false;
+        
+        return array(
+           'first_sync' => $first_sync
+        );
+        
+    }
+    
+    /**
+     * Get result
+     *
+     * @EXT\Route(
+     *     "/sync/result",
+     *     name="claro_sync_result"
+     * )
+     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     * 
+     * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
+     * @param User $user
+     *
+     * @return Response
+     */
+    public function resultAction(User $user)
+    {
+        $results = array();
+        $result1 = new SyncInfo();
+        $result1->setWorkspace('Mon Workspace 123');
+        $result1->addToCreate('mon_premier_cours.pdf');
+        $result1->addToUpdate('une_maj.odt');
+        $result1->addToDoublon('un_doublon.calc');
+        
+        $results[] = $result1;
+        
+        $result2 = new SyncInfo();
+        $result2->setWorkspace('Mon Workspace 10000');
+        $result2->addToCreate('mon_premier_cours.pdf');
+        $result2->addToCreate('mon_deuxieme_cours.pdf');
+        $result2->addToDoublon('un_doublon.calc');
+        $result2->addToDoublon('un_autre_doublon.calc');
+        
+        $results[] = $result2;
+        
+        
+        // $result = array(array('Mon Workspace 123', array('mon_premier_cours.pdf', 'bonjour.txt'), array('une_maj.odt'), array('un_doublon.calc')), array('Mon Workspace 10000000000', array('mon_premier_cours.pdf', 'bonjour.txt'), array('une_maj.odt'), array('un_doublon.calc')));
+        
+        return array(
+           'results' => $results
+        );
         
     }
     

@@ -49,6 +49,7 @@ class TransferManager
     private $om;
     private $translator;
     private $userSynchronizedRepo;
+    private $resourceNodeRepo;
     private $userRepo;
     private $loadingManager;
     private $resourceManager;
@@ -85,6 +86,7 @@ class TransferManager
         $this->om = $om;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
         $this->userManager = $userManager;
@@ -358,6 +360,11 @@ class TransferManager
             echo $status.'<br/>';
             // if(sizeof($result) > 1){
             $this->retrieveProfil($username, $password, $result);
+            // echo $result['ws_resnode'];
+            // foreach($result as $elem)
+            // {
+                // echo $elem.'</br>';
+            // }
                 // return true;
             // }
             // else{
@@ -388,8 +395,12 @@ class TransferManager
         $new_user->setPlainPassword($password);
         $this->userManager->createUser($new_user);
         $my_user = $this->userRepo->findOneBy(array('username' => $username));
+        $ws_perso = $my_user->getPersonalWorkspace();
+        $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $ws_perso, 'parent' => NULL));
         $this->om->startFlushSuite();
         $my_user->setExchangeToken($result['token']);
+        $ws_perso->setGuid($result['ws_perso']);
+        $user_ws_rn->setNodeHashName($result['ws_resnode']);
         $this->om->endFlushSuite();
         $this->userSyncManager->createUserSynchronized($my_user);   
 

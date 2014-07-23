@@ -703,8 +703,8 @@ class CreationManager
         $creator->value = $workspace->getCreator()->getExchangeToken();
         $domWorkspace->appendChild($creator);
         $role = $domManifest->createAttribute('role');
-        $role->value = $my_role->getName();
-        $domWorkspace->appenChild($type);
+        $role->value = $my_role[0]->getName();
+        $domWorkspace->appendChild($type);
         $name = $domManifest->createAttribute('name');
         $name->value = $workspace->getName();
         $domWorkspace->appendChild($name);     

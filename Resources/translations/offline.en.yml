@@ -3,7 +3,7 @@ hello: Hello
 last_sync: The last time you synchronize was
 update: If you want to update your plateform, please click on the following link and follow the instructions.
 offline_mode: Offline mode
-offline_presentation: You can get Claroline on your computer and use it without internet connexion. Once you download claroline on your computer, you will have to synchronize it periodically to share your work online and to get the new updates.
+offline_presentation: Welcome to Claroffline. This tool's main purpose is to maintain your local Claroline platform up-to-date. The button below will start the synchronisation process with the online platform in order to retrieve all the modifications. Besides, the modifications you made on your local Claroline platform will also be uploaded to the online platform.
 offline_result : Here is your synchronisation result :
 sync_confirmation: Do you want to synchronize ?
 sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?

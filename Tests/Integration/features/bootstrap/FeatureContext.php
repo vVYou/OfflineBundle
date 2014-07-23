@@ -28,7 +28,25 @@ class FeatureContext extends MinkContext
     {
         $this->parameters = $parameters;
     }
-
+    
+    /**
+   * After each scenario, we close the browser
+   *
+   * @AfterScenario
+   */
+    public function closeBrowser()
+    {
+        $this->getSession()->stop();
+    }
+    
+    /**
+     * @Given /^that I\'m not log in$/
+     */
+    public function thatIMNotLogIn()
+    {
+        return true;
+    }
+    
     /**
      * @Then /^I should smile$/
      */

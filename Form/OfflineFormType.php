@@ -19,8 +19,8 @@ class OfflineFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('name', 'text', array('required' => true));
-        $builder->add('password', 'text', array('required' => true));
+        $builder->add('name', 'text', array('required' => true, 'label' => 'sync_name'));
+        $builder->add('password', 'text', array('required' => true, 'label' => 'sync_pwd'));
    
     }
 

@@ -104,10 +104,11 @@ class FirstConnectionListener
         */
         $first_route = 'claro_sync_config';
         $_route = $event->getRequest()->get('_route');
+        $token = $this->securityContext->getToken();
         
         if ($event->isMasterRequest()) {
             if ($first_route !== $_route){
-                if($this->securityContext->getToken()->getUser() == 'anon.'){  
+                if($token && $token->getUser() == 'anon.'){  
                     if(!(file_exists(SyncConstant::PLAT_CONF))){        
                         $uri = $this->router->generate($first_route);
                         $response = new RedirectResponse($uri);

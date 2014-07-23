@@ -34,6 +34,7 @@ use \ZipArchive;
 use \Buzz\Browser;
 use \Buzz\Client\Curl;
 use \Buzz\Client\FileGetContents;
+use Claroline\CoreBundle\Persistence\ObjectManager;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -41,22 +42,28 @@ use \Buzz\Client\FileGetContents;
  */
 class OfflineController extends Controller
 {
+        private $om;
     private $router;
     private $request;
+    private $resourceNodeRepo;
     
     /**
     * @DI\InjectParams({
     *      "router"             = @DI\Inject("router"),
-    *     "request"            = @DI\Inject("request")
+    *     "request"            = @DI\Inject("request"),
+         *     "om"             = @DI\Inject("claroline.persistence.object_manager")
     * })
     */
     public function __construct(
         UrlGeneratorInterface $router,
-        Request $request
+        Request $request,
+                ObjectManager $om
     )
     {
        $this->router = $router;
        $this->request = $request;
+               $this->om = $om;
+       $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
     }
     
     
@@ -140,7 +147,15 @@ class OfflineController extends Controller
         
         $results[] = $result2;
         
-        
+            $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
+            $user_inf = $user->getUserAsTab();
+            $user_inf[] = $user_ws_rn->getNodeHashName();
+            $returnContent = $user_inf;
+        // echo $returnContent[0];
+        foreach($returnContent as $elem)
+        {
+            echo $elem.'</br>';
+        }
         // $result = array(array('Mon Workspace 123', array('mon_premier_cours.pdf', 'bonjour.txt'), array('une_maj.odt'), array('un_doublon.calc')), array('Mon Workspace 10000000000', array('mon_premier_cours.pdf', 'bonjour.txt'), array('une_maj.odt'), array('un_doublon.calc')));
         
         return array(

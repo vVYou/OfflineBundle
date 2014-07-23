@@ -45,6 +45,7 @@ class SynchronisationController extends Controller
     private $session;
     private $formFactory;
     private $userRepo;
+    private $resourceNodeRepo;
     
      /**
      * @DI\InjectParams({
@@ -79,6 +80,7 @@ class SynchronisationController extends Controller
         $this->session = $session;
         $this->formFactory = $formFactory;
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
     }
     // TODO Security voir workspace controller.
 
@@ -230,7 +232,10 @@ class SynchronisationController extends Controller
             $em = $this->getDoctrine()->getManager();
             $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationsArray['username']);
             //TODO ajout du token
-            $returnContent = $user->getUserAsTab();
+            $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
+            $user_inf = $user->getUserAsTab();
+            $user_inf['ws_resnode'] = $user_ws_rn->getNodeHashName();
+            $returnContent = $user_inf;
         }
         return new JsonResponse($returnContent, $status);
     }

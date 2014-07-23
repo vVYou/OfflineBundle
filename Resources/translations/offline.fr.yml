@@ -3,7 +3,7 @@ hello: Bonjour
 last_sync: Vous vous etes synchronisea derniere fois le
 update: Si vous souhaitez mettre a jour votre plateforme, veuillez cliquer sur le lien si dessous et suivez les instructions.
 offline_mode: Mode deconnecte
-offline_presentation: Vous pouvez teleharger Claroline sur votre ordinateur pour y avoir acces lorsque vous ne pouvez pas vous connecter a internet. Une fois Claroline installe sur votre machine vous devrez synchroniser votre machine pour partager votre travail et obtenir les mises a jours de vos espaces d'activites.
+offline_presentation: Bienvenue sur Claroffline. Ce outil a pour objectif de maintenir à jour votre plateforme Claroline locale avec la plateforme en ligne correspondante. Le boutton ci-dessous lancera une synchronisation avec la plateforme en ligne afin de récupérer toutes les modifications y ayant été apportées. De plus, toutes les modifications ayant eu lieu sur votre plateforme locale seront également envoyées à la plateforme en ligne. 
 offline_result : Voici les résultats de la synchronisation :
 sync_confirmation: Voulez-vous synchroniser ?
 sync_hello: Bonjour {{user}} voulez-vous synchroniser votre plateforme claroline pour l'utiliser hors-ligne ?

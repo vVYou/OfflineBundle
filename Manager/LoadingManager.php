@@ -25,6 +25,7 @@ use Claroline\CoreBundle\Library\Workspace\Configuration;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Library\Security\Utilities;
 use Claroline\CoreBundle\Library\Security\TokenUpdater;
+use Claroline\CoreBundle\Listener\TimestampableListener;
 use Claroline\CoreBundle\Event\StrictDispatcher;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
@@ -327,7 +328,7 @@ class LoadingManager
                 // echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
                 // $workspace_creator = $this->userRepo->findOneBy(array('exchangeToken' => $work->getAttribute('creator')));
                 // echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
-                $workspace = $this->createWorkspace($work, $user);
+                $workspace = $this->createWorkspace($work, $this->user);
                 //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
             }
             
@@ -352,6 +353,11 @@ class LoadingManager
             $res = $resourceList->item($i);
             if($res->nodeName == 'resource')
             {
+                $date = new DateTime();
+                $date->setTimestamp($res->getAttribute('creation_date'));
+
+                $listener = $this->getTimestampListener();
+                $listener->forceTime($date);
                 
                 // Check, when a resource is visited, if it needs to be updated or created.               
                 $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $res->getAttribute('hashname_node')));
@@ -916,6 +922,21 @@ class LoadingManager
                 return $child->textContent;
             }
         }
+    }
+    
+    private function getTimestampListener()
+    {
+        $evm = $this->get('doctrine.orm.entity_manager')->getEventManager();
+
+        foreach ($evm->getListeners() as $listenersByEvent) {
+            foreach ($listenersByEvent as $listener) {
+                if ($listener instanceof TimestampableListener) {
+                    return $listener;
+                }
+            }
+        }
+
+        throw new \Exception('Cannot found timestamp listener');
     }
     
 }

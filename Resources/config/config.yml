@@ -1,15 +1,9 @@
 plugin:
   has_options: false
-  icon: sync.png
-  
-resources:
-    - class: Claroline\OfflineBundle\Entity\UserSynchronized
-      name: user_synchronized
-      is_exportable: false
-      icon: sync.png
-      #actions:
-          # The name of the action is the translation key that will be used to display
-          #  the action in the list of available actions for your resource.
-          #  The name will be passed to you by the Event manager.
-        #- name: post
-        #- name: moderate
+  # icon: sync.png
+
+  tools:
+    - name: claroline_offline_tool
+      class: refresh
+      is_displayable_in_workspace: false
+      is_displayable_in_desktop: true

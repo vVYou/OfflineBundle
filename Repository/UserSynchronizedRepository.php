@@ -13,10 +13,10 @@ namespace Claroline\OfflineBundle\Repository;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityRepository;
-//use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
+//use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\CoreBundle\Entity\User;
-use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
+use Claroline\CoreBundle\Entity\Workspace\Workspace;
 //use Claroline\CoreBundle\Entity\Role;
 
 class UserSynchronizedRepository extends EntityRepository
@@ -56,13 +56,13 @@ class UserSynchronizedRepository extends EntityRepository
   
     /**
      * Returns the workspace with the given guid
-     * @return AbstractWorkspace
+     * @return Workspace
      */  
     public function findByGuid($guid)
     {
         $dql = '
             SELECT w
-            FROM Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace w
+            FROM Claroline\CoreBundle\Entity\Workspace\Workspace w
             WHERE w.guid = :guid
         ';
 
@@ -74,13 +74,13 @@ class UserSynchronizedRepository extends EntityRepository
 
     /**
      * Returns the workspace with the given code
-     * @return AbstractWorkspace
+     * @return Workspace
      */  
     public function findByCode($code)
     {
         $dql = '
             SELECT w
-            FROM Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace w
+            FROM Claroline\CoreBundle\Entity\Workspace\Workspace w
             WHERE w.code = :code
         ';
 

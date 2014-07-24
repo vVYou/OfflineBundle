@@ -10,11 +10,10 @@ use Behat\Behat\Context\BehatContext,
     Behat\Behat\Exception\PendingException;
 use Behat\Gherkin\Node\PyStringNode,
     Behat\Gherkin\Node\TableNode;
-    
+
 use Claroline\CoreBundle\Tests\Integration\Context;
 use Behat\Behat\Context\Step;
 use Goutte\Client;
-use Claroline\OfflineBundle\SyncConstant;
 
 //
 // Require 3rd-party libraries here:
@@ -41,7 +40,7 @@ class FeatureContext extends MinkContext
     {
         $this->parameters = $parameters;
     }
-    
+
     /**
      * Sets HttpKernel instance.
      * This method will be automatically called by Symfony2Extension ContextInitializer.
@@ -52,7 +51,7 @@ class FeatureContext extends MinkContext
     {
         $this->kernel = $kernel;
     }
-    
+
     /**
      * After each scenario, we close the browser
      *
@@ -62,7 +61,7 @@ class FeatureContext extends MinkContext
     {
         $this->getSession()->stop();
     }
- 
+
     /**
      * @Given /^I am not logged in$/
      */
@@ -73,7 +72,7 @@ class FeatureContext extends MinkContext
             ->visit($this->locatePath('/logout'))
         ;
     }
-    
+
     /**
      * @Given /^the admin account "([^"]*)" is created$/
     */
@@ -84,7 +83,7 @@ class FeatureContext extends MinkContext
             array(array('username' => $username, 'role' => 'ROLE_ADMIN'))
         );
     }
-    
+
     /**
      * @Given /^I log in with "([^"]*)"\/"([^"]*)"$/
      */
@@ -98,32 +97,33 @@ class FeatureContext extends MinkContext
             new Step\When('I should be on "/desktop/tool/open/home"')
         );
     }
-    
+
     /**
      * @Given /^I have not retrieved my account$/
      */
-     
+
     public function iHaveNotRetrievedMyAccount()
     {
         return true;
     }
-    
+
     /**
      * @Given /^I have retrieved my account$/
      */
-     
+
     public function iHaveRetrievedMyAccount()
     {
-        if(!(file_exists('/app/config/1st_conf'))){ 
-            mkdir('makemyday');        
+        if (!(file_exists('/app/config/1st_conf'))) {
+            mkdir('makemyday');
         }
+
         return true;
     }
-    
+
     /**
      * @When /^I go on the platform$/
      */
-     
+
     public function iGoOnThePlatform()
     {
         $this->getMink()
@@ -131,7 +131,7 @@ class FeatureContext extends MinkContext
             ->visit($this->locatePath(''))
         ;
     }
-    
+
     /**
      * @Then /^I should smile$/
      */
@@ -139,7 +139,7 @@ class FeatureContext extends MinkContext
     {
         return true;
     }
-    
+
     protected function loadFixture($fixtureFqcn, array $args = array())
     {
         $client = new Client();
@@ -154,12 +154,12 @@ class FeatureContext extends MinkContext
             "Unable to load {$fixtureFqcn} fixture"
         );
     }
-    
+
     private function getUrl($path)
     {
         return $this->getMinkParameter('base_url') . '/' . $path;
     }
-    
+
     private function checkForResponseError($status, $content, $exceptionMsg)
     {
         if (preg_match('#<title>([^<]+)#', $content, $matches)) {
@@ -177,8 +177,7 @@ class FeatureContext extends MinkContext
 
     public function spin($lambda, $wait = 5)
     {
-        for ($i = 0; $i < $wait; $i++)
-        {
+        for ($i = 0; $i < $wait; $i++) {
             try {
                 if ($lambda($this)) {
                     return true;
@@ -194,5 +193,5 @@ class FeatureContext extends MinkContext
 
         throw new \Exception("Timeout thrown by " . $backtrace[1]['class'] . "::" . $backtrace[1]['function']);
     }
- 
+
 }

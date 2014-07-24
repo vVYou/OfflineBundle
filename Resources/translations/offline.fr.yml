@@ -3,11 +3,11 @@ hello: Bonjour
 last_sync: Vous vous etes synchronisea derniere fois le
 update: Si vous souhaitez mettre a jour votre plateforme, veuillez cliquer sur le lien si dessous et suivez les instructions.
 offline_mode: Mode deconnecte
-offline_presentation: Bienvenue sur Claroffline. Ce outil a pour objectif de maintenir à jour votre plateforme Claroline locale avec la plateforme en ligne correspondante. Le boutton ci-dessous lancera une synchronisation avec la plateforme en ligne afin de récupérer toutes les modifications y ayant été apportées. De plus, toutes les modifications ayant eu lieu sur votre plateforme locale seront également envoyées à la plateforme en ligne. 
+offline_presentation: Bienvenue sur Claroffline. Ce outil a pour objectif de maintenir à jour votre plateforme Claroline locale avec la plateforme en ligne correspondante. Le boutton ci-dessous lancera une synchronisation avec la plateforme en ligne afin de récupérer toutes les modifications y ayant été apportées. De plus, toutes les modifications ayant eu lieu sur votre plateforme locale seront également envoyées à la plateforme en ligne.
 offline_result : Voici les résultats de la synchronisation :
 sync_confirmation: Voulez-vous synchroniser ?
 sync_hello: Bonjour {{user}} voulez-vous synchroniser votre plateforme claroline pour l'utiliser hors-ligne ?
-sync_config : Afin que l'application puisse recuperer votre profil sur la plateforme en ligne, veuillez indiquer votre nom d'utilisateur, mot de passe et adresse internet de la plateforme concernée. 
+sync_config : Afin que l'application puisse recuperer votre profil sur la plateforme en ligne, veuillez indiquer votre nom d'utilisateur, mot de passe et adresse internet de la plateforme concernée.
 sync_first : Votre compte a été récupéré avec succès! Nous vous invitons à lancer votre première synchronisation afin de récupérer l'ensemble de vos cours.
 sync_config_fail : Le compte que vous avez entré ne semble pas exister.
 sync_unreach : Impossible d'atteindre le serveur. Vérifier votre connexion internet et vérifier que vous pouvez atteindre la plateforme. Si cela est le cas, vérifier votre fichier SyncConstant.
@@ -27,5 +27,5 @@ sync_result : Plate-forme synchronisée ! Voici les résultats :
 sync_ws : Dans l'espace d'activités :
 sync_ws_crea : Les ressources suivantes ont été créées :
 sync_ws_upd : Les ressources suivantes ont été mise à jour :
-sync_ws_doub : Un doublon a été créé pour les ressources suivantes : 
+sync_ws_doub : Un doublon a été créé pour les ressources suivantes :
 sync_url : Adresse du site :

@@ -3,10 +3,8 @@
 namespace Claroline\OfflineBundle\Entity;
 
 use Symfony\Bridge\Doctrine\Validator\Constraints as DoctrineAssert;
-use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\ORM\Mapping as ORM;
 //use Doctrine\Common\Collections\ArrayCollection;
-use Claroline\CoreBundle\Entity\AbstractRoleSubject;
 use Claroline\CoreBundle\Entity\User;
 use Gedmo\Mapping\Annotation as Gedmo;
 use \DateTime;
@@ -17,7 +15,7 @@ use \DateTime;
  * @DoctrineAssert\UniqueEntity("user")
  */
 class UserSynchronized
-{   
+{
     const SUCCESS_SYNC = 0;
     const STARTED_UPLOAD = 1;
     const FAIL_UPLOAD = 2;
@@ -64,14 +62,14 @@ class UserSynchronized
      * @ORM\Column(name="filename", nullable=true, type="string")
      */
     protected $filename;
-    
+
     /**
      * @var integer
      *
      * @ORM\Column(name="status", type="integer")
      */
     protected $status;
-    
+
     public function __construct(User $user)
     {
         $this->user = $user;
@@ -79,7 +77,7 @@ class UserSynchronized
         $this->sentTime = new DateTime('@0');
         $this->status = UserSynchronized::SUCCESS_SYNC;
     }
-    
+
     /**
      * @return int
      */
@@ -87,7 +85,7 @@ class UserSynchronized
     {
         return $this->id;
     }
-    
+
     /**
      * @return User
      */
@@ -95,7 +93,7 @@ class UserSynchronized
     {
         return $this->user;
     }
-    
+
     /**
      * @return \DateTime
      */
@@ -103,7 +101,7 @@ class UserSynchronized
     {
         return $this->lastSynchronization;
     }
-    
+
     /**
      *
      * @param \DateTime $date
@@ -111,8 +109,8 @@ class UserSynchronized
     public function setLastSynchronization(\DateTime $date)
     {
         $this->lastSynchronization = $date;
-    }    
-    
+    }
+
     /**
      * @return \DateTime
      */
@@ -120,7 +118,7 @@ class UserSynchronized
     {
         return $this->sentTime;
     }
-    
+
     /**
      *
      * @param \DateTime $date
@@ -129,22 +127,22 @@ class UserSynchronized
     {
         $this->sentTime = $date;
     }
-    
+
     public function getFilename()
     {
         return $this->filename;
     }
-    
+
     public function setFilename($filename)
     {
         $this->filename = $filename;
     }
-    
+
     public function getStatus()
     {
         return $this->status;
     }
-    
+
     public function setStatus($status)
     {
         $this->status = $status;

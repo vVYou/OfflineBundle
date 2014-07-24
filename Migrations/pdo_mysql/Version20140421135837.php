@@ -16,16 +16,16 @@ class Version20140421135837 extends AbstractMigration
     {
         $this->addSql("
             CREATE TABLE claro_role_creation (
-                id INT AUTO_INCREMENT NOT NULL, 
-                role_id INT DEFAULT NULL, 
-                creation_date DATETIME NOT NULL, 
-                INDEX IDX_5005B245D60322AC (role_id), 
+                id INT AUTO_INCREMENT NOT NULL,
+                role_id INT DEFAULT NULL,
+                creation_date DATETIME NOT NULL,
+                INDEX IDX_5005B245D60322AC (role_id),
                 PRIMARY KEY(id)
             ) DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE = InnoDB
         ");
         $this->addSql("
-            ALTER TABLE claro_role_creation 
-            ADD CONSTRAINT FK_5005B245D60322AC FOREIGN KEY (role_id) 
+            ALTER TABLE claro_role_creation
+            ADD CONSTRAINT FK_5005B245D60322AC FOREIGN KEY (role_id)
             REFERENCES claro_role (id)
         ");
     }

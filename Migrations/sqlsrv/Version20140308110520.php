@@ -16,19 +16,19 @@ class Version20140308110520 extends AbstractMigration
     {
         $this->addSql("
             CREATE TABLE claro_user_sync (
-                id INT IDENTITY NOT NULL, 
-                user_id INT NOT NULL, 
-                last_synchronization DATETIME2(6) NOT NULL, 
+                id INT IDENTITY NOT NULL,
+                user_id INT NOT NULL,
+                last_synchronization DATETIME2(6) NOT NULL,
                 PRIMARY KEY (id)
             )
         ");
         $this->addSql("
-            CREATE UNIQUE INDEX UNIQ_23C3CEFA76ED395 ON claro_user_sync (user_id) 
+            CREATE UNIQUE INDEX UNIQ_23C3CEFA76ED395 ON claro_user_sync (user_id)
             WHERE user_id IS NOT NULL
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
-            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id) 
+            ALTER TABLE claro_user_sync
+            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id)
             REFERENCES claro_user (id)
         ");
     }

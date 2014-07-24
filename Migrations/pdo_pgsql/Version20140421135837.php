@@ -16,9 +16,9 @@ class Version20140421135837 extends AbstractMigration
     {
         $this->addSql("
             CREATE TABLE claro_role_creation (
-                id SERIAL NOT NULL, 
-                role_id INT DEFAULT NULL, 
-                creation_date TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, 
+                id SERIAL NOT NULL,
+                role_id INT DEFAULT NULL,
+                creation_date TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
                 PRIMARY KEY(id)
             )
         ");
@@ -26,8 +26,8 @@ class Version20140421135837 extends AbstractMigration
             CREATE INDEX IDX_5005B245D60322AC ON claro_role_creation (role_id)
         ");
         $this->addSql("
-            ALTER TABLE claro_role_creation 
-            ADD CONSTRAINT FK_5005B245D60322AC FOREIGN KEY (role_id) 
+            ALTER TABLE claro_role_creation
+            ADD CONSTRAINT FK_5005B245D60322AC FOREIGN KEY (role_id)
             REFERENCES claro_role (id) NOT DEFERRABLE INITIALLY IMMEDIATE
         ");
     }

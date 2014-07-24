@@ -13,26 +13,18 @@ namespace Claroline\OfflineBundle\Listener;
 
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Event\StrictDispatcher;
-use Claroline\CoreBundle\Form\TermsOfServiceType;
 use Claroline\CoreBundle\Library\Configuration\PlatformConfigurationHandler;
 use Claroline\CoreBundle\Manager\TermsOfServiceManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 use Symfony\Component\Templating\EngineInterface;
 use Symfony\Component\Form\FormFactory;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\Routing\Router;
-use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
-use Symfony\Component\Security\Core\Role\SwitchUserRole;
 use Symfony\Component\Security\Core\SecurityContextInterface;
-use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface;
-use Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
 use Claroline\OfflineBundle\SyncConstant;
 use Claroline\OfflineBundle\Entity\Credential;
 use Claroline\OfflineBundle\Form\OfflineFormType;
@@ -92,12 +84,12 @@ class FirstConnectionListener
      */
     public function onKernelRequest(GetResponseEvent $event)
     {
-   
+
         $event = $this->isFlagOk($event);
     }
 
     private function isFlagOk(GetResponseEvent $event)
-    {      
+    {
         /*
         *   If the user is not connected and the first connection has not be done yet.
         *   He will be redirect to the first connection page.
@@ -105,44 +97,45 @@ class FirstConnectionListener
         $first_route = 'claro_sync_config';
         $_route = $event->getRequest()->get('_route');
         $token = $this->securityContext->getToken();
-        
+
         if ($event->isMasterRequest()) {
-            if ($first_route !== $_route){
-                if($token && $token->getUser() == 'anon.'){  
-                    if(!(file_exists(SyncConstant::PLAT_CONF))){        
+            if ($first_route !== $_route) {
+                if ($token && $token->getUser() == 'anon.') {
+                    if (!(file_exists(SyncConstant::PLAT_CONF))) {
                         $uri = $this->router->generate($first_route);
                         $response = new RedirectResponse($uri);
-                        $event->setResponse(new Response($response));    
+                        $event->setResponse(new Response($response));
                     }
                 }
-            }                 
+            }
         }
+
         return $event;
-        
+
         //VERSION 2.0
-        // if($this->securityContext->getToken()->getUser() == 'anon.'){  
-        
-            // if(!(file_exists(SyncConstant::PLAT_CONF))){
-            
+        // if ($this->securityContext->getToken()->getUser() == 'anon.') {
+
+            // if (!(file_exists(SyncConstant::PLAT_CONF))) {
+
                 // $uri = $this->router->generate('claro_sync_config');
                 // $response = new RedirectResponse($uri);
-                // $event->setResponse(new Response($response));    
+                // $event->setResponse(new Response($response));
 
             // }
         // }
-        
+
         // return $event;
-        
+
         // VERSION DE BASE
-        // if(!(file_exists('../app/config/test_first.txt'))){
+        // if (!(file_exists('../app/config/test_first.txt'))) {
             // file_put_contents('../app/config/test_first.txt', 'monuser');
             // $uri = $this->router->generate('claro_sync_config');
             // $response = new RedirectResponse($uri);
-            // $event->setResponse(new Response($response));            
+            // $event->setResponse(new Response($response));
         // }
-        
+
         //VERSION 1.0
-        // if(!(file_exists('../app/config/test_first.txt'))){
+        // if (!(file_exists('../app/config/test_first.txt'))) {
             // file_put_contents('../app/config/test_first.txt', 'monuser');
             // $cred = new Credential();
             // $form = $this->formFactory->create(new OfflineFormType(), $cred);
@@ -158,7 +151,6 @@ class FirstConnectionListener
 
             // $event->setResponse(new Response($response));
         // }
-    
         return $event;
     }
 }

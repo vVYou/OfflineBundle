@@ -15,21 +15,21 @@ class Version20140522111733 extends AbstractMigration
     public function up(Schema $schema)
     {
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             ADD filename NVARCHAR(255)
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             ADD status INT NOT NULL
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             DROP CONSTRAINT FK_23C3CEFA76ED395
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
-            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id) 
-            REFERENCES claro_user (id) 
+            ALTER TABLE claro_user_sync
+            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id)
+            REFERENCES claro_user (id)
             ON DELETE CASCADE
         ");
     }
@@ -37,20 +37,20 @@ class Version20140522111733 extends AbstractMigration
     public function down(Schema $schema)
     {
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             DROP COLUMN filename
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             DROP COLUMN status
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             DROP CONSTRAINT FK_23C3CEFA76ED395
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
-            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id) 
+            ALTER TABLE claro_user_sync
+            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id)
             REFERENCES claro_user (id)
         ");
     }

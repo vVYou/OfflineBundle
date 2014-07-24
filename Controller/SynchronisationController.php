@@ -12,10 +12,8 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
-use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Library\Security\Authenticator;
-use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\OfflineBundle\Manager\TransferManager;
 use Claroline\CoreBundle\Repository\UserRepository;
@@ -27,14 +25,11 @@ use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
 use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
 use Claroline\OfflineBundle\Manager\Exception\ServeurException;
 use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
-use \DateTime;
-use \ZipArchive;
 use \Buzz\Exception\ClientException;
 use Symfony\Component\Form\FormFactory;
 
-
 class SynchronisationController extends Controller
-{    
+{
     private $om;
     private $authenticator;
     private $request;
@@ -46,7 +41,7 @@ class SynchronisationController extends Controller
     private $formFactory;
     private $userRepo;
     private $resourceNodeRepo;
-    
+
      /**
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
@@ -61,7 +56,7 @@ class SynchronisationController extends Controller
      */
     public function __construct(
         ObjectManager $om,
-        Authenticator $authenticator,       
+        Authenticator $authenticator,
         UserManager $userManager,
         TransferManager $transferManager,
         Request $request,
@@ -86,21 +81,22 @@ class SynchronisationController extends Controller
 
     private function getUserFromID($user)
     {
-        
+
         $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
+
         return $arrayRepo[0];
     }
-    
+
     private function authWithToken($content)
     {
-        $informationsArray = (array)json_decode($content);
+        $informationsArray = (array) json_decode($content);
         $user = $this->userRepository->findOneBy(array('exchangeToken' => $informationsArray['token']));
-        if($user == null){
+        if ($user == null) {
             $status = 401;
-        }else{
+        } else {
             $status = $this->authenticator->authenticateWithToken($user->getUsername(), $informationsArray['token']) ? 200 : 401;
         }
-        
+
         return array(
             'user' => $user,
             'status' => $status,
@@ -114,7 +110,7 @@ class SynchronisationController extends Controller
     *       name="claro_sync_upload_zip",
     *   )
     *
-    *   @EXT\Method("POST")    
+    *   @EXT\Method("POST")
     *
     *   @return Response
     */
@@ -130,26 +126,27 @@ class SynchronisationController extends Controller
         // echo "CONTENT received : ".$content."<br/>";
         $status = $authTab['status'];
         $user = $authTab['user'];
-        
+
         // echo "STATUS : ".$status."<br/>";
         $content = array();
-        if ($status == 200){
+        if ($status == 200) {
             $content = $this->get('claroline.manager.transfer_manager')->processSyncRequest($authTab['informationsArray'], true);
             // echo "what s generate by process request? : ".json_encode($content).'<br/>';
             $status = $content['status'];
         }
+
         return new JsonResponse($content, $status);
         // return new JsonResponse($content, 200);
     }
-    
-    
+
+
     /**
     *   @EXT\Route(
     *       "/sync/unlink",
     *       name="claro_sync_unlink",
     *   )
     *
-    *   @EXT\Method("POST")    
+    *   @EXT\Method("POST")
     *
     *   @return Response
     */
@@ -163,23 +160,24 @@ class SynchronisationController extends Controller
         $user = $authTab['user'];
         // echo "STATUS : ".$status."<br/>";
         $content = array();
-        if ($status == 200){
+        if ($status == 200) {
             $content = $this->get('claroline.manager.transfer_manager')->unlinkSynchronisationFile($authTab['informationsArray'], $user);
             // echo "what s generate by process request? : ".json_encode($content).'<br/>';
             echo 'status return '.$status.'<br/>';
             $status = $content['status'];
         }
+
         return new JsonResponse($content, $status);
         // return new JsonResponse($content, 200);
     }
-    
+
     /**
     *   @EXT\Route(
     *       "/transfer/getzip",
     *       name="claro_sync_get_zip",
     *   )
     *
-    *   @EXT\Method("POST")    
+    *   @EXT\Method("POST")
     *
     *   @return Response
     */
@@ -193,18 +191,19 @@ class SynchronisationController extends Controller
         // echo "Ask Packet Number : ".$informationsArray['packetNum'].'<br/>';
         // echo "STATUS : ".$status."<br/>";
         $content = array();
-        if($status == 200){
+        if ($status == 200) {
             $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$informationsArray['hashname'].'.zip';
             $em = $this->getDoctrine()->getManager();
             $content = $this->get('claroline.manager.transfer_manager')->getMetadataArray($user, $fileName);
             $content['packetNum']=$informationsArray['packetNum'];
             $data = $this->get('claroline.manager.transfer_manager')->getPacket($informationsArray['packetNum'], $fileName, $user);
-            if($data == null){
+            if ($data == null) {
                 $status = 424;
-            }else{
+            } else {
                 $content['file'] = base64_encode($data);
             }
         }
+
         return new JsonResponse($content, $status);
     }
 
@@ -214,7 +213,7 @@ class SynchronisationController extends Controller
     *       name="claro_sync_user",
     *   )
     *
-    *   @EXT\Method("POST")    
+    *   @EXT\Method("POST")
     *
     *   @return Response
     */
@@ -222,12 +221,12 @@ class SynchronisationController extends Controller
     {
         $content = $this->getRequest()->getContent();
         // echo "receive content <br/>";
-        $informationsArray = (array)json_decode($content);
+        $informationsArray = (array) json_decode($content);
         $status = $this->authenticator->authenticate($informationsArray['username'], $informationsArray['password']) ? 200 : 401;
         // echo "STATUS : ".$status."<br/>";
-        $returnContent = array(); 
+        $returnContent = array();
 
-        if($status == 200){
+        if ($status == 200) {
             // Get User informations and return them
             $em = $this->getDoctrine()->getManager();
             $user = $em->getRepository('ClarolineCoreBundle:User')->loadUserByUsername($informationsArray['username']);
@@ -237,20 +236,21 @@ class SynchronisationController extends Controller
             $user_inf['ws_resnode'] = $user_ws_rn->getNodeHashName();
             $returnContent = $user_inf;
         }
+
         return new JsonResponse($returnContent, $status);
     }
-    
+
    /**
     *   This function allows the requester to know what was the last part uploaded on the (online) plateform.
     *   If authentication pass, it returns an array containing the hashname of the file and the last packet upload
     *   If authentication fails, it returns an HTTP 401 error
-    * 
+    *
     *   @EXT\Route(
     *       "/sync/lastUploaded",
     *       name="claro_sync_last_uploaded",
     *   )
     *
-    *   @EXT\Method("POST")    
+    *   @EXT\Method("POST")
     *
     *   @return Response
     */
@@ -261,8 +261,7 @@ class SynchronisationController extends Controller
         $status = $authTab['status'];
         $informationsArray = $authTab['informationsArray'];
         $content = array();
-        if($status == 200)
-        {
+        if ($status == 200) {
             $filename = SyncConstant::SYNCHRO_UP_DIR.$informationsArray['id'].'/'.$informationsArray['hashname'];
             $em = $this->getDoctrine()->getManager();
             $lastUp = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop($filename,  $authTab['user']);
@@ -271,9 +270,10 @@ class SynchronisationController extends Controller
                 'lastUpload' => $lastUp
             );
         }
+
         return new JsonResponse($content, $status);
     }
-    
+
    /**
     *
     *   This method allows the requester to know the number of packets that he has to download to get the pending synchronized archive
@@ -285,7 +285,7 @@ class SynchronisationController extends Controller
     *       name="claro_sync_number_of_packets_to_download",
     *   )
     *
-    *   @EXT\Method("POST")    
+    *   @EXT\Method("POST")
     *
     *   @return Response
     */
@@ -296,8 +296,7 @@ class SynchronisationController extends Controller
         $status = $authTab['status'];
         $informationsArray = $authTab['informationsArray'];
         $content = array();
-        if($status == 200)
-        {
+        if ($status == 200) {
             $filename = SyncConstant::SYNCHRO_DOWN_DIR.$informationsArray['id'].'/sync_'.$informationsArray['hashname'].".zip";
             $nPackets = $this->get('claroline.manager.transfer_manager')->getNumberOfParts($filename);
             $content = array(
@@ -305,9 +304,10 @@ class SynchronisationController extends Controller
                 'nPackets' => $nPackets
             );
         }
+
         return new JsonResponse($content, $status);
     }
-          
+
     /**
     *   First Connection of the user
     *
@@ -325,38 +325,38 @@ class SynchronisationController extends Controller
         $form = $this->formFactory->create(new OfflineFormType(), $cred);
         $msg = '';
         // $error = false;
-        
+
         $form->handleRequest($this->request);
-        if($form->isValid()) {
+        if ($form->isValid()) {
             /*
             *   Check if the user exists on the distant database
             */
             // $profil = $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword());
 
-            // if($profil){
+            // if ($profil) {
                 // $error = false;
                 // $first_sync = true;
                 //Auto-log?
 
                 // TRUE route if auto-log.
-                // $route = $this->router->generate('claro_sync');  
+                // $route = $this->router->generate('claro_sync');
 
                 // Route for test
                 // $route = $this->router->generate('claro_sync_config_ok');
-                
+
                 // return new RedirectResponse($route);
             // }
             // else{
                 // $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
                 // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
             // }
-            
+
             /*
             *   test if username + password already in DB
             */
             $alr_user = $this->userRepo->findOneBy(array('username' => $cred->getName()));
-            if($alr_user == NULL){
-                try{
+            if ($alr_user == NULL) {
+                try {
                     $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword());
                     // $error = false;
                     // $first_sync = true;
@@ -365,55 +365,51 @@ class SynchronisationController extends Controller
                     // TRUE route if auto-log.
                     $this->authenticator->authenticate($cred->getName(), $cred->getPassword());
                     file_put_contents(SyncConstant::PLAT_CONF, $cred->getUrl());
+
                     return $this->render('ClarolineOfflineBundle:Offline:connect_ok.html.twig', array(
                     'first_sync' => true
                     ) );
-                    // $route = $this->router->generate('claro_sync');  
+                    // $route = $this->router->generate('claro_sync');
 
                     // Route for test
                     // $route = $this->router->generate('claro_sync_config_ok');
-                    
-                    // return new RedirectResponse($route);              
+
+                    // return new RedirectResponse($route);
                     // $msg = $this->get('translator')->trans('sync_ok', array(), 'offline');
-                    
-                    
-                }
-                catch(AuthenticationException $e){                
+
+
+                } catch (AuthenticationException $e) {
                     $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
                     // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
-                }
-                catch(ProcessSyncException $e){
+                } catch (ProcessSyncException $e) {
                     $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
                     // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
-                }
-                catch(ServeurException $e){
+                } catch (ServeurException $e) {
                     $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
                     // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
-                }
-                catch(PageNotFoundException $e){
+                } catch (PageNotFoundException $e) {
                     $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
                     // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
-                }
-                catch(ClientException $e){
+                } catch (ClientException $e) {
                     $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
                     // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
                 }
+            } else {
+                $msg = $this->get('translator')->trans('sync_already', array(), 'offline');
             }
-            else{
-                $msg = $this->get('translator')->trans('sync_already', array(), 'offline');                   
-            }
-            
+
             // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
             // finally{
                 // echo 'nananananananannaa BATMAN!';
                 // $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
                 // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
                 // $route = $this->router->generate('claro_sync_config_ok');
-                
+
                 // return new RedirectResponse($route);
             // }
 
         }
+
         return array(
            'form' => $form->createView(),
            'msg' => $msg
@@ -432,6 +428,7 @@ class SynchronisationController extends Controller
     public function firstConnectionOkAction()
     {
         $first_sync = true;
+
         return $this->render('ClarolineOfflineBundle:Offline:connect_ok.html.twig', array(
             'first_sync' => $first_sync
         ) );
@@ -455,17 +452,18 @@ class SynchronisationController extends Controller
     public function firstConnectionNokAction()
     {
         echo '404 not found';
+
         return array(
         );
     }
-    
+
     /**
     *   @EXT\Route(
     *       "/transfer/confirm",
     *       name="claro_confirm_sync",
     *   )
     *
-    *   @EXT\Method("GET")    
+    *   @EXT\Method("GET")
     */
     public function confirmAction()
     {
@@ -477,12 +475,13 @@ class SynchronisationController extends Controller
 
         //TODO verifier authentification !!!  => SHOULD return false if fails
         $this->get('claroline.manager.user_sync_manager')->updateUserSynchronized($authUser);
+
         return true;
     }
 
     /**
     *  Transfert workspace list
-    *   
+    *
     *   @EXT\Route(
     *       "/transfer/workspace/{user}",
     *       name="claro_sync_transfer"
@@ -498,12 +497,12 @@ class SynchronisationController extends Controller
         //TODO Authentification User
         $authUser = $this->getUserFromID($user);
         $toSend = $this->get('claroline.manager.creation_manager')->writeWorspaceList($authUser);
-        
+
         //Send back the online sync zip
         $response = new StreamedResponse();
         //SetCallBack voir Symfony/Bundle/Controller/Controller pour les parametres de set callback
         $response->setCallBack(
-            function () use ($toSend) {                
+            function () use ($toSend) {
                 readfile($toSend);
             }
         );

@@ -11,7 +11,6 @@
 
 namespace Claroline\OfflineBundle\Repository;
 
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityRepository;
 //use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
@@ -39,13 +38,13 @@ class UserSynchronizedRepository extends EntityRepository
         ";
         $query = $this->_em->createQuery($dql);
         $query->setParameter('userId',  $user->getId());
-        
+
         return ($getQuery) ? $query: $query->getResult();
         */
-        
+
         $qb = $this->createQueryBuilder('userSynchronized');
         $qb->select('userSynchronized')
-            ->where('userSynchronized.user = :user_id');       
+            ->where('userSynchronized.user = :user_id');
 
         return $results = $qb->getQuery()->execute(
             array(
@@ -53,11 +52,11 @@ class UserSynchronizedRepository extends EntityRepository
             )
         );
     }
-  
+
     /**
      * Returns the workspace with the given guid
      * @return Workspace
-     */  
+     */
     public function findByGuid($guid)
     {
         $dql = '
@@ -75,7 +74,7 @@ class UserSynchronizedRepository extends EntityRepository
     /**
      * Returns the workspace with the given code
      * @return Workspace
-     */  
+     */
     public function findByCode($code)
     {
         $dql = '
@@ -89,11 +88,11 @@ class UserSynchronizedRepository extends EntityRepository
 
         return $query->getResult();
     }
-    
+
     /**
      * Returns the user with the given id
      * @return User
-     */    
+     */
     public function findById($id)
     {
         $dql = '
@@ -107,11 +106,11 @@ class UserSynchronizedRepository extends EntityRepository
 
         return $query->getResult();
     }
-    
+
     /**
      * Returns the resourceNode that corresponds to the workspace
      * @return ResourceNode
-     */   
+     */
     public function findResourceNodeByWorkspace($workspace)
     {
         $dql = '
@@ -125,11 +124,11 @@ class UserSynchronizedRepository extends EntityRepository
 
         return $query->getResult();
     }
-    
+
      /**
      * Returns the resourceNode that corresponds to the hashname
      * @return ResourceNode
-     */   
+     */
     public function findResourceNodeByHashname($hashname)
     {
         $dql = '

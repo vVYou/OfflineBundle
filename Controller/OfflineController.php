@@ -8,32 +8,22 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
- 
+
 namespace Claroline\OfflineBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
-use Claroline\CoreBundle\Repository;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
-use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Entity\ResourceNode;
-use Claroline\CoreBundle\Controller\FileController;
 use Claroline\OfflineBundle\SyncConstant;
 use Claroline\OfflineBundle\SyncInfo;
-use \DateTime;
-use \ZipArchive;
-use \Buzz\Browser;
-use \Buzz\Client\Curl;
-use \Buzz\Client\FileGetContents;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 
 /**
@@ -46,7 +36,7 @@ class OfflineController extends Controller
     private $router;
     private $request;
     private $resourceNodeRepo;
-    
+
     /**
     * @DI\InjectParams({
     *      "router"             = @DI\Inject("router"),
@@ -65,8 +55,7 @@ class OfflineController extends Controller
                $this->om = $om;
        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
     }
-    
-    
+
     /**
      * Get content by id
      *
@@ -75,7 +64,7 @@ class OfflineController extends Controller
      *     name="claro_sync"
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-     * 
+     *
      * @EXT\Template("ClarolineOfflineBundle:Offline:connect_ok.html.twig")
      * @param User $user
      *
@@ -85,34 +74,34 @@ class OfflineController extends Controller
     {
         // $em = $this->getDoctrine()->getManager();
         // $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-         
+
         // $username = $user->getFirstName() . ' ' . $user->getLastName();
-        
+
         // if ($userSync) {
         // TODO Liens vers la route de synchronisation
             // return $this->render('ClarolineOfflineBundle:Offline:sync.html.twig', array(
                 // 'user' => $username,
                 // 'user_sync_date' => $userSync[0]->getLastSynchronization()
             // ) );
-        // }else{
+        // } else {
         // TODO Methode d'installation
             // return $this->render('ClarolineOfflineBundle:Offline:first_sync.html.twig', array(
                 // 'user' => $username
             // ) );
         // }
-        
+
         // $route = $this->router->generate('claro_sync_exchange');
-        
+
         // return new RedirectResponse($route);
-        
+
         $first_sync = false;
-        
+
         return array(
            'first_sync' => $first_sync
         );
-        
+
     }
-    
+
     /**
      * Get result
      *
@@ -121,7 +110,7 @@ class OfflineController extends Controller
      *     name="claro_sync_result"
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-     * 
+     *
      * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
      * @param User $user
      *
@@ -135,38 +124,36 @@ class OfflineController extends Controller
         $result1->addToCreate('mon_premier_cours.pdf');
         $result1->addToUpdate('une_maj.odt');
         $result1->addToDoublon('un_doublon.calc');
-        
+
         $results[] = $result1;
-        
+
         $result2 = new SyncInfo();
         $result2->setWorkspace('Mon Workspace 10000');
         $result2->addToCreate('mon_premier_cours.pdf');
         $result2->addToCreate('mon_deuxieme_cours.pdf');
         $result2->addToDoublon('un_doublon.calc');
         $result2->addToDoublon('un_autre_doublon.calc');
-        
+
         $results[] = $result2;
-        
+
             $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
             $user_inf = $user->getUserAsTab();
             $user_inf[] = $user_ws_rn->getNodeHashName();
             $returnContent = $user_inf;
         // echo $returnContent[0];
-        foreach($returnContent as $elem)
-        {
+        foreach ($returnContent as $elem) {
             echo $elem.'</br>';
         }
         // $result = array(array('Mon Workspace 123', array('mon_premier_cours.pdf', 'bonjour.txt'), array('une_maj.odt'), array('un_doublon.calc')), array('Mon Workspace 10000000000', array('mon_premier_cours.pdf', 'bonjour.txt'), array('une_maj.odt'), array('un_doublon.calc')));
-        
         return array(
            'results' => $results
         );
-        
+
     }
-    
+
     /**
     *   Create userSyncrhonized entity
-    *   
+    *
     *   @EXT\Route(
     *       "/sync/load",
     *       name="claro_sync_load"
@@ -181,47 +168,46 @@ class OfflineController extends Controller
     public function loadAction(User $user)
     {
         //$userSynchro = $this->get('claroline.manager.user_sync_manager')->createUserSynchronized($user);
-         
+
         //$em = $this->getDoctrine()->getManager();
         //$userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-         
+
         //$zip = $this->get('claroline.manager.loading_manager')->loadXML('manifest_test_3.xml');
-        /*        
+        /*
         $em = $this->getDoctrine()->getManager();
         $lol = $em->getEventManager();
         $tmp = array();
         $tmp = $lol->getListener();
-        
-        foreach($tmp as $listener)
-        {
+
+        foreach ($tmp as $listener) {
             echo 'Listener found';
         }*/
         /*
         $dispatcher = $this->get('event_dispatcher');
         $tmp = array();
         $tmp = $dispatcher->getListeners();
-        foreach($tmp as $listener)
-        {
+        foreach ($tmp as $listener) {
             echo 'Boulou'.'<br/>';
         }
         */
        // $em = this->getDoctrine->
-        
+
         //$bool = $dispatcher->hasListeners('Gedmo\Timestampable');
-        
+
         //echo 'Bool : '.$bool.'<br/>';
-        
+
         $zip = $this->get('claroline.manager.loading_manager')->loadZip('sync_D2DF8F72-D0E5-4E7A-A48D-08379822500D.zip', $user);
-         
+
         $username = $user->getFirstName() . ' ' . $user->getLastName();
+
         return array(
             'user' => $username
          );
     }
-    
+
     /**
     *   Create userSyncrhonized entity
-    *   
+    *
     *   @EXT\Route(
     *       "/sync/exchange",
     *       name="claro_sync_exchange"
@@ -234,54 +220,49 @@ class OfflineController extends Controller
     * @return Response
     */
     public function syncAction(User $authUser)
-    {  /** 
+    {  /**
         *   TODO MODIFY return with render different twig donc redirect plutot que le boolean true false
         */
-        
+
         $em = $this->getDoctrine()->getManager();
         $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($authUser);
-        try{
+        try {
             $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
-        }
-        catch(AuthenticationException $e){                
+        } catch (AuthenticationException $e) {
             $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
             // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
-        }
-        catch(ProcessSyncException $e){
+        } catch (ProcessSyncException $e) {
             $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
             // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
-        }
-        catch(ServeurException $e){
+        } catch (ServeurException $e) {
             $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
             // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
-        }
-        catch(PageNotFoundException $e){
+        } catch (PageNotFoundException $e) {
             $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
             // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
-        }
-        catch(ClientException $e){
+        } catch (ClientException $e) {
             $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
             // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
-        }
-        catch(SynchronisationFailsException $e){
+        } catch (SynchronisationFailsException $e) {
             $msg = $this->get('translator')->trans('sync_fail', array(), 'offline');
-        }       
+        }
         // $i = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop("24F0DCDC-3B64-4019-8D6A-80FBCEA68AF9", $authUser);
         // echo "last download : ".$i."<br/>";
-        
+
         //Format the view
         $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
+
         return array(
             'user' => $username,
             'succeed' => true
          );
-    
+
     }
 
     /**
     *
     *   Seek and show all the modified courses and ressources
-    *   
+    *
     *   @EXT\Route(
     *       "/sync/seek",
     *       name="claro_sync_seek"
@@ -298,20 +279,21 @@ class OfflineController extends Controller
         $em = $this->getDoctrine()->getManager();
         $userSyncTab = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
         $test = $this->get('claroline.manager.creation_manager')->createSyncZip($user, ''.$userSyncTab[0]->getlastSynchronization()->getTimestamp());
-        $username = $user->getFirstName() . ' ' . $user->getLastName(); 
+        $username = $user->getFirstName() . ' ' . $user->getLastName();
         echo 'Congratulations '.$username.'! '."<br/>".'You are now synchronized!';
-        echo ''.$test;   
+        echo ''.$test;
+
         return array(
             'user' => $username,
             //'user_courses' => $test['user_courses'],
             //'user_res' => $test['user_res']
         );
     }
-    
+
     /**
     *
     *  Transfer a file (sync archive) from a computer to another
-    *   
+    *
     *   @EXT\Route(
     *       "/sync/transfer/{user}",
     *       name="claro_sync_transfertest"
@@ -326,14 +308,15 @@ class OfflineController extends Controller
     public function transferAction($user, User $authUser)
     {
         $transfer = true;
-        if($user == $authUser->getId()){
+        if ($user == $authUser->getId()) {
             $toTransfer = './synchronize_down/3/sync_0252D476-FD7D-4E39-9285-A53EDEFCAC90.zip';
             $test = $this->get('claroline.manager.transfer_manager')->uploadZip($toTransfer, $authUser, 0);
-        }else{
+        } else {
             $transfer = false;
         }
-        
-        $username = $authUser->getFirstName() . ' ' . $authUser->getLastName(); 
+
+        $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
+
         return array(
             'user' => $username,
             'transfer' => $transfer
@@ -343,7 +326,7 @@ class OfflineController extends Controller
     /**
     *
     *  Transfer a file (sync archive) from a computer to another
-    *   
+    *
     *   @EXT\Route(
     *       "/sync/getsync/{user}",
     *       name="claro_sync_gettest"
@@ -358,16 +341,17 @@ class OfflineController extends Controller
     public function getSyncAction($user, User $authUser)
     {
         $transfer = true;
-        if($user == $authUser->getId()){
+        if ($user == $authUser->getId()) {
             $hashToGet = '1A7BE8A0-EE83-4853-93A4-63BABB8B8B84';
             $numPackets = 3;
             $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($hashToGet, $numPackets, 0, $authUser);
             echo $test."<br/>";
-        }else{
+        } else {
             $transfer = false;
         }
-        
-        $username = $authUser->getFirstName() . ' ' . $authUser->getLastName(); 
+
+        $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
+
         return array(
             'user' => $username,
             'transfer' => $transfer
@@ -387,16 +371,17 @@ class OfflineController extends Controller
     * @return Response
     */
     public function loadWorkspacesAction(User $user)
-    {       
+    {
         $zip = $this->get('claroline.manager.loading_manager')->loadPublicWorkspaceList(SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/all_workspaces.xml');
-         
+
         $username = $user->getFirstName() . ' ' . $user->getLastName();
+
         return array(
             'user' => $username
          );
     }
-    
-    
+
+
     /**
     *   @EXT\Route(
     *       "/sync/getuser",
@@ -410,11 +395,12 @@ class OfflineController extends Controller
     * @return Response
     */
     public function getUserAction(User $user)
-    {       
+    {
         //TODO change "password", with a window getting password in clear
         $this->get('claroline.manager.transfer_manager')->getUserInfo($user->getUsername(), "password");
-         
+
         $username = $user->getFirstName() . ' ' . $user->getLastName();
+
         return array(
             'user' => $username
          );

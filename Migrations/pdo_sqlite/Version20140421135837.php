@@ -16,9 +16,9 @@ class Version20140421135837 extends AbstractMigration
     {
         $this->addSql("
             CREATE TABLE claro_role_creation (
-                id INTEGER NOT NULL, 
-                role_id INTEGER DEFAULT NULL, 
-                creation_date DATETIME NOT NULL, 
+                id INTEGER NOT NULL,
+                role_id INTEGER DEFAULT NULL,
+                creation_date DATETIME NOT NULL,
                 PRIMARY KEY(id)
             )
         ");

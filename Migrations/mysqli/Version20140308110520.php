@@ -16,16 +16,16 @@ class Version20140308110520 extends AbstractMigration
     {
         $this->addSql("
             CREATE TABLE claro_user_sync (
-                id INT AUTO_INCREMENT NOT NULL, 
-                user_id INT NOT NULL, 
-                last_synchronization DATETIME NOT NULL, 
-                UNIQUE INDEX UNIQ_23C3CEFA76ED395 (user_id), 
+                id INT AUTO_INCREMENT NOT NULL,
+                user_id INT NOT NULL,
+                last_synchronization DATETIME NOT NULL,
+                UNIQUE INDEX UNIQ_23C3CEFA76ED395 (user_id),
                 PRIMARY KEY(id)
             ) DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE = InnoDB
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
-            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id) 
+            ALTER TABLE claro_user_sync
+            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id)
             REFERENCES claro_user (id)
         ");
     }

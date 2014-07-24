@@ -36,16 +36,10 @@ use Claroline\ForumBundle\Entity\Message;
 use Claroline\OfflineBundle\SyncConstant;
 use Claroline\OfflineBundle\SyncInfo;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 use Symfony\Component\Translation\TranslatorInterface;
-use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use \ZipArchive;
 use \DOMDocument;
-use \DOMElement;
 use \DateTime;
 
 /**
@@ -140,35 +134,34 @@ class LoadingManager
         $this->security = $security;
         $this->tokenUpdater = $tokenUpdater;
         $this->syncInfoArray = array();
-        
+
     }
-    
+
     /*
-    *   This method open the zip file, call the loadXML function and 
+    *   This method open the zip file, call the loadXML function and
     *   destroy the zip file while everything is done.
     */
     public function loadZip($zipPath, User $user)
-    {   
+    {
         $this->user = $user;
         //Extract the Zip
         $archive = new ZipArchive();
-        if ($archive->open($zipPath))
-        {
+        if ($archive->open($zipPath)) {
             //Extract the Hashname of the ZIP from the path (length of hashname = 32 char).
             $zip_hashname = substr($zipPath, strlen($zipPath)-40, 36);
             $this->path = SyncConstant::DIRZIP.'/'.$zip_hashname.'/';
             // echo 'J extrait dans ce path : '.$this->path.'<br/>';
             $tmpdirectory = $archive->extractTo($this->path);
-            
+
             //Call LoadXML
             $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getUsername().'.xml');
 
             // $this->loadXML('manifest_test_x.xml'); //Actually used for test.
-            
+
             //Destroy Directory
             //$this->rrmdir($this->path);
             //echo 'DIR deleted <br/>';
-            
+
             //TODO : Utile seulement pour les tests.
             // foreach($this->syncInfoArray as $syncInfo)
             // {
@@ -179,14 +172,14 @@ class LoadingManager
                     // echo 'Create'.'<br/>';
                     // echo $elem.'<br/>';
                 // }
-                
+
                 // $update = $syncInfo->getUpdate();
                 // foreach($update as $up)
                 // {
                     // echo 'Update'.'<br/>';
                     // echo $up.'<br/>';
                 // }
-                
+
                 // $doublon = $syncInfo->getDoublon();
                 // foreach($doublon as $doub)
                 // {
@@ -194,13 +187,11 @@ class LoadingManager
                     // echo $doub.'<br/>';
                 // }
             // }
-        }
-        else
-        {
+        } else {
             //Make a pop-up rather than a exception maybe.
             throw new \Exception('Impossible to load the zip file');
         }
-        
+
         return array(
         'infoArray' => $this->syncInfoArray,
         'synchronizationDate' => $this->synchronizationDate
@@ -211,7 +202,7 @@ class LoadingManager
     {
         $xmlDocument = new DOMDocument();
         $xmlDocument->load($allWorkspace);
-        $this->importWorkspaces($xmlDocument->getElementsByTagName('workspace_list'));           
+        $this->importWorkspaces($xmlDocument->getElementsByTagName('workspace_list'));
     }
 
     /*
@@ -221,15 +212,16 @@ class LoadingManager
     *   Code inspired of :
     *   http://stackoverflow.com/questions/9760526/php-remove-not-empty-folder
     */
-    public function rrmdir($dir){
-        if (is_dir($dir)){
+    public function rrmdir($dir)
+    {
+        if (is_dir($dir)) {
             $objects = scandir($dir);
-            foreach($objects as $object){
-                if($object != "." && $object != ".."){
-                    if(is_dir($dir."/".$object)){
-                    //if(filetype($dir."/".$object) == "dir"){
+            foreach ($objects as $object) {
+                if ($object != "." && $object != "..") {
+                    if (is_dir($dir."/".$object)) {
+                    //if (filetype($dir."/".$object) == "dir") {
                         rmdir($dir."/".$object);
-                    }else{
+                    } else {
                         unlink($dir."/".$object);
                     }
                 }
@@ -238,28 +230,29 @@ class LoadingManager
             rmdir($dir);
         }
     }
-    
+
     /**
      * This method will load and parse the manifest XML file
      */
-    public function loadXML($xmlFilePath){
+    public function loadXML($xmlFilePath)
+    {
         $xmlDocument = new DOMDocument();
         $xmlDocument->load($xmlFilePath);
-        
+
         /*
         *   getElementsByTagName renvoit un NodeList
         *   Sur un NodeList on peut faire ->length et ->item($i) qui retourne un NodeItem
-        *   sur un NodeItem on peut faire 
+        *   sur un NodeItem on peut faire
                 ->nodeName
                 ->nodeValue
                 ->childNodes qui renvoit lui meme un NodeList. la boucle est bouclée
         */
-        
+
         $this->importDescription($xmlDocument);
-        $this->importWorkspaces($xmlDocument);      
-        
+        $this->importWorkspaces($xmlDocument);
+
     }
-    
+
     /*
     *   This method is used to work on the different fields inside the
     *   <description> tags in the XML file.
@@ -267,15 +260,14 @@ class LoadingManager
     private function importDescription($xmlDocument)
     {
         $descriptions = $xmlDocument->getElementsByTagName("description");
-        foreach($descriptions as $description)
-        {
+        foreach ($descriptions as $description) {
             $this->user = $this->userRepo->findOneBy(array('username' => $description->getAttribute('username'), 'mail' => $description->getAttribute('user_mail')));
             // echo 'My user : '.$this->user->getFirstName().'<br/>';
             $this->synchronizationDate = $description->getAttribute('synchronization_date');
             // echo 'My sync date : '.$this->synchronizationDate.'<br/>';
         }
     }
-    
+
     /*
     *   This method is used to work on the different workspaces inside the
     *   <workspace> tags in the XML file.
@@ -283,62 +275,54 @@ class LoadingManager
     private function importWorkspaces($xmlDocument)
     {
         $workspace_list = $xmlDocument->getElementsByTagName("workspace");
-        
-        foreach($workspace_list as $work)
-        {
+
+        foreach ($workspace_list as $work) {
             /**
             *   Check if a workspace with the given guid already exists.
-            *   - if it doesn't exist then it will be created 
+            *   - if it doesn't exist then it will be created
             *   - then proceed to the resources (no matter if we have to create the workspace previously)
             */
-            
+
             //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
             $workspace = $this->workspaceRepo->findOneBy(array('guid' => $work->getAttribute('guid')));
-            
-            if(count($workspace) >= 1)
-            {
+
+            if (count($workspace) >= 1) {
                 // echo 'Mon Workspace : '.$workspace->getGuid().'<br/>';
-                
-                /*  
+
+                /*
                 *   When a workspace with the same guid is found, we can update him if it's required.
                 *   We need to check if : modification_date_offline > modification_date_online.
                 *       - If it is, the workspace can be update with the changes described in the XML.
                 *       - If it's not, it means that the 'online' version of the workspace is up-to-date.
                 */
-                
+
                 //echo 'I need to update my workspace!'.'<br/>';
                 $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
                 // TODO Mettre à jour la date de modification et le nom du directory
                 // echo 'Mon Workspace Node '.$NodeWorkspace->getName().'<br/>';
                 $node_modif_date = $NodeWorkspace->getModificationDate()->getTimestamp();
                 $modif_date = $work->getAttribute('modification_date');
-                
-                if($modif_date > $node_modif_date)
-                {
+
+                if ($modif_date > $node_modif_date) {
                    // The properties of the workspace has been changed and need to be update.
-                }
-                else
-                {
+                } else {
                    // The 'online' version of the workspace is up-to-date.
                 }
-            }
-            
-            else
-            {
+            } else {
                 // echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
                 // $workspace_creator = $this->userRepo->findOneBy(array('exchangeToken' => $work->getAttribute('creator')));
                 // echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
                 $workspace = $this->createWorkspace($work, $this->user);
                 //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
             }
-            
+
             // echo 'En route pour les ressources!'.'<br/>';
             $info = $this->importWorkspace($work->childNodes, $workspace);
             $this->syncInfoArray[] = $info;
 
         }
     }
-    
+
     /**
     * Visit all the 'resource' field in the 'workspace' inside the XML file and
     * either create or update the corresponding resources.
@@ -347,52 +331,46 @@ class LoadingManager
     {
         $wsInfo = new SyncInfo();
         $wsInfo->setWorkspace($workspace->getName().' ('.$workspace->getCode().')');
-        
-        for($i=0; $i<$resourceList->length; $i++)
-        {     
+
+        for ($i=0; $i<$resourceList->length; $i++) {
             $res = $resourceList->item($i);
-            if($res->nodeName == 'resource')
-            {
+            if ($res->nodeName == 'resource') {
                 $date = new DateTime();
                 $date->setTimestamp($res->getAttribute('creation_date'));
 
                 $listener = $this->getTimestampListener();
                 $listener->forceTime($date);
-                
-                // Check, when a resource is visited, if it needs to be updated or created.               
+
+                // Check, when a resource is visited, if it needs to be updated or created.
                 $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $res->getAttribute('hashname_node')));
-                
-                if(count($node) >= 1)
-                {
+
+                if (count($node) >= 1) {
                     //echo 'Faut update!'.'<br/>';
-                    $this->updateResource($res, $node, $workspace, $wsInfo);           
-                }               
-                else
-                {
+                    $this->updateResource($res, $node, $workspace, $wsInfo);
+                } else {
                     //echo 'Faut creer!'.'<br/>';
                     $this->createResource($res, $workspace);
                     $wsInfo->addToCreate($res->getAttribute('name'));
-                } 
+                }
             }
-            if($res->nodeName == 'forum')
-            {
+            if ($res->nodeName == 'forum') {
 
                 // Check the content of a forum described in the XML file.
                 $this->checkContent($res);
             }
         }
-        
+
         return $wsInfo;
     }
-    
+
     /*
-    *   This method will update an already present resource in the database using the 
+    *   This method will update an already present resource in the database using the
     *   informations given by the XML file.
-    */   
+    */
     private function updateResource($resource, $node, $workspace, $wsInfo)
     {
         // echo 'I need to update my resource!'.'<br/>';
-        
+
 
         // Load the required informations from the XML file.
 
@@ -401,27 +379,22 @@ class LoadingManager
         $creation_date = $resource->getAttribute('creation_date'); //USELESS?
         $node_modif_date = $node->getModificationDate()->getTimestamp();
         $user_sync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($this->user);
-        
-        switch($type->getId())
-        {
+
+        switch ($type->getId()) {
             case SyncConstant::DIR :
                 // echo 'It s a directory!'.'<br/>';
-                if($node_modif_date < $modif_date)
-                {
+                if ($node_modif_date < $modif_date) {
                     // TODO Mettre à jour la date de modification et le nom du directory
                     // Only Rename?
                     $this->resourceManager->rename($node, $resource->getAttribute('name'));
                     $wsInfo->addToUpdate($resource->getAttribute('name'));
-                }
-                else
-                {
+                } else {
                     // echo 'Already in Database'.'<br/>';
                 }
                 break;
             case SyncConstant::FORUM :
                 // echo 'It s a forum!'.'<br/>';
-                if($node_modif_date < $modif_date)
-                {
+                if ($node_modif_date < $modif_date) {
                     // TODO Mettre à jour la date de modification et le nom du directory
                     // Only Rename?
                     $this->resourceManager->rename($node, $resource->getAttribute('name'));
@@ -430,46 +403,39 @@ class LoadingManager
                 break;
             default :
                 // echo 'It s a file or a text!'.'<br/>';
-                
-                /*  
+
+                /*
                 *   When a resource with the same hashname is found, we can update him if it's required.
                 *   First, we need to check if : modification_date_online <= user_synchronisation_date.
                 *       - If it is, we know that the resource can be erased because it's now obsolete.
                 *       - If it's not, we check if the modification_date of both resources (in database and in the xml) are
-                *       different. 
+                *       different.
                 *           - If it is we need to create 'doublon' to preserve both resources
                 *           - If it's not we suppose that there are the same (connexion lost, ...)
                 */
 
-                if($node_modif_date <= $user_sync[0]->getLastSynchronization()->getTimestamp())
-                {
+                if ($node_modif_date <= $user_sync[0]->getLastSynchronization()->getTimestamp()) {
                     $this->resourceManager->delete($node);
                     $this->createResource($resource, $workspace);
                     $wsInfo->addToUpdate($resource->getAttribute('name'));
-                }
-                else 
-                {        
-                    if($node_modif_date != $modif_date)
-                    {
+                } else {
+                    if ($node_modif_date != $modif_date) {
                         // Doublon generation
                         $this->createDoublon($resource, $workspace, $node, true);
                         $wsInfo->addToDoublon($resource->getAttribute('name'));
-                    }
-                    
-                    else
-                    {
+                    } else {
                         // echo 'Already in Database'.'<br/>';
                     }
                 }
                 break;
         }
     }
-    
+
     /*
     *   This function create a resource based on the informations given in the XML file.
-    */    
+    */
     private function createResource($resource, $workspace)
-    {           
+    {
         /*
         *   Load the required informations from the XML file.
         */
@@ -480,66 +446,64 @@ class LoadingManager
         $modification_date = new DateTime();
         $creation_date->setTimestamp($resource->getAttribute('creation_date'));
         $modification_date->setTimestamp($resource->getAttribute('modification_date'));
-        
+
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
         $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
-        
-        if(count($parent_node) < 1)
-        {
+
+        if (count($parent_node) < 1) {
             // If the parent node doesn't exist anymore, workspace will be the parent.
             // echo 'Mon parent est mort ! '.'<br/>';
             $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
-        
+
         /*
         *   Prepare the resource based on its Type.
         */
-        switch($type->getId())
-        {
-            
+        switch ($type->getId()) {
+
             case SyncConstant::FILE :
                 $newResource = new File();
                 $file_hashname = $resource->getAttribute('hashname');
                 $newResource->setSize($resource->getAttribute('size'));
-                $newResource->setHashName($file_hashname);                         
+                $newResource->setHashName($file_hashname);
                 rename($this->path.'data'.SyncConstant::ZIPFILEDIR.$file_hashname, '..'.SyncConstant::ZIPFILEDIR.$file_hashname);
                 break;
-                
-            case SyncConstant::DIR : 
-                $newResource = new Directory();            
+
+            case SyncConstant::DIR :
+                $newResource = new Directory();
                 break;
-                
+
             case SyncConstant::TEXT :
-            
+
                 $newResource = new Text();
                 $revision = new Revision();
                 $revision->setContent($this->extractCData($resource));
                 $revision->setUser($this->user);
                 $revision->setText($newResource);
-                $this->om->persist($revision);                         
-                break;  
+                $this->om->persist($revision);
+                break;
 
             case SyncConstant::FORUM :
-            
+
                 $newResource = new Forum();
                 break;
-        }       
-            
+        }
+
         $newResource->setName($resource->getAttribute('name'));
         $newResource->setMimeType($resource->getAttribute('mimetype'));
-        
-        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));       
+
+        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));
         $newResourceNode = $newResource->getResourceNode();
-              
-        // Update of the creation and modification date of the resource. 
+
+        // Update of the creation and modification date of the resource.
         $this->changeDate($newResourceNode,$creation_date,$modification_date);
 
     }
-    
+
     /*
     *   Create a doublon of a resource modified both online and offline.
-    */ 
+    */
     private function createDoublon($resource, $workspace, $node)
     {
         $ds = DIRECTORY_SEPARATOR;
@@ -549,91 +513,89 @@ class LoadingManager
         $modification_date = new DateTime();
         $creation_date->setTimestamp($resource->getAttribute('creation_date'));
         $modification_date->setTimestamp($resource->getAttribute('modification_date'));
-        
+
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
         $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
-        
-        if(count($parent_node) < 1)
-        {
+
+        if (count($parent_node) < 1) {
             // If the parent node doesn't exist anymore, workspace will be the parent.
             // echo 'Mon parent est mort ! '.'<br/>';
             $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
-        
+
         /*
         *   Prepare the resource based on its Type.
         */
-        switch($type->getId())
-        {
-            
+        switch ($type->getId()) {
+
             case SyncConstant::FILE :
                 $newResource = new File();
                 $file_hashname = $resource->getAttribute('hashname');
                 $newResource->setSize($resource->getAttribute('size'));
                 $newResource->setHashName($file_hashname);
-                
+
                 // The file already exist inside the database. We have to modify the Hashname of the file already present.
                 $old_file = $this->resourceManager->getResourceFromNode($node);
                 $old_hashname = $old_file->getHashName();
                 $extension_name = substr($old_hashname, strlen($old_hashname)-4, 4);
                 $new_hashname = $this->ut->generateGuid().$extension_name;
-                
+
                 $this->om->startFlushSuite();
                 $old_file->setHashName($new_hashname);
-                $this->om->endFlushSuite(); 
-                
+                $this->om->endFlushSuite();
+
                 rename('..'.SyncConstant::ZIPFILEDIR.$old_hashname, '..'.SyncConstant::ZIPFILEDIR.$new_hashname);
                 rename($this->path.'data'.SyncConstant::ZIPFILEDIR.$file_hashname, '..'.SyncConstant::ZIPFILEDIR.$file_hashname);
                 break;
-                
-            case SyncConstant::DIR : 
-                $newResource = new Directory();            
+
+            case SyncConstant::DIR :
+                $newResource = new Directory();
                 break;
-                
+
             case SyncConstant::TEXT :
-            
+
                 $newResource = new Text();
                 $revision = new Revision();
                 $revision->setContent($this->extractCData($resource));
                 $revision->setUser($this->user);
                 $revision->setText($newResource);
-                $this->om->persist($revision);                         
-                break;   
+                $this->om->persist($revision);
+                break;
 
             case SyncConstant::FORUM :
-            
+
                 $newResource = new Forum();
-                break;                
-        }      
-        
+                break;
+        }
+
         /*
         *   We add the tag '@offline' to the name of the resource
         *   and modify the Hashname of the resource already present in the Database.
         */
 
         $newResource->setName($resource->getAttribute('name').'@offline');
-        $newResource->setMimeType($resource->getAttribute('mimetype'));              
+        $newResource->setMimeType($resource->getAttribute('mimetype'));
         $oldModificationDate = $node->getModificationDate();
-      
+
         $this->om->startFlushSuite();
         $node->setNodeHashName($this->ut->generateGuid());
-        $this->resourceManager->logChangeSet($node);            
-        $node->setModificationDate($oldModificationDate);      
-        $this->om->endFlushSuite();       
-      
-        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));       
+        $this->resourceManager->logChangeSet($node);
+        $node->setModificationDate($oldModificationDate);
+        $this->om->endFlushSuite();
+
+        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));
         $newResourceNode = $newResource->getResourceNode();
 
-        // Update of the creation and modification date of the resource. 
+        // Update of the creation and modification date of the resource.
         $this->changeDate($newResourceNode,$creation_date,$modification_date);
     }
-    
+
     /*
     *   Create and return a new workspace detailed in the XML file.
-    */     
+    */
     private function createWorkspace($workspace, $user)
-    {   
+    {
         // Use the create method from WorkspaceManager.
         // echo 'Je cree mon Workspace!'.'<br/>';
         $creation_date = new DateTime();
@@ -653,94 +615,84 @@ class LoadingManager
         $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
         $config->setGuid($workspace->getAttribute('guid'));
         // $user = $this->security->getToken()->getUser();
-        
-        // $my_ws = $this->workspaceManager->create($config, $creator);           
-        $my_ws = $this->workspaceManager->create($config, $user);   
+
+        // $my_ws = $this->workspaceManager->create($config, $creator);
+        $my_ws = $this->workspaceManager->create($config, $user);
         // $this->tokenUpdater->update($this->security->getToken());
-        //$route = $this->router->generate('claro_workspace_list'); 
-        
-        if(!($workspace->getAttribute('creator') == $user->getExchangeToken())){
+        //$route = $this->router->generate('claro_workspace_list');
+
+        if (!($workspace->getAttribute('creator') == $user->getExchangeToken())) {
             //Risque d'être un tableau.
             $role = $this->roleRepo->findByUserAndWorkspace($user, $my_ws);
             $this->roleManager->dissociateUserRole($user, $role);
             $role = $this->roleRepo->findOneBy(array('name' => $workspace->getAttribute('role')));
             $this->roleManager->associateUserRole($user, $role);
         }
-        
-        $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $my_ws));                       
-        
+
+        $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $my_ws));
+
         $this->om->startFlushSuite();
         $creation_date->setTimestamp($workspace->getAttribute('creation_date'));
-        $modification_date->setTimestamp($workspace->getAttribute('modification_date'));      
-        
+        $modification_date->setTimestamp($workspace->getAttribute('modification_date'));
+
         $NodeWorkspace->setCreator($user);
         $NodeWorkspace->setCreationDate($creation_date);
         $NodeWorkspace->setModificationDate($modification_date);
         $NodeWorkspace->setNodeHashName($workspace->getAttribute('hashname_node'));
         $this->om->endFlushSuite();
-        
+
         return $my_ws;
 
     }
-    
+
     /*
-    *   Check the content of a forum described in the XML file and 
+    *   Check the content of a forum described in the XML file and
     *   either create or update this content.
     */
     private function checkContent($content)
-    {   
+    {
         $content_type = $content->getAttribute('class');
-        switch($content_type)
-        {
+        switch ($content_type) {
             case SyncConstant::CATE :
                 $category = $this->categoryRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
-                if($category == null)
-                {
+                if ($category == null) {
                     $this->createCategory($content);
-                }
-                else
-                {
+                } else {
                     $this->updateCategory($content, $category);
                 }
-                
+
                 // Update of the Dates
                 // $category = $this->categoryRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
                 // $this->updateDate($category, $content);
                 break;
-                
+
             case SyncConstant::SUB :
                 $subject = $this->subjectRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
-                if($subject == null)
-                {
+                if ($subject == null) {
                     $this->createSubject($content);
-                }
-                else
-                {
+                } else {
                     $this->updateSubject($content, $subject);
                 }
-                
+
                 // Update of the Dates
                 // $subject = $this->subjectRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
                 // $this->updateDate($subject, $content);
                 break;
-                
+
             case SyncConstant::MSG :
                 $message = $this->messageRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
-                if($message == null)
-                {
+                if ($message == null) {
                     $this->createMessage($content);
-                }
-                else
-                {
+                } else {
                     $this->updateMessage($content, $message);
-                }               
-                        
+                }
+
                 // Update of the Dates
                 // $message = $this->messageRepo->findOneBy(array('hashName' => $content->getAttribute('hashname')));
-                // $this->updateDate($message, $content);                              
+                // $this->updateDate($message, $content);
                 break;
         }
-        
+
     }
 
     /*
@@ -749,15 +701,15 @@ class LoadingManager
     private function createCategory($category)
     {
         // echo 'Category created'.'<br/>';
-        
+
         $node_forum = $this->resourceNodeRepo->findOneBy(array('hashName' => $category->getAttribute('forum_node')));
         $forum = $this->resourceManager->getResourceFromNode($node_forum);
-        
+
         $category_name = $category->getAttribute('name');
-        
+
         $this->forumManager->createCategory($forum, $category_name, true, $category->getAttribute('hashname'));
     }
-    
+
     /*
     *   Update a Forum Category based on the XML file in the Archive.
     */
@@ -767,24 +719,22 @@ class LoadingManager
         $dbName = $category->getName();
         $xmlModificationDate = $xmlCategory->getAttribute('update_date');
         $dbModificationDate = $category->getModificationDate()->getTimestamp();
-        if($xmlName != $dbName)
-        {
-            if($xmlModificationDate > $dbModificationDate)
-            {
+        if ($xmlName != $dbName) {
+            if ($xmlModificationDate > $dbModificationDate) {
                 $this->forumManager->editCategory($category, $dbName, $xmlName);
             }
         }
-        
+
         // echo 'Category already in DB!'.'<br/>';
     }
-    
+
     /*
     *   Create a new Forum Subject based on the XML file in the Archive.
     */
     private function createSubject($subject)
     {
         // echo 'Subject created'.'<br/>';
-        
+
         $category = $this->categoryRepo->findOneBy(array('hashName' => $subject->getAttribute('category')));
         $creator = $this->userRepo->findOneBy(array('exchangeToken' => $subject->getAttribute('creator_id')));
         $sub = new Subject();
@@ -792,10 +742,10 @@ class LoadingManager
         $sub->setCategory($category);
         $sub->setCreator($creator);
         $sub->setIsSticked($subject->getAttribute('sticked'));
-        
+
         $this->forumManager->createSubject($sub, $subject->getAttribute('hashname'));
     }
-    
+
     /*
     *   Update a Forum Subject based on the XML file in the Archive.
     */
@@ -805,18 +755,16 @@ class LoadingManager
         $dbName = $subject->getTitle();
         $xmlModificationDate = $xmlSubject->getAttribute('update_date');
         $dbModificationDate = $subject->getUpdate()->getTimestamp();
-        if($xmlName != $dbName)
-        {    
-            if($xmlModificationDate > $dbModificationDate)
-            {
+        if ($xmlName != $dbName) {
+            if ($xmlModificationDate > $dbModificationDate) {
                 $this->forumManager->editSubject($subject, $dbName, $xmlName);
                 $subject->setIsSticked($xmlSubject->getAttribute('sticked'));
             }
         }
-        
+
         // echo 'Subject already in DB!'.'<br/>';
     }
-    
+
     /*
     *   Create a new Forum message based on the XML file in the Archive.
     */
@@ -824,9 +772,9 @@ class LoadingManager
     {
         $creation_date = new DateTime();
         $creation_date->setTimestamp($message->getAttribute('creation_date'));
-        // Message Creation      
+        // Message Creation
         // echo 'Message created'.'<br/>';
-        
+
         $subject = $this->subjectRepo->findOneBy(array('hashName' => $message->getAttribute('subject')));
         $creator = $this->userRepo->findOneBy(array('exchangeToken' => $message->getAttribute('creator_id')));
         $content = $this->extractCData($message);
@@ -834,11 +782,11 @@ class LoadingManager
         $msg->setContent($content.'<br/>'.'<strong>Message created during synchronisation at : '.$creation_date->format('d/m/Y H:i:s').'</strong>');
         $msg->setSubject($subject);
         $msg->setCreator($creator);
-        
-        $this->forumManager->createMessage($msg, $message->getAttribute('hashname'));     
-        
+
+        $this->forumManager->createMessage($msg, $message->getAttribute('hashname'));
+
     }
-    
+
     /*
     *   Update a Forum message based on the XML file in the Archive.
     */
@@ -848,18 +796,16 @@ class LoadingManager
         $dbContent = $message->getContent();
         $xmlModificationDate = $xmlMessage->getAttribute('update_date');
         $dbModificationDate = $message->getUpdate()->getTimestamp();
-        if($xmlContent != $dbContent)
-        {
-            if($xmlModificationDate > $dbModificationDate)
-            {
+        if ($xmlContent != $dbContent) {
+            if ($xmlModificationDate > $dbModificationDate) {
                 $this->forumManager->editMessage($message, $dbContent, $xmlContent);
             }
         }
-        
+
         // echo 'Message already in DB!'.'<br/>';
-            
+
     }
-    
+
     /*
     *   Update the creation and modification/update dates of a category, subject or message.
     */
@@ -871,26 +817,23 @@ class LoadingManager
         $modification_date->setTimestamp($content->getAttribute('update_date'));
         $this->om->startFlushSuite();
         $forumContent->setCreationDate($creation_date);
-        if($content->getAttribute('class') == SyncConstant::CATE)
-        {
+        if ($content->getAttribute('class') == SyncConstant::CATE) {
             $forumContent->setModificationDate($modification_date);
-        }
-        else
-        {
+        } else {
             $forumContent->setUpdate($modification_date);
         }
         $this->om->persist($forumContent);
-        $this->om->endFlushSuite();  
+        $this->om->endFlushSuite();
     }
-    
+
     /*
     *   Change the creation and modification dates of a node.
     *
-    *   @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node 
+    *   @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
     *
-    *   @return \Claroline\CoreBundle\Entity\Resource\ResourceNode   
+    *   @return \Claroline\CoreBundle\Entity\Resource\ResourceNode
     */
-    
+
     private function changeDate($node, $creation_date, $modification_date)
     {
         // echo 'I update my date!'.$node->getName().'<br/>';
@@ -900,30 +843,30 @@ class LoadingManager
         $node->setModificationDate($modification_date);
         $this->om->persist($node);
         $this->resourceManager->logChangeSet($node);
-        $this->om->endFlushSuite();  
+        $this->om->endFlushSuite();
         */
-        
+
         $node->setCreationDate($creation_date);
         $node->setModificationDate($modification_date);
         $this->om->persist($node);
         $this->resourceManager->logChangeSet($node);
         $this->om->flush();
 
-        return $node;       
+        return $node;
     }
-    
+
     /*
     *   Extract the text contains in the CDATA section of the XML file.
     */
     private function extractCData($resource)
-    {      
-        foreach($resource->childNodes as $child) {
+    {
+        foreach ($resource->childNodes as $child) {
             if ($child->nodeType == XML_CDATA_SECTION_NODE) {
                 return $child->textContent;
             }
         }
     }
-    
+
     private function getTimestampListener()
     {
         $evm = $this->get('doctrine.orm.entity_manager')->getEventManager();
@@ -938,5 +881,5 @@ class LoadingManager
 
         throw new \Exception('Cannot found timestamp listener');
     }
-    
+
 }

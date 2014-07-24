@@ -11,14 +11,10 @@
 
 namespace Claroline\OfflineBundle\Manager;
 
-use \DateTime;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\SyncConstant;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Claroline\OfflineBundle\Manager\LoadingManager;
-use Claroline\OfflineBundle\Manager\CreationManager;
-use Claroline\OfflineBundle\Manager\UserSyncManager;
 use JMS\DiExtraBundle\Annotation as DI;
 
 /**
@@ -59,7 +55,7 @@ class SynchronisationManager
         $this->loadingManager = $loadingManager;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
     }
-    
+
     /*
     *   @param User $user
     *   @param UserSynchronized $userSync
@@ -68,7 +64,7 @@ class SynchronisationManager
     {
         $status = $userSync->getStatus();
         echo "begin with the switch, status is ".$status."<br/>";
-        switch($status){
+        switch ($status) {
             case UserSynchronized::SUCCESS_SYNC :
                 $this->step1Create($user, $userSync);
                 break;
@@ -83,7 +79,7 @@ class SynchronisationManager
             case UserSynchronized::SUCCESS_UPLOAD :
                 $this->step3Download($user, $userSync, $userSync->getFilename());
                 break;
-            case UserSynchronized::FAIL_DOWNLOAD : 
+            case UserSynchronized::FAIL_DOWNLOAD :
                 $packetNum = $this->getDownloadStop($userSync->getFilename(), $user);
                 $this->step3Download($user, $userSync, $userSync->getFilename(), null, $packetNum);
                 break;
@@ -93,7 +89,7 @@ class SynchronisationManager
                 break;
         }
     }
-    
+
     public function step1Create(User $user, UserSynchronized $userSync)
     {
         echo "I 'm at step 1<br/>";
@@ -104,7 +100,7 @@ class SynchronisationManager
         echo "j'ai créé ceci ".$toUpload."<br/>";
         $this->step2Upload($user, $userSync, $toUpload);
     }
-    
+
     public function step2Upload(User $user, UserSynchronized $userSync, $filename, $packetNum = 0)
     {
         echo "I 'm at step 2 ".$packetNum."<br/>";
@@ -118,17 +114,17 @@ class SynchronisationManager
         $this->transferManager->deleteFile($user,substr($filename, strlen($filename)-40, 36), SyncConstant::SYNCHRO_UP_DIR);
         unlink($filename);
     }
-    
+
     public function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = null, $packetNum = 0)
     {
         echo "I 'm at step 3<br/>";
-        if($nPackets == null){
+        if ($nPackets == null) {
             $nPackets = $this->transferManager->getOnlineNumberOfPackets($filename, $user);
         }
-        if($nPackets == -1){
+        if ($nPackets == -1) {
             //TODO Change status to fail ? => problem with filename
             $this->step1Create($user, $userSync);
-        }else{
+        } else {
             $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $packetNum, $user);
             $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
             $this->userSyncManager->updateUserSync($userSync);
@@ -138,7 +134,7 @@ class SynchronisationManager
             unlink($toLoad);
         }
     }
-    
+
     public function step4Load(User $user, UserSynchronized $userSync, $filename)
     {
         echo "I 'm at step 4<br/> with filename ".$filename.'<br/>';
@@ -147,7 +143,7 @@ class SynchronisationManager
         $userSync->setLastSynchronization($userSync->getSentTime());
         $this->userSyncManager->updateUserSync($userSync);
     }
-    
+
     public function getDownloadStop($filename, $user)
     {  /*
         * Cette fonction doit retourner le dernier paquet téléchargé sur l'ordinateur;
@@ -155,15 +151,15 @@ class SynchronisationManager
         */
         $stop = true;
         $index = -1;
-        while($stop)
-        {
+        while ($stop) {
             $file = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$filename.'_'.($index + 1);
-            if(! file_exists($file)){
+            if (! file_exists($file)) {
                 $stop=false;
-            }else{
+            } else {
                 $index++;
             }
         }
+
         return $index;
     }
 }

@@ -15,7 +15,7 @@ class Version20140409145151 extends AbstractMigration
     public function up(Schema $schema)
     {
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             ADD (
                 sent_time TIMESTAMP(0) NOT NULL
             )
@@ -25,7 +25,7 @@ class Version20140409145151 extends AbstractMigration
     public function down(Schema $schema)
     {
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             DROP (sent_time)
         ");
     }

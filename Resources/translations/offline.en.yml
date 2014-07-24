@@ -7,8 +7,8 @@ offline_presentation: Welcome to Claroffline. This tool's main purpose is to mai
 offline_result : Here is your synchronisation result :
 sync_confirmation: Do you want to synchronize ?
 sync_hello: Hello {{user}} do you want to synchronize your claroline offline ?
-sync_config : Please enter your username, password and URL of the concerned website. In order to allow the application to retrieve and load your profil from the online platform. 
-sync_config : Afin que l'application puisse recuperer votre profil sur la plateforme en ligne, veuillez indiquer votre nom d'utilisateur, mot de passe et adresse internet de la plateforme concernée. 
+sync_config : Please enter your username, password and URL of the concerned website. In order to allow the application to retrieve and load your profil from the online platform.
+sync_config : Afin que l'application puisse recuperer votre profil sur la plateforme en ligne, veuillez indiquer votre nom d'utilisateur, mot de passe et adresse internet de la plateforme concernée.
 sync_first : Account successfully retrieved! Please start your first synchronisation in order to retrieve all your workspaces and content.
 sync_config_fail : The account you have entered doesn't seem to exist.
 sync_unreach : Server unreachable. Please check your internet connection and check if you can reach the website of your platform. If you can please check your SyncConstant file.
@@ -28,5 +28,5 @@ sync_result : Platform synchronised ! Here's the results :
 sync_ws : In the workspace :
 sync_ws_crea : The following resources have been created :
 sync_ws_upd : The following resources have been updated :
-sync_ws_doub : For the following resources a doublon has been created : 
+sync_ws_doub : For the following resources a doublon has been created :
 sync_url : URL of the website :

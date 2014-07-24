@@ -16,9 +16,9 @@ class Version20140308110520 extends AbstractMigration
     {
         $this->addSql("
             CREATE TABLE claro_user_sync (
-                id INTEGER NOT NULL, 
-                user_id INTEGER NOT NULL, 
-                last_synchronization DATETIME NOT NULL, 
+                id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                last_synchronization DATETIME NOT NULL,
                 PRIMARY KEY(id)
             )
         ");

@@ -20,20 +20,9 @@ use Claroline\CoreBundle\Library\Security\TokenUpdater;
 use Claroline\CoreBundle\Event\StrictDispatcher;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
-use Claroline\OfflineBundle\SyncConstant;
-use Claroline\OfflineBundle\SyncInfo;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 use Symfony\Component\Translation\TranslatorInterface;
-use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use \ZipArchive;
-use \DOMDocument;
-use \DOMElement;
-use \DateTime;
 
 /**
  * @DI\Service("claroline.manager.first_connection_manager")
@@ -88,15 +77,15 @@ class FirstConnectionManager
         $this->ut = $ut;
         $this->dispatcher = $dispatcher;
         $this->security = $security;
-        
+
     }
-    
+
     /*
     *   This method try to catch and create the profil of a user present in the online
     *   database.
     */
     public function retrieveProfil($username, $password)
-    {   
+    {
         $new_user = new User();
         $new_user->setFirstName($profil['first_name']);
         $new_user->setLastName($profil['last_name']);
@@ -106,8 +95,9 @@ class FirstConnectionManager
         $my_user = $this->userRepo->findOneBy(array('username' => $username));
         $this->om->startFlushSuite();
         $my_user->setExchangeToken($profil['token']);
-        $this->om->endFlushSuite();      
+        $this->om->endFlushSuite();
+
         return true;
     }
-    
+
 }

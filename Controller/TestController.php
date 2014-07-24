@@ -11,7 +11,6 @@
 
 namespace Claroline\CoreBundle\Controller;
 
-use Claroline\CoreBundle\Entity\Resource\AbstractResource;
 use Claroline\CoreBundle\Entity\Resource\Directory;
 use Claroline\CoreBundle\Listener\TimestampableListener;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;

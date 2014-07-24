@@ -7,15 +7,15 @@
 {% block title %}{{ parent() ~ ' - ' ~ 'sync_mode' | trans({}, 'offline') | striptags | raw }}{% endblock %}
 
 
-{% block content %}      
-    <div class='panel panel-default'>       
+{% block content %}
+    <div class='panel panel-default'>
         <div class="panel-heading">
             <h3 class="panel-title">{{ 'sync_mode_result'|trans({}, 'offline') }}</h3>
         </div>
         <div class="panel-body">
             <p>{{ 'sync_result'|trans({}, 'offline') }}</p>
             {% for obj in results %}
-                <ul>   
+                <ul>
                     <li>{{ 'sync_ws'|trans({}, 'offline') }} {{ obj.getWorkspace() }}</li>
                     <ul>
                         <li>{{ 'sync_ws_crea'|trans({}, 'offline') }}</li>
@@ -38,12 +38,12 @@
                         <ul>
                         {% for elem in obj.getDoublon() %}
                             <li>{{ elem }}</li>
-                        {% endfor %}  
-                        </ul> 
-                    </ul>                    
+                        {% endfor %}
+                        </ul>
+                    </ul>
                 </ul>
             {% endfor %}
-        </div> 
+        </div>
     </div>
 {%block sync%}{%endblock%}
 

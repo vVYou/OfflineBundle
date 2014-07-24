@@ -2,15 +2,7 @@
 
 namespace Claroline\OfflineBundle\Tests\Integration\features\bootstrap;
 
-use Behat\Behat\Context\Step;
-use Behat\Behat\Event\ScenarioEvent;
-use Behat\Gherkin\Node\TableNode;
-use Behat\Gherkin\Node\TableNode;
-use Behat\Mink\Exception\ElementNotFoundException;
-use Behat\Mink\Exception\ExpectationException;
-use Behat\Symfony2Extension\Context\KernelDictionary;
 use Behat\MinkExtension\Context\MinkContext;
-use Goutte\Client;
 
 /**
  * Feature context.
@@ -28,7 +20,7 @@ class FeatureContext extends MinkContext
     {
         $this->parameters = $parameters;
     }
-    
+
     /**
    * After each scenario, we close the browser
    *
@@ -38,7 +30,7 @@ class FeatureContext extends MinkContext
     {
         $this->getSession()->stop();
     }
-    
+
     /**
      * @Given /^that I\'m not log in$/
      */
@@ -46,7 +38,7 @@ class FeatureContext extends MinkContext
     {
         return true;
     }
-    
+
     /**
      * @Then /^I should smile$/
      */
@@ -54,5 +46,3 @@ class FeatureContext extends MinkContext
     {
         return true;
     }
-    
- 

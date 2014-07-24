@@ -15,20 +15,20 @@ class Version20140522111733 extends AbstractMigration
     public function up(Schema $schema)
     {
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             ADD (
-                filename VARCHAR2(255) DEFAULT NULL, 
+                filename VARCHAR2(255) DEFAULT NULL,
                 status NUMBER(10) NOT NULL
             )
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             DROP CONSTRAINT FK_23C3CEFA76ED395
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
-            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id) 
-            REFERENCES claro_user (id) 
+            ALTER TABLE claro_user_sync
+            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id)
+            REFERENCES claro_user (id)
             ON DELETE CASCADE
         ");
     }
@@ -36,16 +36,16 @@ class Version20140522111733 extends AbstractMigration
     public function down(Schema $schema)
     {
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             DROP (filename, status)
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             DROP CONSTRAINT FK_23C3CEFA76ED395
         ");
         $this->addSql("
-            ALTER TABLE claro_user_sync 
-            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id) 
+            ALTER TABLE claro_user_sync
+            ADD CONSTRAINT FK_23C3CEFA76ED395 FOREIGN KEY (user_id)
             REFERENCES claro_user (id)
         ");
     }

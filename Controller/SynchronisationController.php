@@ -364,9 +364,9 @@ class SynchronisationController extends Controller
                     // echo 'badadoum';
                     // TRUE route if auto-log.
                     $this->authenticator->authenticate($cred->getName(), $cred->getPassword());
-                    $first_sync = true;
+                    file_put_contents(SyncConstant::PLAT_CONF, $cred->getUrl());
                     return $this->render('ClarolineOfflineBundle:Offline:connect_ok.html.twig', array(
-                    'first_sync' => $first_sync
+                    'first_sync' => true
                     ) );
                     // $route = $this->router->generate('claro_sync');  
 

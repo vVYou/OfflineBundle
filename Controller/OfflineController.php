@@ -214,7 +214,7 @@ class OfflineController extends Controller
     *   )
     *
     * @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
-    * @EXT\Template("ClarolineOfflineBundle:Offline:load.html.twig")
+    * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
     *
     * @param User $authUser
     * @return Response
@@ -227,7 +227,7 @@ class OfflineController extends Controller
         $em = $this->getDoctrine()->getManager();
         $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($authUser);
         try {
-            $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
+            $infoArray = $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
         } catch (AuthenticationException $e) {
             $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
             // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
@@ -253,8 +253,7 @@ class OfflineController extends Controller
         $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
 
         return array(
-            'user' => $username,
-            'succeed' => true
+            'results' => $infoArray
          );
 
     }
@@ -310,7 +309,7 @@ class OfflineController extends Controller
         $transfer = true;
         if ($user == $authUser->getId()) {
             $toTransfer = './synchronize_down/3/sync_0252D476-FD7D-4E39-9285-A53EDEFCAC90.zip';
-            $test = $this->get('claroline.manager.transfer_manager')->uploadZip($toTransfer, $authUser, 0);
+            $test = $this->get('claroline.manager.transfer_manager')->uploadArchive($toTransfer, $authUser, 0);
         } else {
             $transfer = false;
         }
@@ -344,7 +343,7 @@ class OfflineController extends Controller
         if ($user == $authUser->getId()) {
             $hashToGet = '1A7BE8A0-EE83-4853-93A4-63BABB8B8B84';
             $numPackets = 3;
-            $test = $this->get('claroline.manager.transfer_manager')->getSyncZip($hashToGet, $numPackets, 0, $authUser);
+            $test = $this->get('claroline.manager.transfer_manager')->downloadArchive($hashToGet, $numPackets, 0, $authUser);
             echo $test."<br/>";
         } else {
             $transfer = false;

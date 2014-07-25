@@ -53,14 +53,14 @@ class TransferManager
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "translator"     = @DI\Inject("translator"),
-     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
+     *     "om"                 = @DI\Inject("claroline.persistence.object_manager"),
+     *     "translator"         = @DI\Inject("translator"),
+     *     "resourceManager"    = @DI\Inject("claroline.manager.resource_manager"),
      *     "creationManager"    = @DI\Inject("claroline.manager.creation_manager"),
-     *     "loadingManager" = @DI\Inject("claroline.manager.loading_manager"),
-     *     "userManager"   = @DI\Inject("claroline.manager.user_manager"),
-     *     "userSyncManager" = @DI\Inject("claroline.manager.user_sync_manager"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc")
+     *     "loadingManager"     = @DI\Inject("claroline.manager.loading_manager"),
+     *     "userManager"        = @DI\Inject("claroline.manager.user_manager"),
+     *     "userSyncManager"    = @DI\Inject("claroline.manager.user_sync_manager"),
+     *     "ut"                 = @DI\Inject("claroline.utilities.misc")
      * })
      */
     public function __construct(
@@ -88,114 +88,122 @@ class TransferManager
     }
 
     /*
-    *   @param User $user
+    *******   METHODS EXECUTED OFFLINE *******
     */
-    public function uploadZip($toTransfer, User $user, $packetNumber, $firstTime = true)
-    {  /*
-        *   L'objectif de cette fonction est de transférer le fichier en paramètre à la plateforme dans l'URL est sauvegardée dans les constantes
-        *   Ce transfer s'effectue en plusieurs paquets
-        */
-        // ATTENTION, droits d'ecriture de fichier
+    
+    /*
+    *   @param User $user
+    *   @param $toTransfer is the filname of the archive to upload on the online plateform
+    *
+    *   This method will upload the file given in $toTransfer on the online plateform from $fragmentNumber to the end of the file
+    *   @return hashname of the online synchronisation archive.
+    *   When the archive is completely uploaded online, it is loaded on the online plateform.
+    *   Then the online plateform create it's own synchronisation archive and give back its name so it can be downloaded later
+    */
+    public function uploadArchive($toTransfer, User $user, $fragmentNumber, $firstTime = true)
+    {  // ATTENTION, droits d'ecriture de fichier >> TEST LINUX
 
         $browser = $this->getBrowser();
-        $requestContent = $this->getMetadataArray($user, $toTransfer);
-        $numberOfPackets = $requestContent['nPackets'];
+        $metadatas = $this->getMetadataArray($user, $toTransfer);
+        $totalFragments = $metadatas['nPackets'];
         $responseContent = "";
         $status = 200;
 
         try {
-            while ($packetNumber < $numberOfPackets && $status == 200) {
-                $requestContent['file'] = base64_encode($this->getPacket($packetNumber, $toTransfer, $user));
-                $requestContent['packetNum'] = $packetNumber;
-                // echo "le tableau que j'envoie : ".json_encode($requestContent)."<br/>";
-
-                //Utilisation de la methode POST de HTML et non la methode GET pour pouvoir injecter des données en même temps.
-                $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadzip', array(), json_encode($requestContent));
+            while ($fragmentNumber < $totalFragments && $status == 200) {
+                $metadatas['file'] = base64_encode($this->getFragment($fragmentNumber, $toTransfer, $user));
+                $metadatas['packetNum'] = $fragmentNumber;
+                // Execute the post request sending informations online
+                $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadArchive', array(), json_encode($metadatas));
                 $responseContent = $reponse->getContent();
-                echo 'CONTENT : <br/>'.$responseContent.'<br/>';
+                echo "CONTENT received : ".$responseContent."<br/>";
                 $status = $reponse->getStatusCode();
                 $responseContent = (array) json_decode($responseContent);
-                $packetNumber ++;
+                $fragmentNumber ++;
             }
+            // Control result of the requests
             $this->analyseStatusCode($status);
 
             return $responseContent;
         } catch (ClientException $e) {
+            // In case of timeout try again once
             if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime) {
-                // echo "Oh mon dieu, un timeout";
-                $this->uploadZip($toTransfer, $user, $packetNumber, false);
+                $this->uploadArchive($toTransfer, $user, $fragmentNumber, false);
             } else {
                 throw $e;
             }
         }
     }
-
-    public function analyseStatusCode($status)
-    {   // TODO throw exception ? - comment differencier erreur pour upload ou getzip?
-        echo "the status ".$status." to analyse <br/>";
-        switch ($status) {
-            case 200:
-                return true;
-            case 401:
-                // echo "error authentication <br/>";
-                throw new AuthenticationException();
-
-                return false;
-            case 404:
-                throw new PageNotFoundException();
-            case 424:
-                // echo "method failure <br/>";
-                throw new ProcessSyncException();
-
-                return false;
-            case 500:
-                // echo "method failure <br/>";
-                throw new ServeurException();
-
-                return false;
-            default:
-                return true;
-        }
-    }
-
-    public function getSyncZip($hashToGet, $numPackets, $packetNum, $user, $firstTime = true)
+    
+    // This method will download the file with the name $hashToGet from the online plateform
+    // It will begin at $fragmentNumber and go up to the end of the file
+    public function downloadArchive($hashToGet, $totalFragments, $fragmentNumber, $user, $firstTime = true)
     {
-        $packetNum = 0;
         $browser = $this->getBrowser();
-        $requestContent = array(
-            // 'id' => $user->getId(),
-            // 'username' => $user->getUsername(),
+        $metadatas = array(
             'token' => $user->getExchangeToken(),
             'hashname' => $hashToGet,
-            'nPackets' => $numPackets,
+            'nPackets' => $totalFragments,
             'packetNum' => 0);
         $processContent = null;
         $status = 200;
         try {
-            while ($packetNum < $numPackets && $status == 200) {
-                // echo 'doing packet '.$packetNum.'<br/>';
-                $requestContent['packetNum'] = $packetNum;
-                $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip', array(), json_encode($requestContent));
+            while ($fragmentNumber < $totalFragments && $status == 200) {
+                // echo 'doing packet '.$fragmentNumber.'<br/>';
+                $metadatas['packetNum'] = $fragmentNumber;
+                $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip', array(), json_encode($metadatas));
                 $content = $reponse->getContent();
-                // echo "CONTENT received : ".$content."<br/>";
+                echo "CONTENT received : ".$content."<br/>";
                 $status = $reponse->getStatusCode();
                 $processContent = $this->processSyncRequest((array) json_decode($content), false);
-                $packetNum++;
+                $fragmentNumber++;
             }
             $this->analyseStatusCode($status);
 
             return $processContent['zip_name'];
         } catch (ClientException $e) {
             if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime) {
-                // echo "Oh mon dieu, un timeout";
-                $this->getSyncZip($hashToGet, $numPackets, $packetNum, $user, false);
+                $this->downloadArchive($hashToGet, $totalFragments, $fragmentNumber, $user, false);
             } else {
                 throw $e;
             }
         }
+    } 
+    
+    // Method to analyse the status received after a request on the online server
+    // @return throw exception matching with the errors status
+    //      If no error (or default) return true
+    private function analyseStatusCode($status)
+    {   
+        switch ($status) {
+            case 200:
+                return true;
+            case 401:
+                throw new AuthenticationException();
+                return false;
+            case 404:
+                throw new PageNotFoundException();
+            case 424:
+                throw new ProcessSyncException();
+                return false;
+            case 500:
+                throw new ServeurException();
+                return false;
+            default:
+                return true;
+        }
     }
+    
+    /*
+    *******   METHODS EXECUTED OFFLINE *******
+    */
+    
+    
+    /*
+    *******   METHODS USED IN BOTH SIDES *******
+    */
 
-    public function getNumberOfParts($filename)
+    public function getTotalFragments($filename)
     {
         if (! file_exists($filename)) {
             return -1;
@@ -213,13 +221,13 @@ class TransferManager
             return array(
                 'token' => $user->getExchangeToken(),
                 'hashname' => substr($filename, strlen($filename)-40, 36),
-                'nPackets' => $this->getNumberOfParts($filename),
+                'nPackets' => $this->getTotalFragments($filename),
                 'checksum' => hash_file( "sha256", $filename)
             );
         }
     }
 
-    public function getPacket($packetNumber, $filename, $user)
+    public function getFragment($fragmentNumber, $filename, $user)
     {
         if (!file_exists($filename)) {
             $this->userSyncManager->resetSync($user);
@@ -227,10 +235,10 @@ class TransferManager
         } else {
             $fileSize = filesize($filename);
             $handle = fopen($filename, 'r');
-            if ($packetNumber*SyncConstant::MAX_PACKET_SIZE > $fileSize || !$handle) {
+            if ($fragmentNumber*SyncConstant::MAX_PACKET_SIZE > $fileSize || !$handle) {
                 return null;
             } else {
-                $position = $packetNumber*SyncConstant::MAX_PACKET_SIZE;
+                $position = $fragmentNumber*SyncConstant::MAX_PACKET_SIZE;
                 fseek($handle, $position);
                 if ($fileSize > $position+SyncConstant::MAX_PACKET_SIZE) {
                     $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);

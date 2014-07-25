@@ -259,10 +259,11 @@ class SynchronisationController extends Controller
         $authTab = $this->authWithToken($this->getRequest()->getContent());
         // echo "CONTENT received : ".$content."<br/>";
         $status = $authTab['status'];
+        $user = $authTab['user'];
         $informationsArray = $authTab['informationsArray'];
         $content = array();
         if ($status == 200) {
-            $filename = SyncConstant::SYNCHRO_UP_DIR.$informationsArray['id'].'/'.$informationsArray['hashname'];
+            $filename = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$informationsArray['hashname'];
             $em = $this->getDoctrine()->getManager();
             $lastUp = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop($filename,  $authTab['user']);
             $content = array(
@@ -292,16 +293,18 @@ class SynchronisationController extends Controller
     public function getNumberOfPacketsToDownload()
     {
         $authTab = $this->authWithToken($this->getRequest()->getContent());
+        
         // echo "CONTENT received : ".$content."<br/>";
         $status = $authTab['status'];
+        $user = $authTab['user'];
         $informationsArray = $authTab['informationsArray'];
         $content = array();
         if ($status == 200) {
-            $filename = SyncConstant::SYNCHRO_DOWN_DIR.$informationsArray['id'].'/sync_'.$informationsArray['hashname'].".zip";
-            $nPackets = $this->get('claroline.manager.transfer_manager')->getNumberOfParts($filename);
+            $filename = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$informationsArray['hashname'].".zip";
+            $nFragments = $this->get('claroline.manager.transfer_manager')->getNumberOfParts($filename);
             $content = array(
                 'hashname' => $informationsArray['hashname'],
-                'nPackets' => $nPackets
+                'nPackets' => $nFragments
             );
         }
 

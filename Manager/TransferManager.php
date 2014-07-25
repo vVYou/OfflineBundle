@@ -333,7 +333,7 @@ class TransferManager
         }
     }
 
-    public function getUserInfo($username, $password, $firstTime = true)
+    public function getUserInfo($username, $password, $url, $firstTime = true)
     {
         // The given password has to be clear, without any encryption, the security is made by the HTTPS communication
         echo $username."<br/>";
@@ -347,14 +347,14 @@ class TransferManager
         );
         // echo "content array : ".json_encode($contentArray).'<br/>';
         try {
-            $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray));
+            $response = $browser->post($url.'/sync/user', array(), json_encode($contentArray));
             $status = $this->analyseStatusCode($response->getStatusCode());
             $result = (array) json_decode($response->getContent());
             echo sizeof($result).'<br/>';
             echo $response->getStatusCode().'<br/>';
             echo $status.'<br/>';
             // if (sizeof($result) > 1) {
-            $this->retrieveProfil($username, $password, $result);
+            $this->retrieveProfil($username, $password, $result, $url);
             // echo $result['ws_resnode'];
             // foreach($result as $elem)
             // {
@@ -368,7 +368,7 @@ class TransferManager
         } catch (ClientException $e) {
             if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime) {
                 // echo "Oh mon dieu, un timeout";
-                $this->getUserInfo($username, $password, false);
+                $this->getUserInfo($username, $password, $url, false);
             } else {
                 throw $e;
             }
@@ -379,7 +379,7 @@ class TransferManager
     *   This method try to catch and create the profil of a user present in the online
     *   database.
     */
-    public function retrieveProfil($username, $password, $result)
+    public function retrieveProfil($username, $password, $result, $url)
     {
         $new_user = new User();
         $new_user->setFirstName($result['first_name']);
@@ -399,7 +399,7 @@ class TransferManager
         $this->userSyncManager->createUserSynchronized($my_user);
 
         // Creation of the file inside the offline database
-        file_put_contents(SyncConstant::PLAT_CONF, $result['username']);
+        file_put_contents(SyncConstant::PLAT_CONF, $url);
 
     }
 

@@ -357,14 +357,13 @@ class SynchronisationController extends Controller
             $alr_user = $this->userRepo->findOneBy(array('username' => $cred->getName()));
             if ($alr_user == NULL) {
                 try {
-                    $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword());
+                    $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword(), $cred->getUrl());
                     // $error = false;
                     // $first_sync = true;
                     //Auto-log?
                     // echo 'badadoum';
                     // TRUE route if auto-log.
                     $this->authenticator->authenticate($cred->getName(), $cred->getPassword());
-                    file_put_contents(SyncConstant::PLAT_CONF, $cred->getUrl());
 
                     return $this->render('ClarolineOfflineBundle:Offline:connect_ok.html.twig', array(
                     'first_sync' => true

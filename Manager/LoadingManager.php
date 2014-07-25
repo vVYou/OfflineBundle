@@ -38,6 +38,7 @@ use Claroline\OfflineBundle\SyncInfo;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 use Symfony\Component\Translation\TranslatorInterface;
+use Doctrine\ORM\EntityManager
 use \ZipArchive;
 use \DOMDocument;
 use \DateTime;
@@ -63,6 +64,7 @@ class LoadingManager
     private $roleRepo;
     private $resourceManager;
     private $workspaceManager;
+    private $entityManager
     private $roleManager;
     private $forumManager;
     private $templateDir;
@@ -85,6 +87,7 @@ class LoadingManager
      *     "wsManager"      = @DI\Inject("claroline.manager.workspace_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
      *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
+     *     "entityManager"  = @DI\Inject("'doctrine.orm.entity_manager"),
      *     "roleManager"    =   @DI\Inject("claroline.manager.role_manager"),
      *     "forumManager"   = @DI\Inject("claroline.manager.forum_manager"),
      *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%"),
@@ -101,6 +104,7 @@ class LoadingManager
         WorkspaceManager $wsManager,
         ResourceManager $resourceManager,
         WorkspaceManager $workspaceManager,
+        EntityManager $entityManager,
         RoleManager $roleManager,
         Manager $forumManager,
         $templateDir,
@@ -869,7 +873,7 @@ class LoadingManager
 
     private function getTimestampListener()
     {
-        $evm = $this->get('doctrine.orm.entity_manager')->getEventManager();
+        $evm = $this->entityManager->getEventManager();
 
         foreach ($evm->getListeners() as $listenersByEvent) {
             foreach ($listenersByEvent as $listener) {

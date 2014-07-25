@@ -38,7 +38,6 @@ use Claroline\OfflineBundle\SyncInfo;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 use Symfony\Component\Translation\TranslatorInterface;
-use Doctrine\ORM\EntityManager
 use \ZipArchive;
 use \DOMDocument;
 use \DateTime;
@@ -64,7 +63,6 @@ class LoadingManager
     private $roleRepo;
     private $resourceManager;
     private $workspaceManager;
-    private $entityManager
     private $roleManager;
     private $forumManager;
     private $templateDir;
@@ -87,7 +85,6 @@ class LoadingManager
      *     "wsManager"      = @DI\Inject("claroline.manager.workspace_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
      *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
-     *     "entityManager"  = @DI\Inject("'doctrine.orm.entity_manager"),
      *     "roleManager"    =   @DI\Inject("claroline.manager.role_manager"),
      *     "forumManager"   = @DI\Inject("claroline.manager.forum_manager"),
      *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%"),
@@ -104,7 +101,6 @@ class LoadingManager
         WorkspaceManager $wsManager,
         ResourceManager $resourceManager,
         WorkspaceManager $workspaceManager,
-        EntityManager $entityManager,
         RoleManager $roleManager,
         Manager $forumManager,
         $templateDir,
@@ -196,10 +192,7 @@ class LoadingManager
             throw new \Exception('Impossible to load the zip file');
         }
 
-        return array(
-        'infoArray' => $this->syncInfoArray,
-        'synchronizationDate' => $this->synchronizationDate
-        );
+        return $this->syncInfoArray;
     }
 
     public function loadPublicWorkspaceList($allWorkspace)
@@ -340,10 +333,10 @@ class LoadingManager
             $res = $resourceList->item($i);
             if ($res->nodeName == 'resource') {
                 $date = new DateTime();
-                $date->setTimestamp($res->getAttribute('creation_date'));
+                // $date->setTimestamp($res->getAttribute('creation_date'));
 
-                $listener = $this->getTimestampListener();
-                $listener->forceTime($date);
+                // $listener = $this->getTimestampListener();
+                // $listener->forceTime($date);
 
                 // Check, when a resource is visited, if it needs to be updated or created.
                 $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $res->getAttribute('hashname_node')));
@@ -873,7 +866,7 @@ class LoadingManager
 
     private function getTimestampListener()
     {
-        $evm = $this->entityManager->getEventManager();
+        $evm = $this->get('doctrine.orm.entity_manager')->getEventManager();
 
         foreach ($evm->getListeners() as $listenersByEvent) {
             foreach ($listenersByEvent as $listener) {

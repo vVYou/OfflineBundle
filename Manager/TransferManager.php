@@ -34,7 +34,7 @@ use \Buzz\Exception\ClientException;
 /**
  * @DI\Service("claroline.manager.transfer_manager")
  */
-
+// This Manager handle the treatment of the requests between the online and the offline plateform
 class TransferManager
 {
     private $om;
@@ -211,8 +211,6 @@ class TransferManager
             throw new SynchronisationFailsException();
         } else {
             return array(
-                // 'id' => $user->getId(),
-                // 'username' => $user->getUsername(),
                 'token' => $user->getExchangeToken(),
                 'hashname' => substr($filename, strlen($filename)-40, 36),
                 'nPackets' => $this->getNumberOfParts($filename),
@@ -442,6 +440,7 @@ class TransferManager
             'hashname' => $filename
         );
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/numberOfPacketsToDownload', array(), json_encode($contentArray));
+        echo "Content received <br/>".$response->getContent()."<br/>";
         $this->analyseStatusCode($response->getStatusCode());
         $responseArray = (array) json_decode($response->getContent());
 

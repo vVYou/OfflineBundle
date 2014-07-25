@@ -103,15 +103,16 @@ class SynchronisationManager
             case UserSynchronized::SUCCESS_DOWNLOAD :
                 $toLoad = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$userSync->getFilename().'.zip';
                 // Load the online synchronisation archive on the plateform
-                $this->step4Load($user, $userSync, $toLoad);
+                return $this->step4Load($user, $userSync, $toLoad);
                 break;
         }
     }
 
     // Method implementing the first step of the global process
     // Creates the synchronisation archive and transfer it to the second step
-    public function step1Create(User $user, UserSynchronized $userSync)
+    private function step1Create(User $user, UserSynchronized $userSync)
     {
+        echo "step1 <br/>";
         // $toUpload will be the filename of the synchronisation archive created
         $toUpload = $this->creationManager->createSyncZip($user, $userSync->getLastSynchronization()->getTimestamp());
         // Save it in UserSync in case of restart needed
@@ -127,14 +128,15 @@ class SynchronisationManager
 
     // Method implementing the second step of the global process
     // Upload the synchronisation archive to the online plateform
-    public function step2Upload(User $user, UserSynchronized $userSync, $filename, $packetNum = 0)
+    private function step2Upload(User $user, UserSynchronized $userSync, $filename, $packetNum = 0)
     {
+        echo "step2 <br/>";
         if ($filename == null) {
             $this->step1Create($user, $userSync);
         } else {
             // $toDownload will be the synchronisation archive of the online plateform.
             // this information is received when the upload is finished.
-            $toDownload = $this->transferManager->uploadZip($filename, $user, $packetNum);
+            $toDownload = $this->transferManager->uploadArchive($filename, $user, $packetNum);
             //Saves informations and update status
             $userSync->setFilename($toDownload['hashname']);
             $userSync->setStatus(UserSynchronized::SUCCESS_UPLOAD);
@@ -149,8 +151,9 @@ class SynchronisationManager
 
     // Method implementing the third step of the global process
     // Download the synchronisation archive of the online plateform
-    public function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = null, $packetNum = 0)
+    private function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = null, $packetNum = 0)
     {
+        echo "step3 <br/>";
         if ($nPackets == null) {
             echo "testons le nombre de frangments <br/>";
             $nPackets = $this->transferManager->getOnlineNumberOfPackets($filename, $user);
@@ -165,7 +168,7 @@ class SynchronisationManager
             $this->synchroniseUser($user, $userSync);
         } else {
             // $toLoad will be the downloaded from the online plateform
-            $toLoad = $this->transferManager->getSyncZip($filename, $nPackets, $packetNum, $user);
+            $toLoad = $this->transferManager->downloadArchive($filename, $nPackets, $packetNum, $user);
             // Update userSync status
             $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
             $this->userSyncManager->updateUserSync($userSync);
@@ -179,13 +182,15 @@ class SynchronisationManager
 
     // Method implementing the fourth step of the global process
     // It will load the downloaded from the archive into 
-    public function step4Load(User $user, UserSynchronized $userSync, $filename)
+    private function step4Load(User $user, UserSynchronized $userSync, $filename)
     {
+        echo "step4 <br/>";
         // Load synchronisation archive ($filename) in offline database
-        $this->loadingManager->loadZip($filename, $user);
+        $infoArray = $this->loadingManager->loadZip($filename, $user);
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
         $userSync->setLastSynchronization($userSync->getSentTime());
         $this->userSyncManager->updateUserSync($userSync);
+        return $infoArray;
     }
 
     // This method has to return the last fragment uploaded on the online plateform

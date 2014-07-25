@@ -106,7 +106,7 @@ class SynchronisationController extends Controller
 
     /**
     *   @EXT\Route(
-    *       "/transfer/uploadzip",
+    *       "/transfer/uploadArchive",
     *       name="claro_sync_upload_zip",
     *   )
     *
@@ -196,7 +196,7 @@ class SynchronisationController extends Controller
             $em = $this->getDoctrine()->getManager();
             $content = $this->get('claroline.manager.transfer_manager')->getMetadataArray($user, $fileName);
             $content['packetNum']=$informationsArray['packetNum'];
-            $data = $this->get('claroline.manager.transfer_manager')->getPacket($informationsArray['packetNum'], $fileName, $user);
+            $data = $this->get('claroline.manager.transfer_manager')->getFragment($informationsArray['packetNum'], $fileName, $user);
             if ($data == null) {
                 $status = 424;
             } else {
@@ -301,7 +301,7 @@ class SynchronisationController extends Controller
         $content = array();
         if ($status == 200) {
             $filename = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$informationsArray['hashname'].".zip";
-            $nFragments = $this->get('claroline.manager.transfer_manager')->getNumberOfParts($filename);
+            $nFragments = $this->get('claroline.manager.transfer_manager')->getTotalFragments($filename);
             $content = array(
                 'hashname' => $informationsArray['hashname'],
                 'nPackets' => $nFragments

@@ -192,7 +192,10 @@ class LoadingManager
             throw new \Exception('Impossible to load the zip file');
         }
 
-        return $this->syncInfoArray;
+        return array(
+            'infoArray' => $this->syncInfoArray,
+            'synchronizationDate' => $this->synchronizationDate
+        );
     }
 
     public function loadPublicWorkspaceList($allWorkspace)
@@ -333,10 +336,10 @@ class LoadingManager
             $res = $resourceList->item($i);
             if ($res->nodeName == 'resource') {
                 $date = new DateTime();
-                // $date->setTimestamp($res->getAttribute('creation_date'));
+                $date->setTimestamp($res->getAttribute('creation_date'));
 
-                // $listener = $this->getTimestampListener();
-                // $listener->forceTime($date);
+                $listener = $this->getTimestampListener();
+                $listener->forceTime($date);
 
                 // Check, when a resource is visited, if it needs to be updated or created.
                 $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $res->getAttribute('hashname_node')));

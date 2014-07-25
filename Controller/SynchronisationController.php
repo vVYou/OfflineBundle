@@ -44,14 +44,14 @@ class SynchronisationController extends Controller
 
      /**
      * @DI\InjectParams({
-     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "authenticator"  = @DI\Inject("claroline.authenticator"),
-     *     "userManager"   = @DI\Inject("claroline.manager.user_manager"),
+     *     "om"              = @DI\Inject("claroline.persistence.object_manager"),
+     *     "authenticator"   = @DI\Inject("claroline.authenticator"),
+     *     "userManager"     = @DI\Inject("claroline.manager.user_manager"),
      *     "transferManager" = @DI\Inject("claroline.manager.transfer_manager"),
-     *     "request"            = @DI\Inject("request"),
-     *     "router"             = @DI\Inject("router"),
-     *     "session"            = @DI\Inject("session"),
-     *     "formFactory"            = @DI\Inject("form.factory")
+     *     "request"         = @DI\Inject("request"),
+     *     "router"          = @DI\Inject("router"),
+     *     "session"         = @DI\Inject("session"),
+     *     "formFactory"     = @DI\Inject("form.factory")
      * })
      */
     public function __construct(
@@ -77,11 +77,9 @@ class SynchronisationController extends Controller
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
     }
-    // TODO Security voir workspace controller.
 
     private function getUserFromID($user)
     {
-
         $arrayRepo = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findById($user);
 
         return $arrayRepo[0];
@@ -188,15 +186,15 @@ class SynchronisationController extends Controller
         $status = $authTab['status'];
         $user = $authTab['user'];
         $informationsArray = $authTab['informationsArray'];
-        // echo "Ask Packet Number : ".$informationsArray['packetNum'].'<br/>';
+        // echo "Ask Packet Number : ".$informationsArray['fragmentNumber'].'<br/>';
         // echo "STATUS : ".$status."<br/>";
         $content = array();
         if ($status == 200) {
             $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$informationsArray['hashname'].'.zip';
             $em = $this->getDoctrine()->getManager();
             $content = $this->get('claroline.manager.transfer_manager')->getMetadataArray($user, $fileName);
-            $content['packetNum']=$informationsArray['packetNum'];
-            $data = $this->get('claroline.manager.transfer_manager')->getFragment($informationsArray['packetNum'], $fileName, $user);
+            $content['fragmentNumber']=$informationsArray['fragmentNumber'];
+            $data = $this->get('claroline.manager.transfer_manager')->getFragment($informationsArray['fragmentNumber'], $fileName, $user);
             if ($data == null) {
                 $status = 424;
             } else {
@@ -304,7 +302,7 @@ class SynchronisationController extends Controller
             $nFragments = $this->get('claroline.manager.transfer_manager')->getTotalFragments($filename);
             $content = array(
                 'hashname' => $informationsArray['hashname'],
-                'nPackets' => $nFragments
+                'totalFragments' => $nFragments
             );
         }
 
@@ -360,13 +358,14 @@ class SynchronisationController extends Controller
             $alr_user = $this->userRepo->findOneBy(array('username' => $cred->getName()));
             if ($alr_user == NULL) {
                 try {
-                    $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword(), $cred->getUrl());
+                    $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword());
                     // $error = false;
                     // $first_sync = true;
                     //Auto-log?
                     // echo 'badadoum';
                     // TRUE route if auto-log.
                     $this->authenticator->authenticate($cred->getName(), $cred->getPassword());
+                    file_put_contents(SyncConstant::PLAT_CONF, $cred->getUrl());
 
                     return $this->render('ClarolineOfflineBundle:Offline:connect_ok.html.twig', array(
                     'first_sync' => true

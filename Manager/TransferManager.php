@@ -34,7 +34,7 @@ use \Buzz\Exception\ClientException;
 /**
  * @DI\Service("claroline.manager.transfer_manager")
  */
-// This Manager handle the treatment of the requests between the online and the offline plateform
+// This Manager handle the process of the requests between the online and the offline plateform
 class TransferManager
 {
     private $om;
@@ -105,18 +105,18 @@ class TransferManager
 
         $browser = $this->getBrowser();
         $metadatas = $this->getMetadataArray($user, $toTransfer);
-        $totalFragments = $metadatas['nPackets'];
+        $totalFragments = $metadatas['totalFragments'];
         $responseContent = "";
         $status = 200;
 
         try {
             while ($fragmentNumber < $totalFragments && $status == 200) {
                 $metadatas['file'] = base64_encode($this->getFragment($fragmentNumber, $toTransfer, $user));
-                $metadatas['packetNum'] = $fragmentNumber;
+                $metadatas['fragmentNumber'] = $fragmentNumber;
                 // Execute the post request sending informations online
                 $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/uploadArchive', array(), json_encode($metadatas));
                 $responseContent = $reponse->getContent();
-                echo "CONTENT received : ".$responseContent."<br/>";
+                // echo "Content <br/>".$responseContent."<br/>";
                 $status = $reponse->getStatusCode();
                 $responseContent = (array) json_decode($responseContent);
                 $fragmentNumber ++;
@@ -143,17 +143,16 @@ class TransferManager
         $metadatas = array(
             'token' => $user->getExchangeToken(),
             'hashname' => $hashToGet,
-            'nPackets' => $totalFragments,
-            'packetNum' => 0);
+            'totalFragments' => $totalFragments,
+            'fragmentNumber' => 0);
         $processContent = null;
         $status = 200;
         try {
             while ($fragmentNumber < $totalFragments && $status == 200) {
-                // echo 'doing packet '.$fragmentNumber.'<br/>';
-                $metadatas['packetNum'] = $fragmentNumber;
+                $metadatas['fragmentNumber'] = $fragmentNumber;
                 $reponse = $browser->post(SyncConstant::PLATEFORM_URL.'/transfer/getzip', array(), json_encode($metadatas));
                 $content = $reponse->getContent();
-                echo "CONTENT received : ".$content."<br/>";
+                // echo "Content <br/>".$content."<br/>";
                 $status = $reponse->getStatusCode();
                 $processContent = $this->processSyncRequest((array) json_decode($content), false);
                 $fragmentNumber++;
@@ -194,198 +193,8 @@ class TransferManager
         }
     }
     
-    /*
-    *******   METHODS EXECUTED OFFLINE *******
-    */
-    
-    
-    /*
-    *******   METHODS USED IN BOTH SIDES *******
-    */
-
-    public function getTotalFragments($filename)
-    {
-        if (! file_exists($filename)) {
-            return -1;
-        } else {
-            return (int) (filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1;
-        }
-    }
-
-    public function getMetadataArray($user, $filename)
-    {
-        if (!file_exists($filename)) {
-            $this->userSyncManager->resetSync($user);
-            throw new SynchronisationFailsException();
-        } else {
-            return array(
-                'token' => $user->getExchangeToken(),
-                'hashname' => substr($filename, strlen($filename)-40, 36),
-                'nPackets' => $this->getTotalFragments($filename),
-                'checksum' => hash_file( "sha256", $filename)
-            );
-        }
-    }
-
-    public function getFragment($fragmentNumber, $filename, $user)
-    {
-        if (!file_exists($filename)) {
-            $this->userSyncManager->resetSync($user);
-            throw new SynchronisationFailsException();
-        } else {
-            $fileSize = filesize($filename);
-            $handle = fopen($filename, 'r');
-            if ($fragmentNumber*SyncConstant::MAX_PACKET_SIZE > $fileSize || !$handle) {
-                return null;
-            } else {
-                $position = $fragmentNumber*SyncConstant::MAX_PACKET_SIZE;
-                fseek($handle, $position);
-                if ($fileSize > $position+SyncConstant::MAX_PACKET_SIZE) {
-                    $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
-                } else {
-                    $data = fread($handle, $fileSize-$position);
-                }
-                if(!fclose($handle)) return null;
-
-                return $data;
-            }
-        }
-    }
-
-    public function processSyncRequest($content, $createSync)
-    {
-        //TODO Verifier le fichier entrant (dependency injections)
-        //TODO verification de l'existance du dossier
-        $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
-        $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId();
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777);
-        }
-        $partName = $dir.'/'.$content['hashname'].'_'.$content['packetNum'];
-        $partFile = fopen($partName, 'w+');
-        if(!$partFile) return array("status" => 424);
-        $write = fwrite($partFile, base64_decode($content['file']));
-        if($write === false) return array("status" => 424);
-        if(!fclose($partFile)) return array("status" => 424);
-        if ($content['packetNum'] == ($content['nPackets']-1)) {
-            return $this->endExchangeProcess($content, $createSync);
-        }
-
-        return array(
-            "status" => 200
-        );
-    }
-
-    public function endExchangeProcess($content, $createSync)
-    {
-        $zipName = $this->assembleParts($content);
-        if ($zipName != null) {
-            //Load archive
-            $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token'])); //loadUserByUsername($content['username']);
-            $loadingResponse = $this->loadingManager->loadZip($zipName, $user);
-            if ($createSync) {
-                //Create synchronisation
-                $toSend = $this->creationManager->createSyncZip($user, $loadingResponse['synchronizationDate']);
-                // $this->userSyncManager->updateUserSynchronized($user);
-                $metaDataArray = $this->getMetadataArray($user, $toSend);
-                $metaDataArray["status"] = 200;
-
-                return $metaDataArray;
-            } else {
-                return array(
-                    "zip_name" => $zipName,
-                    "status" => 200
-                );
-            }
-        } else {
-            return array(
-                'status' => 424
-            );
-        }
-    }
-
-    public function assembleParts($content)
-    {
-        $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
-        $zipName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$content['hashname'].'.zip';
-        $zipFile = fopen($zipName, 'w+');
-        if(!$zipFile) return null;
-        for ($i = 0; $i<$content['nPackets']; $i++) {
-            $partName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$content['hashname'].'_'.$i;
-            $partFile = fopen($partName, 'r');
-            if(!$partFile) return null;
-            $write = fwrite($zipFile, fread($partFile, filesize($partName)));
-            if($write === false) return null;
-            if(!fclose($partFile)) return null;
-            unlink($partName);
-        }
-        if(!fclose($zipFile))return null;
-        if (hash_file( "sha256", $zipName) == $content['checksum']) {
-            // echo "CHECKSUM SUCCEED <br/>";
-            return $zipName;
-        } else {
-            // echo "CHECKSUM FAIL <br/>";
-            return null;
-        }
-    }
-
-    public function confirmRequest($user)
-    {
-        $browser = $this->getBrowser();
-
-        $reponse = $browser->get(SyncConstant::PLATEFORM_URL.'/transfer/confirm/'.$user->getId());
-        if ($reponse) {
-            echo "HE CONFIRM RECEIVE !<br/>";
-        }
-    }
-
-    public function getUserInfo($username, $password, $url, $firstTime = true)
-    {
-        // The given password has to be clear, without any encryption, the security is made by the HTTPS communication
-        echo $username."<br/>";
-        echo $password."<br/>";
-        $browser = $this->getBrowser();
-
-        //TODO remove hardcode
-        $contentArray = array(
-            'username' => $username,
-            'password' => $password
-        );
-        // echo "content array : ".json_encode($contentArray).'<br/>';
-        try {
-            $response = $browser->post($url.'/sync/user', array(), json_encode($contentArray));
-            $status = $this->analyseStatusCode($response->getStatusCode());
-            $result = (array) json_decode($response->getContent());
-            echo sizeof($result).'<br/>';
-            echo $response->getStatusCode().'<br/>';
-            echo $status.'<br/>';
-            // if (sizeof($result) > 1) {
-            $this->retrieveProfil($username, $password, $result, $url);
-            // echo $result['ws_resnode'];
-            // foreach($result as $elem)
-            // {
-                // echo $elem.'</br>';
-            // }
-                // return true;
-            // }
-            // else{
-                // return false;
-            // }
-        } catch (ClientException $e) {
-            if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime) {
-                // echo "Oh mon dieu, un timeout";
-                $this->getUserInfo($username, $password, $url, false);
-            } else {
-                throw $e;
-            }
-        }
-    }
-
-    /*
-    *   This method try to catch and create the profil of a user present in the online
-    *   database.
-    */
-    public function retrieveProfil($username, $password, $result, $url)
+    //  This method try to catch and create the profile of a user present in the online database.
+    public function retrieveProfil($username, $password, $result)
     {
         $new_user = new User();
         $new_user->setFirstName($result['first_name']);
@@ -405,30 +214,20 @@ class TransferManager
         $this->userSyncManager->createUserSynchronized($my_user);
 
         // Creation of the file inside the offline database
-        file_put_contents(SyncConstant::PLAT_CONF, $url);
+        file_put_contents(SyncConstant::PLAT_CONF, $result['username']);
 
     }
 
-    private function getBrowser()
-    {
-        $client = new Curl();
-        $client->setTimeout(60);
-        $browser = new Browser($client);
-
-        return $browser;
-    }
-
-    public function getLastPacketUploaded($filename, $user)
+    // This Method returns the number of the last fragment of the file $filename uploaded on the online plateform
+    // If the file was not yet uploaded it returns -1
+    public function getLastFragmentUploaded($filename, $user)
     {
         $browser = $this->getBrowser();
         $contentArray = array(
-            'username' => $user->getUsername(),
-            'id' => $user->getId(),
             'token' => $user->getExchangeToken(),
             'hashname' => substr($filename, strlen($filename)-40, 36)
         );
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/lastUploaded', array(), json_encode($contentArray));
-        // echo "CONTENT received : ".$response->getContent()."<br/>";
         if ($this->analyseStatusCode($response->getStatusCode())) {
             $responseArray = (array) json_decode($response->getContent());
 
@@ -438,34 +237,23 @@ class TransferManager
         }
     }
 
-    public function getOnlineNumberOfPackets($filename, $user)
+    // This method contact the online plateform and returns the number of fragment requier to download $filename
+    // If the file doesn't exists it returns -1
+    public function getNumberOfFragmentsOnline($filename, $user)
     {
         $browser = $this->getBrowser();
         $contentArray = array(
-            // 'username' => $user->getUsername(),
-            // 'id' => $user->getId(),
             'token' => $user->getExchangeToken(),
             'hashname' => $filename
         );
         $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/numberOfPacketsToDownload', array(), json_encode($contentArray));
-        echo "Content received <br/>".$response->getContent()."<br/>";
         $this->analyseStatusCode($response->getStatusCode());
         $responseArray = (array) json_decode($response->getContent());
 
-        return $responseArray['nPackets'];
+        return $responseArray['totalFragments'];
     }
-
-    public function unlinkSynchronisationFile($content, $user)
-    {
-        // echo 'je delete : '.$content['dir'].$user->getId().'/sync_'.$content['hashname'].'.zip<br/>';
-        unlink($content['dir'].$user->getId().'/sync_'.$content['hashname'].'.zip');
-        $content['status'] = 200;
-
-        return $content;
-    }
-
-
-
+        
+    // This method is used to contact the online plateform and request to delete $filename
     public function deleteFile($user, $filename, $dir, $firstTime=true)
     {
         $browser = $this->getBrowser();
@@ -475,17 +263,216 @@ class TransferManager
             'dir' => $dir
         );
         try {
-            // echo "Je tente de delete ".$filename." dans ".$dir." pour ".$user->getExchangeToken()."<br/>";
             $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/unlink', array(), json_encode($contentArray));
             $this->analyseStatusCode($response->getStatusCode());
-            // echo "Here is my response ".$response->getContent().'<br/>';
         } catch (ClientException $e) {
             if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime) {
-                // echo "Oh mon dieu, un timeout";
                 $this->deleteFile($user, $filename, $dir, false);
             } else {
                 throw $e;
             }
         }
     }
+    
+    /*
+    *******   METHODS EXECUTED ONLINE *******
+    */
+
+    public function getUserInfo($username, $password, $firstTime = true)
+    {
+        // The given password has to be clear, without any encryption, the security is made by the HTTPS communication
+        echo $username."<br/>";
+        echo $password."<br/>";
+        $browser = $this->getBrowser();
+
+        //TODO remove hardcode
+        $contentArray = array(
+            'username' => $username,
+            'password' => $password
+        );
+        try {
+            $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray));
+            $status = $this->analyseStatusCode($response->getStatusCode());
+            $result = (array) json_decode($response->getContent());
+            echo sizeof($result).'<br/>';
+            echo $response->getStatusCode().'<br/>';
+            echo $status.'<br/>';
+            // if (sizeof($result) > 1) {
+            $this->retrieveProfil($username, $password, $result);
+            // echo $result['ws_resnode'];
+            // foreach($result as $elem)
+            // {
+                // echo $elem.'</br>';
+            // }
+                // return true;
+            // }
+            // else{
+                // return false;
+            // }
+        } catch (ClientException $e) {
+            if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime) {
+                $this->getUserInfo($username, $password, false);
+            } else {
+                throw $e;
+            }
+        }
+    }
+    
+    // This method is used to delete files on the online plateform
+    public function unlinkSynchronisationFile($content, $user)
+    {
+        unlink($content['dir'].$user->getId().'/sync_'.$content['hashname'].'.zip');
+        $content['status'] = 200;
+
+        return $content;
+    }
+    
+    /*
+    *******   METHODS USED IN BOTH SIDES *******
+    */
+    
+    // The Browser is the Curl client used to create the HTTP request
+    private function getBrowser()
+    {
+        $client = new Curl();
+        $client->setTimeout(60);
+        $browser = new Browser($client);
+
+        return $browser;
+    }
+    
+    // Method returning a table of the metadatas that are sent with the post requests
+    public function getMetadataArray($user, $filename)
+    {
+        if (!file_exists($filename)) {
+            $this->userSyncManager->resetSync($user);
+            throw new SynchronisationFailsException();
+        } else {
+            return array(
+                'token' => $user->getExchangeToken(),
+                'hashname' => substr($filename, strlen($filename)-40, 36),
+                'totalFragments' => $this->getTotalFragments($filename),
+                'checksum' => hash_file( "sha256", $filename)
+            );
+        }
+    }
+    
+    // Method returning the number of fragment of a file
+    // If file doesn't exist it returns -1
+    public function getTotalFragments($filename)
+    {
+        if (! file_exists($filename)) {
+            return -1;
+        } else {
+            return (int) (filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1;
+        }
+    }
+    
+    // Method returning the fragment number $fragmentNumber of the file $filename
+    // If file doesn't exists throw a SynchronisationFailsException and reset the UserSynchronized entity of $user
+    public function getFragment($fragmentNumber, $filename, $user)
+    {
+        if (!file_exists($filename)) {
+            $this->userSyncManager->resetSync($user);
+            throw new SynchronisationFailsException();
+        } else {
+            $fileSize = filesize($filename);
+            $handle = fopen($filename, 'r');
+            // Control that fragment exists
+            if ($fragmentNumber*SyncConstant::MAX_PACKET_SIZE > $fileSize || !$handle) {
+                return null;
+            } else {
+                $position = $fragmentNumber*SyncConstant::MAX_PACKET_SIZE;
+                fseek($handle, $position);
+                if ($fileSize > $position+SyncConstant::MAX_PACKET_SIZE) {
+                    $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
+                } else {
+                    $data = fread($handle, $fileSize-$position);
+                }
+                if(!fclose($handle)) return null;
+
+                return $data;
+            }
+        }
+    }
+
+    // Method used to analyse request and determining if all fragment are received
+    // It returns an array containing the status code of the procedure
+    public function processSyncRequest($content, $createSync)
+    {
+        $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
+        $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId();
+        // If directory doesn't exists create it
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777);
+        }
+        // Save the fragment received
+        $fragmentName = $dir.'/'.$content['hashname'].'_'.$content['fragmentNumber'];
+        $partFile = fopen($fragmentName, 'w+');
+        if(!$partFile) return array("status" => 424);
+        $write = fwrite($partFile, base64_decode($content['file']));
+        if($write === false) return array("status" => 424);
+        if(!fclose($partFile)) return array("status" => 424);
+        // Control if all fragments are received
+        if ($content['fragmentNumber'] == ($content['totalFragments']-1)) {
+            return $this->endExchangeProcess($content, $createSync);
+        }
+
+        return array(
+            "status" => 200
+        );
+    }
+
+    // This method is in charge of the processing when all fragments are transfered
+    private function endExchangeProcess($content, $createSync)
+    {
+        $zipName = $this->assembleParts($content);
+        if ($zipName != null) {
+            //Load archive
+            $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
+            $loadingResponse = $this->loadingManager->loadZip($zipName, $user);
+            if ($createSync) {
+                //Create synchronisation archive (when online)
+                $toSend = $this->creationManager->createSyncZip($user, $loadingResponse['synchronizationDate']);
+                $metaDataArray = $this->getMetadataArray($user, $toSend);
+                $metaDataArray["status"] = 200;
+
+                return $metaDataArray;
+            } else {
+                return array(
+                    "zip_name" => $zipName,
+                    "status" => 200
+                );
+            }
+        } else {
+            return array(
+                'status' => 424
+            );
+        }
+    }
+
+    //  This method is used to write the complete zip in one file from all the fragments
+    private function assembleParts($content)
+    {
+        $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
+        $zipName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$content['hashname'].'.zip';
+        $zipFile = fopen($zipName, 'w+');
+        if(!$zipFile) return null;
+        for ($i = 0; $i<$content['totalFragments']; $i++) {
+            $fragmentName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$content['hashname'].'_'.$i;
+            $partFile = fopen($fragmentName, 'r');
+            if(!$partFile) return null;
+            $write = fwrite($zipFile, fread($partFile, filesize($fragmentName)));
+            if($write === false) return null;
+            if(!fclose($partFile)) return null;
+            unlink($fragmentName);
+        }
+        if(!fclose($zipFile))return null;
+        if (hash_file( "sha256", $zipName) == $content['checksum']) {
+            return $zipName;
+        } else {
+            return null;
+        }
+    }
+
 }

@@ -26,6 +26,7 @@ use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\Translation\TranslatorInterface;
 use \ZipArchive;
 use \DOMDocument;
+use Claroline\OfflineBundle\Model\Resource\OfflineText;
 
 /**
  * @DI\Service("claroline.manager.creation_manager")
@@ -46,6 +47,7 @@ class CreationManager
     private $workspaceRepo;
     private $roleRepo;
     private $ut;
+    private $offlinetest;
 
     /**
      * Constructor.
@@ -80,6 +82,74 @@ class CreationManager
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
+        $this->offlinetest = new OfflineText($this->om, $this->resourceManager);
+    }
+    
+    /**
+    *   Test New OfflineText
+    *   
+    */
+    
+    public function testOffline(User $user, $date)
+    {
+        echo 'je suis dans testoffline!';
+        ini_set('max_execution_time', 0);
+        $typeList = array('text');
+
+        $archive = new ZipArchive();
+        $domManifest = new DOMDocument('1.0', "UTF-8");
+        $domManifest->formatOutput = true;
+        $manifestName = SyncConstant::MANIFEST.'_'.$user->getUsername().'.xml';
+
+        // Manifest section
+        $sectManifest = $domManifest->createElement('manifest');
+        $domManifest->appendChild($sectManifest);
+
+        //Description section
+        $this->writeManifestDescription($domManifest, $sectManifest, $user, $date);
+
+        $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId();
+
+        $hashname_zip = $this->ut->generateGuid();
+        $fileName = $dir.'/sync_'.$hashname_zip.'.zip';
+
+        $typeArray = $this->buildTypeArray($typeList);
+        $userWS = $this->workspaceRepo->findByUser($user);
+
+        if ($archive->open($fileName, ZipArchive::CREATE) === true) {
+            echo 'je suis dans le if testoffline!';
+            foreach ($userWS as $element) {
+            
+            
+            $domWorkspace = $this->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);
+            foreach ($typeArray as $resType) {
+                $ressourcesToSync = array();
+                //$em_res = $this->getDoctrine()->getManager();
+                $userRes = $this->resourceNodeRepo->findByWorkspaceAndResourceType($element, $resType);
+                if (count($userRes) >= 1) {
+
+                    $path = ''; // USELESS?
+                    $ressourcesToSync = $this->checkObsolete($userRes, $user, $date);  // Remove all the resources not modified.
+                    //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
+
+                    foreach ($ressourcesToSync as $res) {
+                        echo 'Test ressource texte';
+                        $domManifest = $this->offlinetest->addResourceToManifest($domManifest, $domWorkspace, $res);
+                    }
+                }
+            }
+        }
+        } else {
+            throw new \Exception('Impossible to open the zip file');
+        }
+
+        $domManifest->save($manifestName);
+        $archive->addFile($manifestName);
+        $archivePath = $archive->filename;
+        $archive->close();
+        // Erase the manifest from the current folder.
+        // unlink($manifestName);
+        return $archivePath;
     }
 
     /**

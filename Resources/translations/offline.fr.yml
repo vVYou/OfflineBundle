@@ -10,10 +10,11 @@ sync_hello: Bonjour {{user}} voulez-vous synchroniser votre plateforme claroline
 sync_config : Afin que l'application puisse recuperer votre profil sur la plateforme en ligne, veuillez indiquer votre nom d'utilisateur, mot de passe et adresse internet de la plateforme concernée.
 sync_first : Votre compte a été récupéré avec succès! Nous vous invitons à lancer votre première synchronisation afin de récupérer l'ensemble de vos cours.
 sync_config_fail : Le compte que vous avez entré ne semble pas exister.
-sync_unreach : Impossible d'atteindre le serveur. Vérifier votre connexion internet et vérifier que vous pouvez atteindre la plateforme. Si cela est le cas, vérifier votre fichier SyncConstant.
+sync_unreach : Impossible d'atteindre le serveur. Vérifiez votre connexion internet et vérifiez que vous pouvez atteindre la plateforme. Si cela est le cas, vérifiez l'adresse de la plateforme que vous avez renseignée lors de la récupération de votre compte.
 sync_server_fail : Une erreur est survenue du côté du serveur, veuillez réessayer dans quelques instants.
 sync_client_fail : Une erreur est survenue en contactant le serveur distant. Veuillez réessayer plus tard.
 sync_launch : Lancer la synchronisation
+sync_param : Paramètres
 sync_retrieve : Récupérer le profil
 sync_ok : Votre compte a été récupéré avec succès! Nous vous invitons à vous connecter et lancer votre première synchronisation afin de récupérer l'ensemble de vos cours.
 sync_fail : Le processus a échoué. Veuillez réessayer.
@@ -29,3 +30,4 @@ sync_ws_crea : Les ressources suivantes ont été créées :
 sync_ws_upd : Les ressources suivantes ont été mise à jour :
 sync_ws_doub : Un doublon a été créé pour les ressources suivantes :
 sync_url : Adresse du site :
+sync_url_edit : Adresse du site

@@ -25,6 +25,9 @@ use Claroline\CoreBundle\Entity\ResourceNode;
 use Claroline\OfflineBundle\SyncConstant;
 use Claroline\OfflineBundle\SyncInfo;
 use Claroline\CoreBundle\Persistence\ObjectManager;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\Yaml\Parser;
+use Symfony\Component\Yaml\Dumper;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -32,10 +35,13 @@ use Claroline\CoreBundle\Persistence\ObjectManager;
  */
 class OfflineController extends Controller
 {
-        private $om;
+    private $om;
     private $router;
     private $request;
     private $resourceNodeRepo;
+    private $yamlparser;
+    private $yaml_parser;
+    private $yaml_dump;
 
     /**
     * @DI\InjectParams({
@@ -54,6 +60,8 @@ class OfflineController extends Controller
        $this->request = $request;
                $this->om = $om;
        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+       $this->yaml_parser = new Parser();
+       $this->yaml_dump = new Dumper();
     }
 
     /**
@@ -149,6 +157,23 @@ class OfflineController extends Controller
            'results' => $results
         );
 
+    }
+    
+    /**
+    *   Options of synchronisation modifications
+    *
+    *   @EXT\Route(
+    *       "/sync/param",
+    *       name="claro_sync_param"
+    *   )
+    *
+    * @EXT\Template("ClarolineOfflineBundle:Offline:sync_param.html.twig")
+    */
+    public function syncParamAction()
+    {       
+        return array(
+           'msg' => ''
+        );
     }
 
     /**
@@ -404,4 +429,114 @@ class OfflineController extends Controller
             'user' => $username
          );
     }
+    
+    /**
+     *  Allow the user to modify the URL contacted during the synchronisation
+     *
+     * @Route(
+     *     "/url/form/edit",
+     *     name="sync_url_edit_form"
+     * )
+     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     *
+     * @EXT\Template("ClarolineOfflineBundle:Offline:sync_url.html.twig")
+     * @param User $user
+     *
+     * @return Response
+     */
+    public function editUrlAction(User $user)
+    {          
+        $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+        
+        return array(
+            'value' => $value
+        );
+    }
+    
+    /**
+     * @Route(
+     *     "/url/edit",
+     *     name="sync_url_edit"
+     * )
+     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     *
+     * @param User $user
+     *
+     * @return Response
+     */
+    public function editUrlYmlAction(User $user)
+    {
+        $request = $this->get('request');
+        $user = $this->get('security.context')->getToken()->getUser();
+        $new_url = $request->request->get('_url');       
+
+        $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+        $value['url'] = $new_url;
+        
+        $yaml = $this->yaml_dump->dump($value);
+        file_put_contents(SyncConstant::PLAT_CONF, $yaml);
+
+        $route = $this->get('router')->generate(
+            'claro_sync'
+        );
+
+        return new RedirectResponse($route);
+    }
+    
+    
+    // METHODE DE TEST 
+    
+    /**
+    *
+    *   Test New OfflineText
+    *
+    *   @EXT\Route(
+    *       "/sync/seek_text",
+    *       name="claro_sync_seek_text"
+    *   )
+    *
+    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
+     * @param User $user
+     *
+     * @return Response
+     */
+    public function seekTestAction(User $user)
+    {
+        $results = array();
+        $em = $this->getDoctrine()->getManager();
+        $userSyncTab = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $test = $this->get('claroline.manager.creation_manager')->testOffline($user, $userSyncTab[0]->getlastSynchronization()->getTimestamp());
+        // echo '<br/>'.$test.'<br/>';
+        return array(
+           'results' => $results
+        );
+    }
+    
+    /**
+    *
+    *   Test New OfflineText
+    *
+    *   @EXT\Route(
+    *       "/sync/load_text",
+    *       name="claro_sync_load_text"
+    *   )
+    *
+    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
+     * @param User $user
+     *
+     * @return Response
+     */
+    public function loadTestAction(User $user)
+    {
+                $results = array();
+        $results = $this->get('claroline.manager.loading_manager')->loadZip('sync_1E53C756-F51A-4858-B12F-B82462BAEC6F.zip', $user);
+
+
+        return array(
+            'results' => $results
+         );
+    }
+    
 }

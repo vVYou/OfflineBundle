@@ -30,6 +30,7 @@ use JMS\DiExtraBundle\Annotation as DI;
 use \Buzz\Browser;
 use \Buzz\Client\Curl;
 use \Buzz\Exception\ClientException;
+use Symfony\Component\Yaml\Dumper;
 
 /**
  * @DI\Service("claroline.manager.transfer_manager")
@@ -48,6 +49,7 @@ class TransferManager
     private $userSyncManager;
     private $userManager;
     private $ut;
+    private $yaml_dump;
 
     /**
      * Constructor.
@@ -85,6 +87,7 @@ class TransferManager
         $this->loadingManager = $loadingManager;
         $this->userSyncManager = $userSyncManager;
         $this->ut = $ut;
+        $this->yaml_dump = new Dumper();
     }
 
     /*
@@ -404,8 +407,14 @@ class TransferManager
         $this->om->endFlushSuite();
         $this->userSyncManager->createUserSynchronized($my_user);
 
-        // Creation of the file inside the offline database
-        file_put_contents(SyncConstant::PLAT_CONF, $url);
+        // Creation of sync_config file
+        $sync_config = array(
+            'username' => $result['username'],
+            'mail' => $result['mail'],
+            'url' => $url
+        );
+        $yaml = $this->yaml_dump->dump($sync_config);
+        file_put_contents(SyncConstant::PLAT_CONF, $yaml);
 
     }
 

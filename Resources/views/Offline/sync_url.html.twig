@@ -1,0 +1,37 @@
+{% extends "ClarolineCoreBundle:Desktop:layout.html.twig" %}
+
+
+{% block breadcrumb %}
+    {{
+        macros.breadcrumbs([
+            {
+                'icon': 'icon-briefcase',
+                'name': 'desktop'|trans({}, 'platform'),
+                'href': path('claro_desktop_open')
+            },
+            {
+                'name': 'claroline_offline_tool'|trans({}, 'tools'),
+                'href': ''
+            },
+            {
+                'name': 'sync_url_edit' | trans({}, 'offline'),
+                'href': ''
+            }
+        ])
+    }}
+{% endblock %}
+{% block section_content %}
+    <div class="panel-heading">
+        <h3 class="panel-title">{{ 'sync_url_edit'|trans({}, 'offline') }}</h3>
+    </div>
+    <form role="form" novalidate="validate" method="post" action="{{ _path('sync_url_edit')}}" id="edit_form">
+        <div class="panel-body">
+            <label for="url">{{ 'sync_url'|trans({}, 'offline') }}</label>
+            <input type="text" class="form-control" id="url" name="_url" placeholder={{ value['url']|raw }} tabindex="1" autofocus></input>
+        </div>
+        <div class="panel-footer">
+            <button type="submit" class="btn btn-primary">{{ 'ok'|trans({}, 'platform') }}</button>
+            <a class="btn btn-default" href="{{ path('claro_sync') }}" role="button">{{ 'cancel' | trans({}, 'platform') }}</a>
+        </div>
+    </form>
+{% endblock %}

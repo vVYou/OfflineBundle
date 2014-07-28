@@ -79,9 +79,9 @@ class SynchronisationManager
             // Has a synchronisation archive
             case UserSynchronized::STARTED_UPLOAD :
                 // Where did we stopped the transmission ?
-                $packetNum = $this->transferManager->getLastPacketUploaded($userSync->getFilename(), $user);
+                $fragmentNumber = $this->transferManager->getLastFragmentUploaded($userSync->getFilename(), $user);
                 // Restart uploading from the last stop
-                $this->step2Upload($user, $userSync, $userSync->getFilename(), $packetNum+1);
+                $this->step2Upload($user, $userSync, $userSync->getFilename(), $fragmentNumber+1);
                 break;
             // Uploading failed
             case UserSynchronized::FAIL_UPLOAD :
@@ -96,8 +96,8 @@ class SynchronisationManager
             // Download fail
             case UserSynchronized::FAIL_DOWNLOAD :
                 // Restart download
-                $packetNum = $this->getDownloadStop($userSync->getFilename(), $user);
-                $this->step3Download($user, $userSync, $userSync->getFilename(), null, $packetNum);
+                $fragmentNumber = $this->getDownloadStop($userSync->getFilename(), $user);
+                $this->step3Download($user, $userSync, $userSync->getFilename(), null, $fragmentNumber);
                 break;
             // Download finished
             case UserSynchronized::SUCCESS_DOWNLOAD :
@@ -112,7 +112,6 @@ class SynchronisationManager
     // Creates the synchronisation archive and transfer it to the second step
     private function step1Create(User $user, UserSynchronized $userSync)
     {
-        echo "step1 <br/>";
         // $toUpload will be the filename of the synchronisation archive created
         $toUpload = $this->creationManager->createSyncZip($user, $userSync->getLastSynchronization()->getTimestamp());
         // Save it in UserSync in case of restart needed
@@ -128,21 +127,20 @@ class SynchronisationManager
 
     // Method implementing the second step of the global process
     // Upload the synchronisation archive to the online plateform
-    private function step2Upload(User $user, UserSynchronized $userSync, $filename, $packetNum = 0)
+    private function step2Upload(User $user, UserSynchronized $userSync, $filename, $fragmentNumber = 0)
     {
-        echo "step2 <br/>";
         if ($filename == null) {
             $this->step1Create($user, $userSync);
         } else {
             // $toDownload will be the synchronisation archive of the online plateform.
             // this information is received when the upload is finished.
-            $toDownload = $this->transferManager->uploadArchive($filename, $user, $packetNum);
+            $toDownload = $this->transferManager->uploadArchive($filename, $user, $fragmentNumber);
             //Saves informations and update status
             $userSync->setFilename($toDownload['hashname']);
             $userSync->setStatus(UserSynchronized::SUCCESS_UPLOAD);
             $this->userSyncManager->updateUserSync($userSync);
             //Go to step 3
-            $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['nPackets']);
+            $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['totalFragments']);
             // Clean the directory when done (online the offline)
             $this->transferManager->deleteFile($user,substr($filename, strlen($filename)-40, 36), SyncConstant::SYNCHRO_UP_DIR);
             unlink($filename);
@@ -151,15 +149,14 @@ class SynchronisationManager
 
     // Method implementing the third step of the global process
     // Download the synchronisation archive of the online plateform
-    private function step3Download(User $user, UserSynchronized $userSync, $filename, $nPackets = null, $packetNum = 0)
+    private function step3Download(User $user, UserSynchronized $userSync, $filename, $totalFragments = null, $fragmentNumber = 0)
     {
-        echo "step3 <br/>";
-        if ($nPackets == null) {
+        if ($totalFragments == null) {
             echo "testons le nombre de frangments <br/>";
-            $nPackets = $this->transferManager->getOnlineNumberOfPackets($filename, $user);
+            $totalFragments = $this->transferManager->getNumberOfFragmentsOnline($filename, $user);
         }
         // The file doesn't exist online
-        if ($nPackets == -1) {
+        if ($totalFragments == -1) {
             echo "j'en ai -1 <br/>";
             // Erase filename, set status and restart
             $userSync->setFilename(null);
@@ -168,7 +165,7 @@ class SynchronisationManager
             $this->synchroniseUser($user, $userSync);
         } else {
             // $toLoad will be the downloaded from the online plateform
-            $toLoad = $this->transferManager->downloadArchive($filename, $nPackets, $packetNum, $user);
+            $toLoad = $this->transferManager->downloadArchive($filename, $totalFragments, $fragmentNumber, $user);
             // Update userSync status
             $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
             $this->userSyncManager->updateUserSync($userSync);
@@ -184,13 +181,12 @@ class SynchronisationManager
     // It will load the downloaded from the archive into 
     private function step4Load(User $user, UserSynchronized $userSync, $filename)
     {
-        echo "step4 <br/>";
         // Load synchronisation archive ($filename) in offline database
-        $infoArray = $this->loadingManager->loadZip($filename, $user);
+        $loadArray = $this->loadingManager->loadZip($filename, $user);
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
         $userSync->setLastSynchronization($userSync->getSentTime());
         $this->userSyncManager->updateUserSync($userSync);
-        return $infoArray;
+        return $loadArray['infoArray'];
     }
 
     // This method has to return the last fragment uploaded on the online plateform

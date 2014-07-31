@@ -19,19 +19,21 @@ use Claroline\CoreBundle\Persistence\ObjectManager;
 
 abstract class OfflineResource
 {
-    abstract public function createResource($resource, $workspace, $user, $wsInfo);
+    abstract public function createResource($resource, $workspace, $user, $wsInfo, $path);
    
-    abstract public function updateResource($resource, $node, $workspace, $user, $wsInfo);
+    abstract public function updateResource($resource, $node, $workspace, $user, $wsInfo, $path);
    
-    abstract public function createDoublon($resource, $workspace, $node);    
+    abstract public function createDoublon($resource, $workspace, $node, $path);   
+
+    abstract public function getType();
     
-    public function addResourceToManifest($domManifest, $domWorkspace, $resToAdd){
+    public function addResourceToManifest($domManifest, $domWorkspace, $resToAdd, $archive, $date){
     
         $typeNode = $resToAdd->getResourceType()->getId();
         $creation_time = $resToAdd->getCreationDate()->getTimestamp();
         $modification_time = $resToAdd->getModificationDate()->getTimestamp();
 
-        if (!($resToAdd->getParent() == NULL & $typeNode == SyncConstant::DIR)) {
+        if (!($resToAdd->getParent() == NULL && $typeNode == SyncConstant::DIR)) {
             $domRes = $domManifest->createElement('resource');
             $domWorkspace->appendChild($domRes);
 

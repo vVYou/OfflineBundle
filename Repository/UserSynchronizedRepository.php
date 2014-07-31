@@ -142,4 +142,5 @@ class UserSynchronizedRepository extends EntityRepository
 
         return $query->getResult();
     }
+    
 }

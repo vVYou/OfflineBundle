@@ -28,6 +28,10 @@ use Symfony\Component\Translation\TranslatorInterface;
 use \DOMDocument;
 use \DateTime;
 
+/**
+ * @DI\Service("claroline_offline.offline.text")
+ * @DI\Tag("claroline_offline.offline")
+ */
 class OfflineText extends OfflineResource
 {
     private $om;
@@ -35,7 +39,6 @@ class OfflineText extends OfflineResource
     private $revisionRepo;
     private $userRepo;
     private $resourceNodeRepo;
-
     
     /**
      * Constructor.
@@ -56,10 +59,14 @@ class OfflineText extends OfflineResource
         $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
         $this->resourceManager = $resourceManager;
     }
+        
+    public function getType(){
+        return 'text';
+    }
     
-    public function addResourceToManifest($domManifest, $domWorkspace, $resToAdd){
+    public function addResourceToManifest($domManifest, $domWorkspace, $resToAdd, $archive, $date){
    
-        $domRes = parent::addResourceToManifest($domManifest, $domWorkspace, $resToAdd);
+        $domRes = parent::addResourceToManifest($domManifest, $domWorkspace, $resToAdd, $archive, $date);
         $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
         $revision = $this->revisionRepo->findOneBy(array('text' => $my_res));
 
@@ -73,7 +80,7 @@ class OfflineText extends OfflineResource
         return $domManifest;
     }
    
-    public function createResource($resource, $workspace, $user, $wsInfo){
+    public function createResource($resource, $workspace, $user, $wsInfo, $path){
    
         $newResource = new Text();
         $creation_date = new DateTime();
@@ -103,35 +110,37 @@ class OfflineText extends OfflineResource
         $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));
         $wsInfo->addToCreate($resource->getAttribute('name'));
         
-        $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_node')));
+        $node = $newResource->getResourceNode();
         $this->changeDate($node, $creation_date, $modification_date, $this->om, $this->resourceManager);
         return $wsInfo;
     }
    
-    public function updateResource($resource, $node, $workspace, $user, $wsInfo){
+    public function updateResource($resource, $node, $workspace, $user, $wsInfo, $path){
    
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modif_date = $resource->getAttribute('modification_date');
         $creation_date = $resource->getAttribute('creation_date'); //USELESS?
         $node_modif_date = $node->getModificationDate()->getTimestamp();
-        $user_sync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($this->user);
+        $user_sync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
 
-        if ($node_modif_date <= $user_sync[0]->getLastSynchronization()->getTimestamp()) {
+        if ($node_modif_date <= $resource->getAttribute('synchronization_date')) {
             $this->resourceManager->delete($node);
             $this->createResource($resource, $workspace, $user, $wsInfo);
             $wsInfo->addToUpdate($resource->getAttribute('name'));
         } else {
             if ($node_modif_date != $modif_date) {
                 // Doublon generation
-                $this->createDoublon($resource, $workspace, $node, true);
+                $this->createDoublon($resource, $workspace, $node, $path);
                 $wsInfo->addToDoublon($resource->getAttribute('name'));
             } else {
-                // echo 'Already in Database'.'<br/>';
+                echo 'Already in Database'.'<br/>';
             }
         }
+        
+        return $wsInfo;
     }
    
-    public function createDoublon($resource, $workspace, $node){
+    public function createDoublon($resource, $workspace, $node, $path){
         
         $newResource = new Text();
         $creation_date = new DateTime();
@@ -151,7 +160,7 @@ class OfflineText extends OfflineResource
       
         $revision = new Revision();
         $revision->setContent($this->extractCData($resource));
-        $revision->setUser($this->user);
+        $revision->setUser($user);
         $revision->setText($newResource);
         $this->om->persist($revision);
         
@@ -171,5 +180,9 @@ class OfflineText extends OfflineResource
         $this->om->endFlushSuite();
 
         $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));  
+            
+        $node = $newResource->getResourceNode();
+        $this->changeDate($node, $creation_date, $modification_date, $this->om, $this->resourceManager);
+
     }
 }

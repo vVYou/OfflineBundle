@@ -21,7 +21,7 @@ class OfflineFormType extends AbstractType
     {
         $builder->add('name', 'text', array('required' => true, 'label' => 'sync_name'));
         $builder->add('password', 'password', array('required' => true, 'label' => 'sync_pwd'));
-        $builder->add('url', 'url', array('required' => true, 'label' => 'sync_url'));
+        $builder->add('url', 'url', array('required' => true, 'label' => 'sync_url', 'attr' => array('placeholder' => 'url_ex')));
     }
 
     public function getName()

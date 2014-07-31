@@ -195,31 +195,6 @@ class TransferManager
                 return true;
         }
     }
-    
-    //  This method try to catch and create the profile of a user present in the online database.
-    public function retrieveProfil($username, $password, $result)
-    {
-        $new_user = new User();
-        $new_user->setFirstName($result['first_name']);
-        $new_user->setLastName($result['last_name']);
-        $new_user->setUsername($result['username']);
-        $new_user->setMail($result['mail']);
-        $new_user->setPlainPassword($password);
-        $this->userManager->createUser($new_user);
-        $my_user = $this->userRepo->findOneBy(array('username' => $username));
-        $ws_perso = $my_user->getPersonalWorkspace();
-        $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $ws_perso, 'parent' => NULL));
-        $this->om->startFlushSuite();
-        $my_user->setExchangeToken($result['token']);
-        $ws_perso->setGuid($result['ws_perso']);
-        $user_ws_rn->setNodeHashName($result['ws_resnode']);
-        $this->om->endFlushSuite();
-        $this->userSyncManager->createUserSynchronized($my_user);
-
-        // Creation of the file inside the offline database
-        file_put_contents(SyncConstant::PLAT_CONF, $result['username']);
-
-    }
 
     // This Method returns the number of the last fragment of the file $filename uploaded on the online plateform
     // If the file was not yet uploaded it returns -1
@@ -280,46 +255,6 @@ class TransferManager
     /*
     *******   METHODS EXECUTED ONLINE *******
     */
-
-    public function getUserInfo($username, $password, $firstTime = true)
-    {
-        // The given password has to be clear, without any encryption, the security is made by the HTTPS communication
-        echo $username."<br/>";
-        echo $password."<br/>";
-        $browser = $this->getBrowser();
-
-        //TODO remove hardcode
-        $contentArray = array(
-            'username' => $username,
-            'password' => $password
-        );
-        try {
-            $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/user', array(), json_encode($contentArray));
-            $status = $this->analyseStatusCode($response->getStatusCode());
-            $result = (array) json_decode($response->getContent());
-            echo sizeof($result).'<br/>';
-            echo $response->getStatusCode().'<br/>';
-            echo $status.'<br/>';
-            // if (sizeof($result) > 1) {
-            $this->retrieveProfil($username, $password, $result);
-            // echo $result['ws_resnode'];
-            // foreach($result as $elem)
-            // {
-                // echo $elem.'</br>';
-            // }
-                // return true;
-            // }
-            // else{
-                // return false;
-            // }
-        } catch (ClientException $e) {
-            if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime) {
-                $this->getUserInfo($username, $password, false);
-            } else {
-                throw $e;
-            }
-        }
-    }
     
     // This method is used to delete files on the online plateform
     public function unlinkSynchronisationFile($content, $user)
@@ -554,23 +489,8 @@ class TransferManager
         $this->userSyncManager->createUserSynchronized($my_user);
 
         // Creation of sync_config file
-        $sync_config = array(
-            'username' => $result['username'],
-            'mail' => $result['mail'],
-            'url' => $url
-        );
-        $yaml = $this->yaml_dump->dump($sync_config);
-        file_put_contents(SyncConstant::PLAT_CONF, $yaml);
+        $this->createSyncConfigFile($result, $url);
 
-    }
-
-    private function getBrowser()
-    {
-        $client = new Curl();
-        $client->setTimeout(60);
-        $browser = new Browser($client);
-
-        return $browser;
     }
 
     public function getLastPacketUploaded($filename, $user)
@@ -609,38 +529,51 @@ class TransferManager
 
         return $responseArray['nPackets'];
     }
-
-    public function unlinkSynchronisationFile($content, $user)
-    {
-        // echo 'je delete : '.$content['dir'].$user->getId().'/sync_'.$content['hashname'].'.zip<br/>';
-        unlink($content['dir'].$user->getId().'/sync_'.$content['hashname'].'.zip');
-        $content['status'] = 200;
-
-        return $content;
+    
+    // Create and/or add a new User profil in the synchronisation file.
+      
+    public function createSyncConfigFile($result, $url){
+    
+        if(!(file_exists(SyncConstant::PLAT_CONF))){
+            $yaml_array = array();
+            $sync_config = array(
+                'username' => $result['username'],
+                'mail' => $result['mail'],
+                'url' => $url
+            );           
+            $yaml_array[] = $sync_config;
+            
+            $yaml = $this->yaml_dump->dump($yaml_array);
+            file_put_contents(SyncConstant::PLAT_CONF, $yaml);
+        
+        }
+        
+        else{
+            $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+            $sync_config = array(
+                'username' => $result['username'],
+                'mail' => $result['mail'],
+                'url' => $url
+            );           
+            $value[] = $sync_config;
+            
+            $yaml = $this->yaml_dump->dump($value);
+            file_put_contents(SyncConstant::PLAT_CONF, $yaml);   
+        }
     }
-
-
-
-    public function deleteFile($user, $filename, $dir, $firstTime=true)
-    {
-        $browser = $this->getBrowser();
-        $contentArray = array(
-            'token' => $user->getExchangeToken(),
-            'hashname' => $filename,
-            'dir' => $dir
-        );
-        try {
-            // echo "Je tente de delete ".$filename." dans ".$dir." pour ".$user->getExchangeToken()."<br/>";
-            $response = $browser->post(SyncConstant::PLATEFORM_URL.'/sync/unlink', array(), json_encode($contentArray));
-            $this->analyseStatusCode($response->getStatusCode());
-            // echo "Here is my response ".$response->getContent().'<br/>';
-        } catch (ClientException $e) {
-            if (($e->getCode() == CURLE_OPERATION_TIMEDOUT) && $firstTime) {
-                // echo "Oh mon dieu, un timeout";
-                $this->deleteFile($user, $filename, $dir, false);
-            } else {
-                throw $e;
+    
+    // Return the URL specify for the given User in the synchronisation file.
+    
+    public function getUserUrl(User $user){
+    
+        $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+        $results = array();
+        foreach($value as $elem){
+            if($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()){
+                $results = $elem;
             }
         }
+        
+        return $results;
     }
 }

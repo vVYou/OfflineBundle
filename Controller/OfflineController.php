@@ -445,11 +445,17 @@ class OfflineController extends Controller
      * @return Response
      */
     public function editUrlAction(User $user)
-    {          
+    {             
         $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+        $results = array();
+        foreach($value as $elem){
+            if($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()){
+                $results = $elem;
+            }
+        }
         
         return array(
-            'value' => $value
+            'value' => $results
         );
     }
     
@@ -506,7 +512,7 @@ class OfflineController extends Controller
         $results = array();
         $em = $this->getDoctrine()->getManager();
         $userSyncTab = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-        $test = $this->get('claroline.manager.creation_manager')->testOffline($user, $userSyncTab[0]->getlastSynchronization()->getTimestamp());
+        $test = $this->get('claroline.manager.creation_manager')->createSyncZip($user, $userSyncTab[0]->getlastSynchronization()->getTimestamp());
         // echo '<br/>'.$test.'<br/>';
         return array(
            'results' => $results
@@ -531,7 +537,7 @@ class OfflineController extends Controller
     public function loadTestAction(User $user)
     {
                 $results = array();
-        $results = $this->get('claroline.manager.loading_manager')->loadZip('sync_1E53C756-F51A-4858-B12F-B82462BAEC6F.zip', $user);
+        $results = $this->get('claroline.manager.loading_manager')->loadZip('sync_8D689C13-C2B7-4118-9740-3CF7C4E17D7B.zip', $user);
 
 
         return array(

@@ -31,3 +31,4 @@ sync_ws_upd : The following resources have been updated :
 sync_ws_doub : For the following resources a doublon has been created :
 sync_url : URL of the website :
 sync_url_edit : URL of the website
+url_ex : http://www.example.com

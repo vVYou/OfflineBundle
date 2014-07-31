@@ -31,3 +31,4 @@ sync_ws_upd : Les ressources suivantes ont été mise à jour :
 sync_ws_doub : Un doublon a été créé pour les ressources suivantes :
 sync_url : Adresse du site :
 sync_url_edit : Adresse du site
+url_ex : http://www.exemple.com

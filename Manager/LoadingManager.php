@@ -41,6 +41,7 @@ use Symfony\Component\Translation\TranslatorInterface;
 use \ZipArchive;
 use \DOMDocument;
 use \DateTime;
+use Claroline\OfflineBundle\Model\Resource\OfflineResource;
 
 /**
  * @DI\Service("claroline.manager.loading_manager")
@@ -74,6 +75,7 @@ class LoadingManager
     private $security;
     private $tokenUpdater;
     private $syncInfoArray;
+    private $offline;
 
     /**
      * Constructor.
@@ -134,9 +136,15 @@ class LoadingManager
         $this->security = $security;
         $this->tokenUpdater = $tokenUpdater;
         $this->syncInfoArray = array();
+        $this->offline = array();
 
     }
-
+    
+    public function addOffline(OfflineResource  $offline)
+    {
+        $this->offline[$offline->getType()] = $offline;
+    } 
+    
     /*
     *   This method open the zip file, call the loadXML function and
     *   destroy the zip file while everything is done.

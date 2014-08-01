@@ -74,10 +74,14 @@ class TestManager
             $begin = new Datetime;
             $this->transferManager->uploadArchive($file, $user, 0);
             $stop = new Datetime;
-            fwrite($report, print_r($stop->diff($begin)).",");
-            echo "      exe ".$i."    TEMPS : ".print_r($stop->diff($begin))."<br/>";
+            // fwrite($report, print_r($stop->diff($begin)).",");
+            // echo "      exe ".$i."    TEMPS : ".print_r($stop->diff($begin))."<br/>";
+            $diffTime = $stop->diff($begin);
+            $diffSec = $diffTime->i*60 + $diffTime->s;
+            fwrite($report, $diffSec.",");
+            echo "      exe ".$i."    TEMPS : ".$diffSec."<br/>";
         }
-        fwrite($report, "END TEST\n");
+        fwrite($report, "\nEND TEST\n");
     }
     
     private function testDownloadFile($report, $file, $user)

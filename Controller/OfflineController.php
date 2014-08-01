@@ -176,6 +176,28 @@ class OfflineController extends Controller
         );
     }
 
+     /**
+    *   @EXT\Route(
+    *       "/sync/testTrans",
+    *       name="claro_test_trans"
+    *   )
+    *
+    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+    * @EXT\Template("ClarolineOfflineBundle:Offline:load.html.twig")
+    *
+    * @param User $user
+    * @return Response
+    */
+    public function testTrans($user)
+    {
+        $this->get('claroline.manager.test_offline_manager')->testTransfer($user);
+            
+        return array(
+            'user' => "plouf"
+         );
+    }
+    
+    
     /**
     *   Create userSyncrhonized entity
     *

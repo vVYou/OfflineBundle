@@ -97,6 +97,7 @@ class FirstConnectionListener
         $first_route = 'claro_sync_config';
         $_route = $event->getRequest()->get('_route');
         $token = $this->securityContext->getToken();
+        // $url = HttpRequest::getUrl();
 
         if ($event->isMasterRequest()) {
             if ($first_route !== $_route) {

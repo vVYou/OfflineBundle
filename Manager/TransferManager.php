@@ -31,6 +31,7 @@ use \Buzz\Browser;
 use \Buzz\Client\Curl;
 use \Buzz\Exception\ClientException;
 use Symfony\Component\Yaml\Dumper;
+use Symfony\Component\Yaml\Parser;
 
 /**
  * @DI\Service("claroline.manager.transfer_manager")
@@ -50,6 +51,7 @@ class TransferManager
     private $userManager;
     private $ut;
     private $yaml_dump;
+    private $yaml_parser;
 
     /**
      * Constructor.
@@ -88,6 +90,7 @@ class TransferManager
         $this->userSyncManager = $userSyncManager;
         $this->ut = $ut;
         $this->yaml_dump = new Dumper();
+        $this->yaml_parser = new Parser();
     }
 
     /*

@@ -474,19 +474,22 @@ class OfflineController extends Controller
     {
         $request = $this->get('request');
         $user = $this->get('security.context')->getToken()->getUser();
-        $new_url = $request->request->get('_url');       
+        $new_url = $request->request->get('_url');
+        $new_yaml = array();
 
         $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
-        $value['url'] = $new_url;
         
-        $yaml = $this->yaml_dump->dump($value);
+        foreach($value as $elem){
+            if($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()){
+                $elem['url'] = $new_url;
+            }
+            $new_yaml[] = $elem;
+        }   
+        $yaml = $this->yaml_dump->dump($new_yaml);
         file_put_contents(SyncConstant::PLAT_CONF, $yaml);
+        
+        return $this->redirect($this->generateUrl('claro_desktop_open_tool', array('toolName' => "claroline_offline_tool")));
 
-        $route = $this->get('router')->generate(
-            'claro_sync'
-        );
-
-        return new RedirectResponse($route);
     }
     
     

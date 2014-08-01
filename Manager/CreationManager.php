@@ -143,30 +143,6 @@ class CreationManager
         return $archivePath;
     }
 
-    public function writeWorspaceList_(User $user)
-    {
-        $workspaces = $this->workspaceRepo->findWorkspacesWithSelfRegistration($user);
-        $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/';
-        if (!is_dir($dir)) {
-            mkdir($dir);
-        }
-        $fileName = $dir.'all_workspaces.xml';
-        $allWorkspaces = fopen($fileName, "w+");
-        fputs($allWorkspaces, "<workspace_list>");
-
-        foreach ($workspaces as $workspace) {
-            $this->addWorkspaceToManifest($domManifest, $sectManifest, $workspace, $user);
-            fputs($allWorkspaces, '
-        </workspace>');
-        }
-
-        fputs($allWorkspaces, "
-</workspace_list>");
-        fclose($allWorkspaces);
-        //echo "filename : ".$fileName.'<br/>';
-        return $fileName;
-    }
-
     /*
     *   Fill the Zip with the file required for the synchronisation.
     *   Also, create a manifest containing all the changes done.

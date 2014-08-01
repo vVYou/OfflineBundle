@@ -5,7 +5,7 @@
 *   used to display the results of the synchronisation to the user.
 */
 
-namespace Claroline\OfflineBundle;
+namespace Claroline\OfflineBundle\Model;
 
 class SyncInfo
 {

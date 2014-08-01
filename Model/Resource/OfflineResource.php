@@ -12,29 +12,76 @@
 namespace Claroline\OfflineBundle\Model\Resource;
 
 use \DOMDocument;
+use Claroline\OfflineBundle\Model\SyncConstant;
+use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
-use Claroline\OfflineBundle\SyncConstant;
-use Claroline\CoreBundle\Manager\ResourceManager;
-use Claroline\CoreBundle\Persistence\ObjectManager;
+use Claroline\CoreBundle\Entity\Workspace\Workspace;
+use Claroline\CoreBundle\Entity\User;
+use \DateTime;
 
 abstract class OfflineResource
 {
-    abstract public function createResource($resource, $workspace, $user, $wsInfo, $path);
+    /**
+     * Add informations required to check and recreated a resource if necessary.
+     *
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
+     * @param \ZipArchive $archive
+     * @param \DateTime $date
+     */
+    abstract public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, DateTime $date);
+    
+    /**
+     * Create a resource of the type supported by the service based on the XML file.
+     *
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\User $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
+     * @param string $path
+     *
+     * @return \Claroline\OfflineBundle\Model\SyncInfo
+     */
+    abstract public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path);
    
-    abstract public function updateResource($resource, $node, $workspace, $user, $wsInfo, $path);
+    /**
+     * Update a resource of the type supported by the service based on the XML file.
+     *
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\User $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
+     * @param string $path
+     *
+     * @return \Claroline\OfflineBundle\Model\SyncInfo
+     *
+     */
+    abstract public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path);
    
-    abstract public function createDoublon($resource, $workspace, $node, $path);   
+    /**
+     * Create a copy of the resource in case of conflict (e.g. if a ressource has been modified both offline
+     * and online)
+     *
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node     
+     * @param string $path
+     */
+    abstract public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path);   
 
+    // Return the type of resource supported by the service
     abstract public function getType();
     
-    public function addResourceToManifest($domManifest, $domWorkspace, $resToAdd, $archive, $date){
-    
+    /**
+     * Add informations required to check and recreated a node if necessary.
+     *
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
+     */
+    public function addNodeToManifest($domManifest, $off_type, $domWorkspace, ResourceNode $resToAdd)
+    {  
         $typeNode = $resToAdd->getResourceType()->getId();
         $creation_time = $resToAdd->getCreationDate()->getTimestamp();
         $modification_time = $resToAdd->getModificationDate()->getTimestamp();
 
         if (!($resToAdd->getParent() == NULL && $typeNode == SyncConstant::DIR)) {
-            $domRes = $domManifest->createElement('resource');
+            $domRes = $domManifest->createElement('resource-'.$off_type);
             $domWorkspace->appendChild($domRes);
 
             $type = $domManifest->createAttribute('type');
@@ -47,7 +94,6 @@ abstract class OfflineResource
             $mimetype->value = $resToAdd->getMimeType();
             $domRes->appendChild($mimetype);
             $creator = $domManifest->createAttribute('creator');
-            // $creator->value = $resToAdd->getCreator()->getId();
             $creator->value = $resToAdd->getCreator()->getExchangeToken();
             $domRes->appendChild($creator);
             $hashname_node = $domManifest->createAttribute('hashname_node');
@@ -69,9 +115,9 @@ abstract class OfflineResource
     
     }
    
-    /*
-    *   Extract the text contains in the CDATA section of the XML file.
-    */
+    /**
+     * Extract the text contains in the CDATA section of the XML file.
+     */
     public function extractCData($resource)
     {
         foreach ($resource->childNodes as $child) {
@@ -81,13 +127,13 @@ abstract class OfflineResource
         }
     }
     
-    /*
-    *   Change the creation and modification dates of a node.
-    *
-    *   @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
-    *
-    *   @return \Claroline\CoreBundle\Entity\Resource\ResourceNode
-    */
+    /**
+     * Change the creation and modification dates of a node.
+     *
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
+     *
+     * @return \Claroline\CoreBundle\Entity\Resource\ResourceNode
+     */
     public function changeDate($node, $creation_date, $modification_date, $om, $resourceManager)
     {
         $node->setCreationDate($creation_date);

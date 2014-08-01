@@ -24,7 +24,7 @@ use Claroline\OfflineBundle\Manager\Exception\ServeurException;
 use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
 use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
 use Claroline\CoreBundle\Manager\UserManager;
-use Claroline\OfflineBundle\SyncConstant;
+use Claroline\OfflineBundle\Model\SyncConstant;
 use Symfony\Component\Translation\TranslatorInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use \Buzz\Browser;

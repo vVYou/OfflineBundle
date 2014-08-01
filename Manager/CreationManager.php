@@ -20,7 +20,7 @@ use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Claroline\OfflineBundle\SyncConstant;
+use Claroline\OfflineBundle\Model\SyncConstant;
 use JMS\DiExtraBundle\Annotation as DI;
 //use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;

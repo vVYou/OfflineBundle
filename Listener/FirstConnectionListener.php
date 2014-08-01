@@ -25,7 +25,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\Routing\Router;
 use Symfony\Component\Security\Core\SecurityContextInterface;
-use Claroline\OfflineBundle\SyncConstant;
+use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Entity\Credential;
 use Claroline\OfflineBundle\Form\OfflineFormType;
 
@@ -97,19 +97,25 @@ class FirstConnectionListener
         $first_route = 'claro_sync_config';
         $_route = $event->getRequest()->get('_route');
         $token = $this->securityContext->getToken();
-        // $url = HttpRequest::getUrl();
+        $url = $event->getRequest()->getHttpHost();
 
-        if ($event->isMasterRequest()) {
-            if ($first_route !== $_route) {
-                if ($token && $token->getUser() == 'anon.') {
-                    if (!(file_exists(SyncConstant::PLAT_CONF))) {
-                        $uri = $this->router->generate($first_route);
-                        $response = new RedirectResponse($uri);
-                        $event->setResponse(new Response($response));
-                    }
-                }
-            }
+        if(strpos($url, 'localhost')){
+            $uri = $this->router->generate($first_route);
+            $response = new RedirectResponse($uri);
+            $event->setResponse(new Response($response));
         }
+        
+        // if ($event->isMasterRequest()) {
+            // if ($first_route !== $_route) {
+                // if ($token && $token->getUser() == 'anon.') {
+                    // if (!(file_exists(SyncConstant::PLAT_CONF))) {
+                        // $uri = $this->router->generate($first_route);
+                        // $response = new RedirectResponse($uri);
+                        // $event->setResponse(new Response($response));
+                    // }
+                // }
+            // }
+        // }
 
         return $event;
 

@@ -17,7 +17,7 @@ use Claroline\CoreBundle\Library\Security\Authenticator;
 use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\OfflineBundle\Manager\TransferManager;
 use Claroline\CoreBundle\Repository\UserRepository;
-use Claroline\OfflineBundle\SyncConstant;
+use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Entity\Credential;
 use Claroline\OfflineBundle\Form\OfflineFormType;
 use Claroline\CoreBundle\Persistence\ObjectManager;

@@ -13,7 +13,7 @@ namespace Claroline\OfflineBundle\Manager;
 
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\OfflineBundle\SyncConstant;
+use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use JMS\DiExtraBundle\Annotation as DI;
 use \DateTime;

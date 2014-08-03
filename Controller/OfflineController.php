@@ -541,7 +541,8 @@ class OfflineController extends Controller
         $userSyncTab = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
         $test = $this->get('claroline.manager.creation_manager')->createSyncZip($user, $userSyncTab[0]->getlastSynchronization()->getTimestamp());
         return array(
-           'results' => $results
+           'results' => $results,
+           'msg' => ''
         );
     }
     

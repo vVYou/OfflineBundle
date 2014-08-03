@@ -27,7 +27,7 @@ use Symfony\Component\Translation\TranslatorInterface;
 use \ZipArchive;
 use \DOMDocument;
 use \DateTime;
-use Claroline\OfflineBundle\Model\Resource\OfflineResource;
+use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 
 /**
  * @DI\Service("claroline.manager.creation_manager")
@@ -87,7 +87,7 @@ class CreationManager
     }
     
         
-    public function addOffline(OfflineResource  $offline)
+    public function addOffline(OfflineElement  $offline)
     {
         $this->offline[$offline->getType()] = $offline;
     }   
@@ -155,7 +155,7 @@ class CreationManager
     {
         foreach ($userWS as $element) {
         
-            $domWorkspace = $this->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);         
+            $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);         
             $dateTimeStamp = new DateTime();
             $dateTimeStamp->setTimeStamp($date);
             $ressourcesToSync = $this->findResourceToSync($element, $types, $dateTimeStamp);// Remove all the resources not modified.
@@ -195,76 +195,7 @@ class CreationManager
     /************************************************************
     *   Here figure all methods used to manipulate the xml file. *
     *************************************************************/
-
-    /**
-     * Add informations of a specific workspace in the manifest.
-     *
-     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\User $user
-     */
-    private function addWorkspaceToManifest($domManifest, $sectManifest, Workspace $workspace, User $user)
-    {
-        $my_role = $this->roleRepo->findByUserAndWorkspace($user, $workspace);
-
-        $my_res_node = $this->userSynchronizedRepo->findResourceNodeByWorkspace($workspace);
-        $creation_time = $my_res_node[0]->getCreationDate()->getTimestamp();
-        $modification_time = $my_res_node[0]->getModificationDate()->getTimestamp();
-
-        $domWorkspace = $domManifest->createElement('workspace');
-        $sectManifest->appendChild($domWorkspace);
-
-        $type = $domManifest->createAttribute('type');
-        $type->value = get_class($workspace);
-        $domWorkspace->appendChild($type);
-        $creator = $domManifest->createAttribute('creator_username');
-        $creator->value = $workspace->getCreator()->getUsername();
-        $domWorkspace->appendChild($creator);
-        $creatorFirstname = $domManifest->createAttribute('creator_firstname');
-        $creatorFirstname->value = $workspace->getCreator()->getFirstName();
-        $domWorkspace->appendChild($creatorFirstname);
-        $creatorLastname = $domManifest->createAttribute('creator_lastname');
-        $creatorLastname->value = $workspace->getCreator()->getLastName();
-        $domWorkspace->appendChild($creatorLastname);
-        $creatorMail = $domManifest->createAttribute('creator_mail');
-        $creatorMail->value = $workspace->getCreator()->getMail();
-        $domWorkspace->appendChild($creatorMail);
-        $role = $domManifest->createAttribute('role');
-        $role->value = $my_role[0]->getName();
-        $domWorkspace->appendChild($role);
-        $name = $domManifest->createAttribute('name');
-        $name->value = $workspace->getName();
-        $domWorkspace->appendChild($name);
-        $code = $domManifest->createAttribute('code');
-        $code->value = $workspace->getCode();
-        $domWorkspace->appendChild($code);
-        $displayable = $domManifest->createAttribute('displayable');
-        $displayable->value = $workspace->isDisplayable();
-        $domWorkspace->appendChild($displayable);
-        $selfregistration = $domManifest->createAttribute('selfregistration');
-        $selfregistration->value = $workspace->getSelfRegistration();
-        $domWorkspace->appendChild($selfregistration);
-        $selfunregistration = $domManifest->createAttribute('selfunregistration');
-        $selfunregistration->value = $workspace->getSelfUnregistration();
-        $domWorkspace->appendChild($selfunregistration);
-        $description = $domManifest->createAttribute('description');
-        $description->value = $workspace->getDescription();
-        $domWorkspace->appendChild($description);
-        $guid = $domManifest->createAttribute('guid');
-        $guid->value = $workspace->getGuid();
-        $domWorkspace->appendChild($guid);
-        $hashname_node = $domManifest->createAttribute('hashname_node');
-        $hashname_node->value = $my_res_node[0]->getNodeHashName();
-        $domWorkspace->appendChild($hashname_node);
-        $creation_date = $domManifest->createAttribute('creation_date');
-        $creation_date->value = $creation_time;
-        $domWorkspace->appendChild($creation_date);
-        $modification_date = $domManifest->createAttribute('modification_date');
-        $modification_date->value = $modification_time;
-        $domWorkspace->appendChild($modification_date);
-
-        return $domWorkspace;
-    }
-
+    
     /**
      * Create the description of the manifest.
      *

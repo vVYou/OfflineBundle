@@ -22,12 +22,8 @@ use Doctrine\ORM\EntityManager;
 use \DateTime;
 use \ZipArchive;
 
-abstract class OfflineResource
-{
-    protected $om;
-    protected $resourceManager;    
-    protected $em;
-    
+abstract class OfflineResource extends OfflineElement
+{    
     /**
      * Add informations required to check and recreated a resource if necessary.
      *
@@ -99,18 +95,6 @@ abstract class OfflineResource
             $mimetype = $domManifest->createAttribute('mimetype');
             $mimetype->value = $resToAdd->getMimeType();
             $domRes->appendChild($mimetype);
-            $creator = $domManifest->createAttribute('creator_username');
-            $creator->value = $resToAdd->getCreator()->getUsername();
-            $domWorkspace->appendChild($creator);
-            $creatorFirstname = $domManifest->createAttribute('creator_firstname');
-            $creatorFirstname->value = $resToAdd->getCreator()->getFirstName();
-            $domWorkspace->appendChild($creatorFirstname);
-            $creatorLastname = $domManifest->createAttribute('creator_lastname');
-            $creatorLastname->value = $resToAdd->getCreator()->getLastName();
-            $domWorkspace->appendChild($creatorLastname);
-            $creatorMail = $domManifest->createAttribute('creator_mail');
-            $creatorMail->value = $resToAdd->getCreator()->getMail();
-            $domWorkspace->appendChild($creatorMail);
             $hashname_node = $domManifest->createAttribute('hashname_node');
             $hashname_node->value = $resToAdd->getNodeHashName();
             $domRes->appendChild($hashname_node);
@@ -123,61 +107,11 @@ abstract class OfflineResource
             $modification_date = $domManifest->createAttribute('modification_date');
             $modification_date->value = $modificationTime;
             $domRes->appendChild($modification_date);
+            $domRes = $this->addCreatorInformations($domManifest, $domRes, $resToAdd->getCreator());  
             
             return $domRes;
             
         }
     
-    }
-   
-    /**
-     * Extract the text contains in the CDATA section of the XML file.
-     */
-    public function extractCData($resource)
-    {
-        foreach ($resource->childNodes as $child) {
-            if ($child->nodeType == XML_CDATA_SECTION_NODE) {
-                return $child->textContent;
-            }
-        }
-    }
-    
-    /**
-     * Change the creation and modification dates of a node.
-     *
-     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
-     * @param \DateTime $creationDate
-     * @param \DateTime $modificationDate
-     *
-     * @return \Claroline\CoreBundle\Entity\Resource\ResourceNode
-     */
-    public function changeDate(ResourceNode $node, $creationDate, $modificationDate)
-    {
-        $listener = $this->getTimestampListener();
-        $listener->forceTime($creationDate);
-        $node->setCreationDate($creationDate);
-        $listener = $this->getTimestampListener();
-        $listener->forceTime($modificationDate);
-        $node->setModificationDate($modificationDate);
-        $this->om->persist($node);
-        $this->resourceManager->logChangeSet($node);
-        $this->om->flush();
-
-        return $node;
-    }   
-        
-    private function getTimestampListener()
-    {
-        $evm = $this->em->getEventManager();
-
-        foreach ($evm->getListeners() as $listenersByEvent) {
-            foreach ($listenersByEvent as $listener) {
-                if ($listener instanceof TimestampableListener) {
-                    return $listener;
-                }
-            }
-        }
-
-        throw new \Exception('Cannot found timestamp listener');
     }
 }

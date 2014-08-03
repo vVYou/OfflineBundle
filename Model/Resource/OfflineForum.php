@@ -122,7 +122,8 @@ class OfflineForum extends OfflineResource
         $modificationDate->setTimestamp($resource->getAttribute('modification_date'));
 
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
+        // $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
+        $creator = $this->getCreator($resource);
         $parentNode = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
 
         if (count($parentNode) < 1) {
@@ -347,16 +348,13 @@ class OfflineForum extends OfflineResource
         $title = $domManifest->createAttribute('title');
         $title->value = $content->getTitle();
         $domRes->appendChild($title);
-        $creatorId = $domManifest->createAttribute('creator_id');
-        $creatorId->value = $content->getCreator()->getExchangeToken();
-        $domRes->appendChild($creatorId);
         $closed = $domManifest->createAttribute('closed');
         $closed->value = $content->isClosed();
         $domRes->appendChild($closed);
         $sticked = $domManifest->createAttribute('sticked');
         $sticked->value = $content->isSticked();
-        $domRes->appendChild($sticked);
-    
+        $domRes->appendChild($sticked);  
+        $domRes = $this->addCreatorInformations($domManifest, $domRes, $content->getCreator());        
     }
     
     /**
@@ -375,11 +373,9 @@ class OfflineForum extends OfflineResource
         $subject = $domManifest->createAttribute('subject');
         $subject->value = $subjectHash;
         $domRes->appendChild($subject);
-        $creatorId = $domManifest->createAttribute('creator_id');
-        $creatorId->value = $content->getCreator()->getExchangeToken();
-        $domRes->appendChild($creatorId);
         $cdata = $domManifest->createCDATASection($content->getContent());
-        $domRes->appendChild($cdata);  
+        $domRes->appendChild($cdata);
+        $domRes = $this->addCreatorInformations($domManifest, $domRes, $content->getCreator());          
     }
     
     /**
@@ -461,7 +457,8 @@ class OfflineForum extends OfflineResource
     private function createSubject($subject)
     {
         $category = $this->categoryRepo->findOneBy(array('hashName' => $subject->getAttribute('category')));
-        $creator = $this->userRepo->findOneBy(array('exchangeToken' => $subject->getAttribute('creator_id')));
+        // $creator = $this->userRepo->findOneBy(array('exchangeToken' => $subject->getAttribute('creator_id')));
+        $creator = $this->getCreator($subject);
         $sub = new Subject();
         $sub->setTitle($subject->getAttribute('title'));
         $sub->setCategory($category);
@@ -507,7 +504,8 @@ class OfflineForum extends OfflineResource
         $creationDate->setTimestamp($message->getAttribute('creation_date'));
         
         $subject = $this->subjectRepo->findOneBy(array('hashName' => $message->getAttribute('subject')));
-        $creator = $this->userRepo->findOneBy(array('exchangeToken' => $message->getAttribute('creator_id')));
+        // $creator = $this->userRepo->findOneBy(array('exchangeToken' => $message->getAttribute('creator_id')));
+        $creator = $this->getCreator($message);
         $content = $this->extractCData($message);
         $msg = new Message();
         $msg->setContent($content.'<br/>'.'<strong>Message created during synchronisation at : '.$creationDate->format('d/m/Y H:i:s').'</strong>');

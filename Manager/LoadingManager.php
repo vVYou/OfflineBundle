@@ -44,7 +44,7 @@ use Doctrine\ORM\EntityManager;
 use \ZipArchive;
 use \DOMDocument;
 use \DateTime;
-use Claroline\OfflineBundle\Model\Resource\OfflineResource;
+use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 
 /**
  * @DI\Service("claroline.manager.loading_manager")
@@ -151,7 +151,7 @@ class LoadingManager
 
     }
     
-    public function addOffline(OfflineResource  $offline)
+    public function addOffline(OfflineElement  $offline)
     {
         $this->offline[$offline->getType()] = $offline;
     } 
@@ -230,7 +230,7 @@ class LoadingManager
             $workspace = $this->workspaceRepo->findOneBy(array('guid' => $work->getAttribute('guid')));
 
             if ($workspace == NULL) {
-                $workspace = $this->createWorkspace($work, $this->user);
+                $workspace = $this->offline['workspace']->createWorkspace($work, $this->user);
             }
             $info = $this->importWorkspace($work->childNodes, $workspace, $work);
             $this->syncInfoArray[] = $info;
@@ -280,122 +280,5 @@ class LoadingManager
         }
         return $wsInfo;
     }
-
-    /**
-     * Create and return a new workspace detailed in the XML file.
-     *
-     * @param \Claroline\CoreBundle\Entity\User $user
-     */
-    private function createWorkspace($workspace, User $user)
-    {
-        // Use the create method from WorkspaceManager.
-        // echo 'Je cree mon Workspace!'.'<br/>';
-        $creation_date = new DateTime();
-        $modification_date = new DateTime();
-        // $creator = $this->om->getRepository('ClarolineCoreBundle:User')->findOneBy(array('exchangeToken' => $workspace->getAttribute('creator')));
-        $ds = DIRECTORY_SEPARATOR;
-
-        // $type = Configuration::TYPE_SIMPLE;
-        $config = Configuration::fromTemplate(
-            $this->templateDir . $ds . 'default.zip'
-        );
-        
-        $creator = $this->getCreator($workspace);
-        
-        // $config->setWorkspaceType($type);
-        $config->setWorkspaceName($workspace->getAttribute('name'));
-        $config->setWorkspaceCode($workspace->getAttribute('code'));
-        $config->setDisplayable($workspace->getAttribute('displayable'));
-        $config->setSelfRegistration($workspace->getAttribute('selfregistration'));
-        $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
-        $config->setWorkspaceDescription($workspace->getAttribute('description'));
-        $config->setGuid($workspace->getAttribute('guid'));
-        // $user = $this->security->getToken()->getUser();
-
-        $my_ws = $this->workspaceManager->create($config, $creator);
-        // $my_ws = $this->workspaceManager->create($config, $user);
-        // $this->tokenUpdater->update($this->security->getToken());
-        //$route = $this->router->generate('claro_workspace_list');
-
-        // if ($workspace->getAttribute('creator_username') != $user->getUsername()) {
-            // $role = $this->roleRepo->findByUserAndWorkspace($user, $my_ws);
-            // $this->roleManager->dissociateUserRole($user, $role);
-            // $role = $this->roleRepo->findOneBy(array('name' => $workspace->getAttribute('role')));
-            // $this->roleManager->associateUserRole($user, $role);
-        // }
-        $this->roleManager->associateUserRole($user, $this->roleManager->getRoleByName($workspace->getAttribute('role')));
-
-        $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $my_ws));
-
-        $this->om->startFlushSuite();
-        $creation_date->setTimestamp($workspace->getAttribute('creation_date'));
-        $modification_date->setTimestamp($workspace->getAttribute('modification_date'));
-
-        $NodeWorkspace->setCreator($user);
-        $NodeWorkspace->setCreationDate($creation_date);
-        $NodeWorkspace->setModificationDate($modification_date);
-        $NodeWorkspace->setNodeHashName($workspace->getAttribute('hashname_node'));
-        $this->om->endFlushSuite();
-
-        return $my_ws;
-
-    }
     
-    private function getCreator($domNode)
-    {
-        $creator = $this->userRepo->findOneBy(array('username' => $domNode->getAttribute('creator_username')));
-        if($creator == null) {
-            $creator = $this->createRandomUser(
-                $domNode->getAttribute('creator_username'),
-                $domNode->getAttribute('creator_firstname'),
-                $domNode->getAttribute('creator_lastname'),
-                $domNode->getAttribute('creator_mail')
-            );
-        }
-        return $creator;
-    }
-    
-    /**
-     * Create a fake user account to symbolise the creator of a workspace or a resource.
-     *
-     * @return \Claroline\CoreBundle\Entity\User
-     */
-    private function createRandomUser($username, $firstname, $lastname, $mail)
-    {
-        $user = new User();
-        $user->setFirstName($firstname);
-        $user->setLastName($lastname);
-        $user->setUserName($username);
-        $user->setMail($mail);
-        // Generate the password randomly.
-        $user->setPassword($this->generateRandomString());
-        $this->userManager->createUser($user);
-        return $user;
-    }
-    
-    // Taken from http://stackoverflow.com/questions/4356289/php-random-string-generator
-    public function generateRandomString($length = 10) {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $randomString = '';
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, strlen($characters) - 1)];
-        }
-        return $randomString;
-    }
-    
-    private function getTimestampListener()
-    {
-        $em = $this->evm->getEventManager();
-
-        foreach ($em->getListeners() as $listenersByEvent) {
-            foreach ($listenersByEvent as $listener) {
-                if ($listener instanceof TimestampableListener) {
-                    return $listener;
-                }
-            }
-        }
-
-        throw new \Exception('Cannot found timestamp listener');
-    }
-
 }

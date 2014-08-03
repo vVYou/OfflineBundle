@@ -14,7 +14,6 @@ namespace Claroline\OfflineBundle\Model\Resource;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\ResourceType;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
-use Claroline\CoreBundle\Entity\Resource\Directory;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
@@ -30,15 +29,14 @@ use \DateTime;
 use \ZipArchive;
 
 /**
- * @DI\Service("claroline_offline.offline.directory")
+ * @DI\Service("claroline_offline.offline.workspace")
  * @DI\Tag("claroline_offline.offline")
  */
-class OfflineDirectory extends OfflineResource
+class OfflineWorkspace extends OfflineElement
 {
-    // private $om;
-    // private $resourceManager;
     private $userRepo;
     private $resourceNodeRepo;
+    private $roleRepo;
     
     /**
      * Constructor.
@@ -58,106 +56,116 @@ class OfflineDirectory extends OfflineResource
         $this->om = $om;
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+        $this->roleRepo = $om->getRepository('ClarolineCoreBundle:Role');
         $this->resourceManager = $resourceManager;
         $this->em = $em;
     }
 
-   // Return the type of resource supported by this service
-   public function getType(){
-        return 'directory';
+    // Return the type of resource supported by this service
+    public function getType(){
+        return 'workspace';
     }
  
     /**
-     * Add informations required to check and recreated a resource if necessary.
-     *
-     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
-     * @param \ZipArchive $archive
-     */ 
-    public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
-    {
-        parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
-        return $domManifest;
-    }
-
-    /**
-     * Create a resource of the type supported by the service based on the XML file.
+     * Add informations of a specific workspace in the manifest.
      *
      * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
      * @param \Claroline\CoreBundle\Entity\User $user
-     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
-     * @param string $path
+     */
+    public function addWorkspaceToManifest($domManifest, $sectManifest, Workspace $workspace, User $user)
+    {
+        $myRole = $this->roleRepo->findByUserAndWorkspace($user, $workspace);
+
+        // $myResNode = $this->userSynchronizedRepo->findResourceNodeByWorkspace($workspace);
+        $myResNode = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
+        $creationTime = $myResNode->getCreationDate()->getTimestamp();
+        $modificationTime = $myResNode->getModificationDate()->getTimestamp();
+
+        $domWorkspace = $domManifest->createElement('workspace');
+        $sectManifest->appendChild($domWorkspace);
+
+        $type = $domManifest->createAttribute('type');
+        $type->value = get_class($workspace);
+        $domWorkspace->appendChild($type);
+        $role = $domManifest->createAttribute('role');
+        $role->value = $myRole[0]->getName();
+        $domWorkspace->appendChild($role);
+        $name = $domManifest->createAttribute('name');
+        $name->value = $workspace->getName();
+        $domWorkspace->appendChild($name);
+        $code = $domManifest->createAttribute('code');
+        $code->value = $workspace->getCode();
+        $domWorkspace->appendChild($code);
+        $displayable = $domManifest->createAttribute('displayable');
+        $displayable->value = $workspace->isDisplayable();
+        $domWorkspace->appendChild($displayable);
+        $selfregistration = $domManifest->createAttribute('selfregistration');
+        $selfregistration->value = $workspace->getSelfRegistration();
+        $domWorkspace->appendChild($selfregistration);
+        $selfunregistration = $domManifest->createAttribute('selfunregistration');
+        $selfunregistration->value = $workspace->getSelfUnregistration();
+        $domWorkspace->appendChild($selfunregistration);
+        $description = $domManifest->createAttribute('description');
+        $description->value = $workspace->getDescription();
+        $domWorkspace->appendChild($description);
+        $guid = $domManifest->createAttribute('guid');
+        $guid->value = $workspace->getGuid();
+        $domWorkspace->appendChild($guid);
+        $hashnameNode = $domManifest->createAttribute('hashname_node');
+        $hashnameNode->value = $myResNode->getNodeHashName();
+        $domWorkspace->appendChild($hashnameNode);
+        $creationDate = $domManifest->createAttribute('creation_date');
+        $creationDate->value = $creationTime;
+        $domWorkspace->appendChild($creationDate);
+        $modificationDate = $domManifest->createAttribute('modification_date');
+        $modificationDate->value = $modificationTime;
+        $domWorkspace->appendChild($modificationDate);
+        $domWorkspace = $this->addCreatorInformations($domManifest, $domWorkspace, $workspace->getCreator());  
+
+        return $domWorkspace;
+    }
+
+    /**
+     * Create and return a new workspace detailed in the XML file.
      *
-     * @return \Claroline\OfflineBundle\Model\SyncInfo
-     */    
-    public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
-    { 
-        $newResource = new Directory();
+     * @param \Claroline\CoreBundle\Entity\User $user
+     *
+     * @return \Claroline\CoreBundle\Entity\Workspace\Workspace
+     */
+    public function createWorkspace($workspace, User $user)
+    {
+        // Use the create method from WorkspaceManager.
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
-        $creationDate->setTimestamp($resource->getAttribute('creation_date'));
-        $modificationDate->setTimestamp($resource->getAttribute('modification_date'));
+        $creationDate->setTimestamp($workspace->getAttribute('creation_date'));
+        $modificationDate->setTimestamp($workspace->getAttribute('modification_date'));        
+        $ds = DIRECTORY_SEPARATOR;
 
-        $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
-        $parentNode = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
-
-        if (count($parentNode) < 1) {
-            // If the parent node doesn't exist anymore, workspace will be the parent.
-            $parentNode  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
-        }
+        $config = Configuration::fromTemplate(
+            $this->templateDir . $ds . 'default.zip'
+        );
         
-        $newResource->setName($resource->getAttribute('name'));
-        $newResource->setMimeType($resource->getAttribute('mimetype'));
+        $creator = $this->getCreator($workspace);
+        $config->setWorkspaceName($workspace->getAttribute('name'));
+        $config->setWorkspaceCode($workspace->getAttribute('code'));
+        $config->setDisplayable($workspace->getAttribute('displayable'));
+        $config->setSelfRegistration($workspace->getAttribute('selfregistration'));
+        $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
+        $config->setWorkspaceDescription($workspace->getAttribute('description'));
+        $config->setGuid($workspace->getAttribute('guid'));
+        $myWs = $this->workspaceManager->create($config, $creator);
+        $this->roleManager->associateUserRole($user, $this->roleManager->getRoleByName($workspace->getAttribute('role')));
 
-        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
-        $wsInfo->addToCreate($resource->getAttribute('name'));
+        $nodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $myWs));
+
+        $this->changeDate($nodeWorkspace, $creationDate, $modificationDate);
         
-        $node = $newResource->getResourceNode();
-        $this->changeDate($node, $creationDate, $modificationDate);
-        return $wsInfo;
-    }
-    
-    /**
-     * Update a resource of the type supported by the service based on the XML file.
-     *
-     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
-     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\User $user
-     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
-     * @param string $path
-     *
-     * @return \Claroline\OfflineBundle\Model\SyncInfo
-     *
-     */   
-    public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
-    {
-        $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        $modificationDate = $resource->getAttribute('modification_date');
-        $creationDate = $resource->getAttribute('creation_date');
-        $NodeModifDate = $node->getModificationDate()->getTimestamp();
-                
-        if ($NodeModifDate < $modificationDate) {
-            $this->resourceManager->rename($node, $resource->getAttribute('name'));
-            $wsInfo->addToUpdate($resource->getAttribute('name'));
-            $creation = new DateTime();
-            $creation->setTimeStamp($creationDate);
-            $modif = new DateTime();
-            $modif->setTimeStamp($modificationDate);
-            $this->changeDate($node, $creation, $modif);
-        }
-        return $wsInfo;
-    }
-   
-    /**
-     * Create a copy of the resource in case of conflict (e.g. if a ressource has been modified both offline
-     * and online)
-     *
-     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node     
-     * @param string $path
-     */
-    public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path)
-    {
-        return;
+        // Need to change the hashname of the node corresponding to the workspace.
+        $this->om->startFlushSuite();
+        $NodeWorkspace->setNodeHashName($workspace->getAttribute('hashname_node'));
+        $this->om->endFlushSuite();
+
+        return $myWs;
+
     }
 }

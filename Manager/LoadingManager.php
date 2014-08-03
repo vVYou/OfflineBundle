@@ -155,10 +155,12 @@ class LoadingManager
         $this->offline[$offline->getType()] = $offline;
     } 
     
-    /*
-    *   This method open the zip file, call the loadXML function and
-    *   destroy the zip file while everything is done.
-    */
+    /**
+     * This method open the zip file, call the loadXML function and
+     * destroy the zip file while everything is done.
+     *
+     * @param \Claroline\CoreBundle\Entity\User $user
+     */
     public function loadZip($zipPath, User $user)
     {
         $this->user = $user;
@@ -174,39 +176,7 @@ class LoadingManager
             //Call LoadXML
             $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getUsername().'.xml');
 
-            // $this->loadXML('manifest_test_x.xml'); //Actually used for test.
-
-            //Destroy Directory
-            //$this->rrmdir($this->path);
-            //echo 'DIR deleted <br/>';
-
-            //TODO : Utile seulement pour les tests.
-            // foreach($this->syncInfoArray as $syncInfo)
-            // {
-                // echo 'For the workspace : '.$syncInfo->getWorkspace().'<br/>';
-                // $add = $syncInfo->getCreate();
-                // foreach($add as $elem)
-                // {
-                    // echo 'Create'.'<br/>';
-                    // echo $elem.'<br/>';
-                // }
-
-                // $update = $syncInfo->getUpdate();
-                // foreach($update as $up)
-                // {
-                    // echo 'Update'.'<br/>';
-                    // echo $up.'<br/>';
-                // }
-
-                // $doublon = $syncInfo->getDoublon();
-                // foreach($doublon as $doub)
-                // {
-                    // echo 'Doublon'.'<br/>';
-                    // echo $doub.'<br/>';
-                // }
-            // }
         } else {
-            //Make a pop-up rather than a exception maybe.
             throw new \Exception('Impossible to load the zip file');
         }
 
@@ -214,39 +184,6 @@ class LoadingManager
             'infoArray' => $this->syncInfoArray,
             'synchronizationDate' => $this->synchronizationDate
         );
-    }
-
-    public function loadPublicWorkspaceList($allWorkspace)
-    {
-        $xmlDocument = new DOMDocument();
-        $xmlDocument->load($allWorkspace);
-        $this->importWorkspaces($xmlDocument->getElementsByTagName('workspace_list'));
-    }
-
-    /*
-    *
-    *       TO FIX !!!!!!!
-    *
-    *   Code inspired of :
-    *   http://stackoverflow.com/questions/9760526/php-remove-not-empty-folder
-    */
-    public function rrmdir($dir)
-    {
-        if (is_dir($dir)) {
-            $objects = scandir($dir);
-            foreach ($objects as $object) {
-                if ($object != "." && $object != "..") {
-                    if (is_dir($dir."/".$object)) {
-                    //if (filetype($dir."/".$object) == "dir") {
-                        rmdir($dir."/".$object);
-                    } else {
-                        unlink($dir."/".$object);
-                    }
-                }
-            }
-            reset($objects);
-            rmdir($dir);
-        }
     }
 
     /**
@@ -257,39 +194,28 @@ class LoadingManager
         $xmlDocument = new DOMDocument();
         $xmlDocument->load($xmlFilePath);
 
-        /*
-        *   getElementsByTagName renvoit un NodeList
-        *   Sur un NodeList on peut faire ->length et ->item($i) qui retourne un NodeItem
-        *   sur un NodeItem on peut faire
-                ->nodeName
-                ->nodeValue
-                ->childNodes qui renvoit lui meme un NodeList. la boucle est bouclée
-        */
-
         $this->importDescription($xmlDocument);
         $this->importWorkspaces($xmlDocument);
 
     }
 
-    /*
-    *   This method is used to work on the different fields inside the
-    *   <description> tags in the XML file.
-    */
+    /**
+     * This method is used to work on the different fields inside the
+     * <description> tags in the XML file.
+     */
     private function importDescription($xmlDocument)
     {
         $descriptions = $xmlDocument->getElementsByTagName("description");
         foreach ($descriptions as $description) {
-            $this->user = $this->userRepo->findOneBy(array('username' => $description->getAttribute('username'), 'mail' => $description->getAttribute('user_mail')));
-            // echo 'My user : '.$this->user->getFirstName().'<br/>';
+            // $this->user = $this->userRepo->findOneBy(array('username' => $description->getAttribute('username'), 'mail' => $description->getAttribute('user_mail')));
             $this->synchronizationDate = $description->getAttribute('synchronization_date');
-            // echo 'My sync date : '.$this->synchronizationDate.'<br/>';
         }
     }
 
-    /*
-    *   This method is used to work on the different workspaces inside the
-    *   <workspace> tags in the XML file.
-    */
+    /**
+     * This method is used to work on the different workspaces inside the
+     * <workspace> tags in the XML file.
+     */
     private function importWorkspaces($xmlDocument)
     {
         $workspace_list = $xmlDocument->getElementsByTagName("workspace");
@@ -299,42 +225,12 @@ class LoadingManager
             *   Check if a workspace with the given guid already exists.
             *   - if it doesn't exist then it will be created
             *   - then proceed to the resources (no matter if we have to create the workspace previously)
-            */
-
-            //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
+            */           
             $workspace = $this->workspaceRepo->findOneBy(array('guid' => $work->getAttribute('guid')));
 
-            if (count($workspace) >= 1) {
-                // echo 'Mon Workspace : '.$workspace->getGuid().'<br/>';
-
-                /*
-                *   When a workspace with the same guid is found, we can update him if it's required.
-                *   We need to check if : modification_date_offline > modification_date_online.
-                *       - If it is, the workspace can be update with the changes described in the XML.
-                *       - If it's not, it means that the 'online' version of the workspace is up-to-date.
-                */
-
-                //echo 'I need to update my workspace!'.'<br/>';
-                $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
-                // TODO Mettre à jour la date de modification et le nom du directory
-                // echo 'Mon Workspace Node '.$NodeWorkspace->getName().'<br/>';
-                $node_modif_date = $NodeWorkspace->getModificationDate()->getTimestamp();
-                $modif_date = $work->getAttribute('modification_date');
-
-                if ($modif_date > $node_modif_date) {
-                   // The properties of the workspace has been changed and need to be update.
-                } else {
-                   // The 'online' version of the workspace is up-to-date.
-                }
-            } else {
-                // echo 'This workspace : '.$item->getAttribute('code').' needs to be created!'.'<br/>';
-                // $workspace_creator = $this->userRepo->findOneBy(array('exchangeToken' => $work->getAttribute('creator')));
-                // echo 'Le creator de mon workspace : '.$workspace_creator->getFirstName().'<br/>';
+            if ($workspace == NULL) {
                 $workspace = $this->createWorkspace($work, $this->user);
-                //$workspace = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findByGuid($item->getAttribute('guid'));
             }
-
-            // echo 'En route pour les ressources!'.'<br/>';
             $info = $this->importWorkspace($work->childNodes, $workspace, $work);
             $this->syncInfoArray[] = $info;
 
@@ -342,10 +238,12 @@ class LoadingManager
     }
 
     /**
-    * Visit all the 'resource' field in the 'workspace' inside the XML file and
-    * either create or update the corresponding resources.
-    */
-    private function importWorkspace($resourceList, $workspace, $work)
+     * Visit all the 'resource' field in the 'workspace' inside the XML file and
+     * either create or update the corresponding resources.
+     *
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     */
+    private function importWorkspace($resourceList, Workspace $workspace, $work)
     {
         $wsInfo = new SyncInfo();
         $wsInfo->setWorkspace($workspace->getName().' ('.$workspace->getCode().')');
@@ -382,10 +280,12 @@ class LoadingManager
         return $wsInfo;
     }
 
-    /*
-    *   Create and return a new workspace detailed in the XML file.
-    */
-    private function createWorkspace($workspace, $user)
+    /**
+     * Create and return a new workspace detailed in the XML file.
+     *
+     * @param \Claroline\CoreBundle\Entity\User $user
+     */
+    private function createWorkspace($workspace, User $user)
     {
         // Use the create method from WorkspaceManager.
         // echo 'Je cree mon Workspace!'.'<br/>';

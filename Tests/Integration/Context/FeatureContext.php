@@ -5,14 +5,17 @@ namespace Claroline\OfflineBundle\Tests\Integration\Context;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Behat\Symfony2Extension\Context\KernelAwareInterface;
 use Behat\MinkExtension\Context\MinkContext;
-
 use Behat\Behat\Context\BehatContext,
     Behat\Behat\Exception\PendingException;
 use Behat\Gherkin\Node\PyStringNode,
     Behat\Gherkin\Node\TableNode;
-
+use Behat\Mink\Exception\ElementNotFoundException;
+use Behat\Mink\Exception\ExpectationException;
+use Behat\Symfony2Extension\Context\KernelDictionary;
 use Claroline\CoreBundle\Tests\Integration\Context;
 use Behat\Behat\Context\Step;
+use Behat\Behat\Event\ScenarioEvent;
+use Claroline\CoreBundle\Library\Installation\Settings\SettingChecker;
 use Goutte\Client;
 
 //
@@ -51,7 +54,7 @@ class FeatureContext extends MinkContext
     {
         $this->kernel = $kernel;
     }
-
+    
     /**
      * After each scenario, we close the browser
      *
@@ -113,8 +116,8 @@ class FeatureContext extends MinkContext
 
     public function iHaveRetrievedMyAccount()
     {
-        if (!(file_exists('/app/config/1st_conf'))) {
-            mkdir('makemyday');
+        if (!(file_exists('./app/config/sync_config.yml'))) {
+            file_put_contents('./app/config/sync_config_x.txt', 'test');
         }
 
         return true;

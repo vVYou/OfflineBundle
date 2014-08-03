@@ -98,93 +98,7 @@ class CreationManager
      *
      * @param \Claroline\CoreBundle\Entity\User $user
      *
-     */
-     public function createSyncZip_(User $user, $date)
-    {
-        ini_set('max_execution_time', 0);
-        $typeList = array('directory', 'file', 'text', 'claroline_forum'); //TODO ! PAS OPTIMAL !
-
-        $archive = new ZipArchive();
-        $domManifest = new DOMDocument('1.0', "UTF-8");
-        $domManifest->formatOutput = true;
-        $manifestName = SyncConstant::MANIFEST.'_'.$user->getUsername().'.xml';
-
-        // Manifest section
-        $sectManifest = $domManifest->createElement('manifest');
-        $domManifest->appendChild($sectManifest);
-
-        //Description section
-        $this->writeManifestDescription($domManifest, $sectManifest, $user, $date);
-
-        $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId();
-        // Ca ne fonctionne pas chez moi
-        if (!is_dir($dir)) {
-            echo $dir;
-            mkdir($dir, 0777);
-        }
-        $hashname_zip = $this->ut->generateGuid();
-        $fileName = $dir.'/sync_'.$hashname_zip.'.zip';
-
-        $typeArray = $this->buildTypeArray($typeList);
-        $userWS = $this->workspaceRepo->findByUser($user);
-
-        if ($archive->open($fileName, ZipArchive::CREATE) === true) {
-           $this->fillSyncZip($userWS, $domManifest, $sectManifest, $typeArray, $user, $archive, $date);
-        } else {
-            throw new \Exception('Impossible to open the zip file');
-        }
-
-        $domManifest->save($manifestName);
-        $archive->addFile($manifestName);
-        $archivePath = $archive->filename;
-        $archive->close();
-        // Erase the manifest from the current folder.
-        // unlink($manifestName);
-        return $archivePath;
-    }
-
-    /*
-    *   Fill the Zip with the file required for the synchronisation.
-    *   Also, create a manifest containing all the changes done.
-    */
-    private function fillSyncZip_($userWS, $domManifest, $sectManifest, $typeArray, $user, $archive, $date)
-    {
-        foreach ($userWS as $element) {
-            $domWorkspace = $this->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);
-            foreach ($typeArray as $resType) {
-                $ressourcesToSync = array();
-                $forum_content = array();
-                //$em_res = $this->getDoctrine()->getManager();
-                $userRes = $this->resourceNodeRepo->findByWorkspaceAndResourceType($element, $resType);
-                if (count($userRes) >= 1) {
-
-                    $path = ''; // USELESS?
-                    $ressourcesToSync = $this->checkObsolete($userRes, $user, $date);  // Remove all the resources not modified.
-                    //echo get_class($ressourcesToSync);//Ajouter le resultat dans l'archive Zip
-
-                    $this->addResourcesToArchive($ressourcesToSync, $archive, $domManifest, $domWorkspace, $user, $path);
-                    //echo "<br/>".count($ressourcesToSync)."<br/>";
-
-                    if ($resType->getId() == SyncConstant::FORUM) {
-                        /*
-                        *   Check, if the resource is a forum, is there are new messages, subjects or category created offline.
-                        */
-                        $forum_content = $this->checkNewContent($userRes, $user, $date);
-                        echo count($forum_content);
-                        $this->addForumToArchive($domManifest, $domWorkspace, $forum_content);
-                    }
-                }
-            }
-        }
-    }
-
-    
-    
-   /**
-    *   Test New OfflineText
-    *   
-    */
-    
+     */   
     public function createSyncZip(User $user, $date)
     {
         ini_set('max_execution_time', 0);
@@ -205,7 +119,6 @@ class CreationManager
 
         // Create the Directory if it does not exists.
         if (!is_dir($dir)) {
-            echo $dir;
             mkdir($dir, 0777);
         }
         
@@ -231,11 +144,14 @@ class CreationManager
         return $archivePath;
     }
     
-    /* 
-    *   Add all the informations required to synchronized the resources in the Manifest and add
-    *   in the archive the file required for the synchronization
-    */
-    public function fillSyncZip($userWS, $domManifest, $sectManifest, $types, $user, $archive, $date)
+    /** 
+     * Add all the informations required to synchronized the resources in the Manifest and add
+     * in the archive the file required for the synchronization
+     *
+     * @param \Claroline\CoreBundle\Entity\User $user
+     * @param \ZipArchive $archive
+     */
+    public function fillSyncZip($userWS, $domManifest, $sectManifest, $types, User $user, ZipArchive $archive, $date)
     {
         foreach ($userWS as $element) {
         
@@ -254,11 +170,13 @@ class CreationManager
         }
     }
     
-    /*
-    *   Filter all the resources based on the user's last synchronization and
-    *   check which one need to be synchronized.
-    */   
-    private function findResourceToSync($workspace, $types, $date)
+    /**
+     * Filter all the resources based on the user's last synchronization and
+     * check which one need to be synchronized.
+     *
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     */   
+    private function findResourceToSync(Workspace $workspace, $types, $date)
     {
         $query = $this->resourceNodeRepo->createQueryBuilder('res')
             ->join('res.resourceType', 'type')
@@ -278,12 +196,14 @@ class CreationManager
     *   Here figure all methods used to manipulate the xml file. *
     *************************************************************/
 
-    /*
-    *   Add informations of a specific workspace in the manifest.
-    */
-    private function addWorkspaceToManifest($domManifest, $sectManifest, $workspace, $user)
+    /**
+     * Add informations of a specific workspace in the manifest.
+     *
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\User $user
+     */
+    private function addWorkspaceToManifest($domManifest, $sectManifest, Workspace $workspace, User $user)
     {
-        //Risque d'être un tableau.
         $my_role = $this->roleRepo->findByUserAndWorkspace($user, $workspace);
 
         $my_res_node = $this->userSynchronizedRepo->findResourceNodeByWorkspace($workspace);
@@ -345,15 +265,13 @@ class CreationManager
         return $domWorkspace;
     }
 
-    /*
-    *   Create the description of the manifest.
-    */
+    /**
+     * Create the description of the manifest.
+     *
+     * @param \Claroline\CoreBundle\Entity\User $user
+     */
     private function writeManifestDescription($domManifest, $sectManifest, User $user, $date)
     {
-        // $dateSync = $this->userSynchronizedRepo->findUserSynchronized($user);
-        // $user_tmp = $dateSync[0]->getLastSynchronization();
-        // $sync_timestamp = $user_tmp->getTimestamp();
-
         $sectDescription = $domManifest->createElement('description');
         $sectManifest->appendChild($sectDescription);
 
@@ -361,9 +279,7 @@ class CreationManager
         $descCreation->value = time();
         $sectDescription->appendChild($descCreation);
 
-        // $userSync = $this->userSynchronizedRepo->findUserSynchronized($user);
         $descReference = $domManifest->createAttribute('synchronization_date');
-        // $descReference->value = $userSync[0]->getLastSynchronization()->getTimestamp();
         $descReference->value = $date;
         $sectDescription->appendChild($descReference);
 

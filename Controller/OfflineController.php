@@ -513,13 +513,14 @@ class OfflineController extends Controller
         return $this->redirect($this->generateUrl('claro_desktop_open_tool', array('toolName' => "claroline_offline_tool")));
 
     }
-
-
-    // METHODE DE TEST
-
+    
+    
+    /*
+    *   METHODE DE TEST : Those methods are used for the creation and loading tests.
+    */ 
     /**
     *
-    *   Test New OfflineText
+    *   Test Creation
     *
     *   @EXT\Route(
     *       "/sync/seek_test",
@@ -538,7 +539,6 @@ class OfflineController extends Controller
         $em = $this->getDoctrine()->getManager();
         $userSyncTab = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
         $test = $this->get('claroline.manager.creation_manager')->createSyncZip($user, $userSyncTab[0]->getlastSynchronization()->getTimestamp());
-        // echo '<br/>'.$test.'<br/>';
         return array(
            'results' => $results
         );
@@ -546,7 +546,7 @@ class OfflineController extends Controller
 
     /**
     *
-    *   Test New OfflineText
+    *   Test Creation
     *
     *   @EXT\Route(
     *       "/sync/load_test",
@@ -561,11 +561,11 @@ class OfflineController extends Controller
      */
     public function loadTestAction(User $user)
     {
-                $results = array();
-        $results = $this->get('claroline.manager.loading_manager')->loadZip('sync_8D689C13-C2B7-4118-9740-3CF7C4E17D7B.zip', $user);
-
+        $results = array();
+        $results = $this->get('claroline.manager.loading_manager')->loadZip('sync_DDD5A32E-92C6-4882-8CAC-E6D4F9D702F0.zip', $user);
         return array(
-            'results' => $results
+            'results' => $results['infoArray'],
+            'msg' => ''
          );
     }
 

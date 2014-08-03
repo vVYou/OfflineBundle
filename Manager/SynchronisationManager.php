@@ -74,30 +74,30 @@ class SynchronisationManager
             // Last synchronisation was well ended.
             case UserSynchronized::SUCCESS_SYNC :
                 // restart from the begining
-                $this->step1Create($user, $userSync);
+                return $this->step1Create($user, $userSync);
                 break;
             // Has a synchronisation archive
             case UserSynchronized::STARTED_UPLOAD :
                 // Where did we stopped the transmission ?
                 $fragmentNumber = $this->transferManager->getLastFragmentUploaded($userSync->getFilename(), $user);
                 // Restart uploading from the last stop
-                $this->step2Upload($user, $userSync, $userSync->getFilename(), $fragmentNumber+1);
+                return $this->step2Upload($user, $userSync, $userSync->getFilename(), $fragmentNumber+1);
                 break;
             // Uploading failed
             case UserSynchronized::FAIL_UPLOAD :
                 // Restart all the upload
-                $this->step2Upload($user, $userSync, $userSync->getFilename());
+                return $this->step2Upload($user, $userSync, $userSync->getFilename());
                 break;
             // Upload finished
             case UserSynchronized::SUCCESS_UPLOAD :
                 // Let's download from the online
-                $this->step3Download($user, $userSync, $userSync->getFilename());
+                return $this->step3Download($user, $userSync, $userSync->getFilename());
                 break;
             // Download fail
             case UserSynchronized::FAIL_DOWNLOAD :
                 // Restart download
                 $fragmentNumber = $this->getDownloadStop($userSync->getFilename(), $user);
-                $this->step3Download($user, $userSync, $userSync->getFilename(), null, $fragmentNumber);
+                return $this->step3Download($user, $userSync, $userSync->getFilename(), null, $fragmentNumber);
                 break;
             // Download finished
             case UserSynchronized::SUCCESS_DOWNLOAD :
@@ -122,7 +122,7 @@ class SynchronisationManager
         $userSync->setSentTime($now);
         $this->userSyncManager->updateUserSync($userSync);
         // Go to step 2
-        $this->step2Upload($user, $userSync, $toUpload);
+        return $this->step2Upload($user, $userSync, $toUpload);
     }
 
     // Method implementing the second step of the global process
@@ -140,7 +140,7 @@ class SynchronisationManager
             $userSync->setStatus(UserSynchronized::SUCCESS_UPLOAD);
             $this->userSyncManager->updateUserSync($userSync);
             //Go to step 3
-            $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['totalFragments']);
+            return $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['totalFragments']);
             // Clean the directory when done (online the offline)
             $this->transferManager->deleteFile($user,substr($filename, strlen($filename)-40, 36), SyncConstant::SYNCHRO_UP_DIR);
             unlink($filename);
@@ -170,7 +170,7 @@ class SynchronisationManager
             $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
             $this->userSyncManager->updateUserSync($userSync);
             // Go to step 4
-            $this->step4Load($user, $userSync, $toLoad);
+            return $this->step4Load($user, $userSync, $toLoad);
             // Clean the files when done
             $this->transferManager->deleteFile($user, $filename, SyncConstant::SYNCHRO_DOWN_DIR);
             unlink($toLoad);

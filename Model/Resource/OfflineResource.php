@@ -11,17 +11,15 @@
 
 namespace Claroline\OfflineBundle\Model\Resource;
 
-use Claroline\CoreBundle\Listener\TimestampableListener;
 use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\User;
-use \DateTime;
 use \ZipArchive;
 
 abstract class OfflineResource extends OfflineElement
-{    
+{
     /**
      * Add informations required to check and recreated a resource if necessary.
      *
@@ -105,8 +103,8 @@ abstract class OfflineResource extends OfflineElement
             $modification_date = $domManifest->createAttribute('modification_date');
             $modification_date->value = $modificationTime;
             $domRes->appendChild($modification_date);
-            $domRes = $this->addCreatorInformations($domManifest, $domRes, $resToAdd->getCreator());  
-            
+            $domRes = $this->addCreatorInformations($domManifest, $domRes, $resToAdd->getCreator());
+
             return $domRes;
 
         }

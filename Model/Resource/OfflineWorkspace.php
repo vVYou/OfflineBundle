@@ -16,11 +16,9 @@ use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
 use \DateTime;
-use \ZipArchive;
 
 /**
  * @DI\Service("claroline_offline.offline.workspace")
@@ -60,12 +58,12 @@ class OfflineWorkspace extends OfflineElement
     {
         return 'workspace';
     }
-        
+
     /**
      * Add informations of a specific workspace in the manifest.
      *
      * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\User $user
+     * @param \Claroline\CoreBundle\Entity\User                $user
      */
     public function addWorkspaceToManifest($domManifest, $sectManifest, Workspace $workspace, User $user)
     {
@@ -115,7 +113,7 @@ class OfflineWorkspace extends OfflineElement
         $modificationDate = $domManifest->createAttribute('modification_date');
         $modificationDate->value = $modificationTime;
         $domWorkspace->appendChild($modificationDate);
-        $domWorkspace = $this->addCreatorInformations($domManifest, $domWorkspace, $workspace->getCreator());  
+        $domWorkspace = $this->addCreatorInformations($domManifest, $domWorkspace, $workspace->getCreator());
 
         return $domWorkspace;
     }
@@ -133,13 +131,13 @@ class OfflineWorkspace extends OfflineElement
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
         $creationDate->setTimestamp($workspace->getAttribute('creation_date'));
-        $modificationDate->setTimestamp($workspace->getAttribute('modification_date'));        
+        $modificationDate->setTimestamp($workspace->getAttribute('modification_date'));
         $ds = DIRECTORY_SEPARATOR;
 
         $config = Configuration::fromTemplate(
             $this->templateDir . $ds . 'default.zip'
         );
-        
+
         $creator = $this->getCreator($workspace);
         $config->setWorkspaceName($workspace->getAttribute('name'));
         $config->setWorkspaceCode($workspace->getAttribute('code'));
@@ -154,7 +152,7 @@ class OfflineWorkspace extends OfflineElement
         $nodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $myWs));
 
         $this->changeDate($nodeWorkspace, $creationDate, $modificationDate);
-        
+
         // Need to change the hashname of the node corresponding to the workspace.
         $this->om->startFlushSuite();
         $NodeWorkspace->setNodeHashName($workspace->getAttribute('hashname_node'));

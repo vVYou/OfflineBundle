@@ -22,11 +22,9 @@ use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Resource\Directory;
 use Claroline\CoreBundle\Entity\Resource\Revision;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
-use Claroline\CoreBundle\Library\Workspace\Configuration;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Library\Security\Utilities;
 use Claroline\CoreBundle\Library\Security\TokenUpdater;
-use Claroline\CoreBundle\Listener\TimestampableListener;
 use Claroline\CoreBundle\Event\StrictDispatcher;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
@@ -42,7 +40,6 @@ use Symfony\Component\Translation\TranslatorInterface;
 use Doctrine\ORM\EntityManager;
 use \ZipArchive;
 use \DOMDocument;
-use \DateTime;
 use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 
 /**
@@ -149,7 +146,7 @@ class LoadingManager
         $this->evm = $evm;
 
     }
-    
+
     public function addOffline(OfflineElement  $offline)
     {
         $this->offline[$offline->getType()] = $offline;

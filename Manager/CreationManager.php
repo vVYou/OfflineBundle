@@ -84,8 +84,8 @@ class CreationManager
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
         $this->offline = array();
-    }   
-        
+    }
+
     public function addOffline(OfflineElement  $offline)
     {
         $this->offline[$offline->getType()] = $offline;
@@ -151,8 +151,8 @@ class CreationManager
      */
     public function fillSyncZip($userWS, $domManifest, $sectManifest, $types, User $user, ZipArchive $archive, $date)
     {
-        foreach ($userWS as $element) {  
-            $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);         
+        foreach ($userWS as $element) {
+            $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);
             $dateTimeStamp = new DateTime();
             $dateTimeStamp->setTimeStamp($date);
             $ressourcesToSync = $this->findResourceToSync($element, $types, $dateTimeStamp);// Remove all the resources not modified.
@@ -192,7 +192,7 @@ class CreationManager
     /************************************************************
     *   Here figure all methods used to manipulate the xml file. *
     *************************************************************/
-    
+
     /**
      * Create the description of the manifest.
      *

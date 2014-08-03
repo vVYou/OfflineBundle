@@ -353,8 +353,8 @@ class OfflineForum extends OfflineResource
         $domRes->appendChild($closed);
         $sticked = $domManifest->createAttribute('sticked');
         $sticked->value = $content->isSticked();
-        $domRes->appendChild($sticked);  
-        $domRes = $this->addCreatorInformations($domManifest, $domRes, $content->getCreator());        
+        $domRes->appendChild($sticked);
+        $domRes = $this->addCreatorInformations($domManifest, $domRes, $content->getCreator());
     }
 
     /**
@@ -375,7 +375,7 @@ class OfflineForum extends OfflineResource
         $domRes->appendChild($subject);
         $cdata = $domManifest->createCDATASection($content->getContent());
         $domRes->appendChild($cdata);
-        $domRes = $this->addCreatorInformations($domManifest, $domRes, $content->getCreator());          
+        $domRes = $this->addCreatorInformations($domManifest, $domRes, $content->getCreator());
 
     }
 

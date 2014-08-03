@@ -272,6 +272,7 @@ class OfflineController extends Controller
 
         $em = $this->getDoctrine()->getManager();
         $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($authUser);
+        $msg = '';
         try {
             $infoArray = $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
         } catch (AuthenticationException $e) {

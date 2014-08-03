@@ -16,6 +16,7 @@ use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Resource\Directory;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
@@ -29,23 +30,22 @@ use \ZipArchive;
  */
 class OfflineDirectory extends OfflineResource
 {
-    // private $om;
-    // private $resourceManager;
-    private $userRepo;
     private $resourceNodeRepo;
 
     /**
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "em"            = @DI\Inject("doctrine.orm.entity_manager")
+     *     "om"              = @DI\Inject("claroline.persistence.object_manager"),
+     *     "resourceManager" = @DI\Inject("claroline.manager.resource_manager"),
+     *     "userManager"     = @DI\Inject("claroline.manager.user_manager"),
+     *     "em"              = @DI\Inject("doctrine.orm.entity_manager")
      * })
      */
     public function __construct(
         ObjectManager $om,
         ResourceManager $resourceManager,
+        UserManager $userManager,
         EntityManager $em
     )
     {
@@ -53,6 +53,7 @@ class OfflineDirectory extends OfflineResource
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->resourceManager = $resourceManager;
+        $this->userManager = $userManager;
         $this->em = $em;
     }
 

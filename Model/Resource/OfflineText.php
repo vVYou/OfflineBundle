@@ -18,6 +18,7 @@ use Claroline\CoreBundle\Entity\Resource\Revision;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
@@ -31,10 +32,7 @@ use \ZipArchive;
  */
 class OfflineText extends OfflineResource
 {
-    // private $om;
-    // private $resourceManager;
     private $revisionRepo;
-    private $userRepo;
     private $resourceNodeRepo;
     private $ut;
 
@@ -44,15 +42,17 @@ class OfflineText extends OfflineResource
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc"),
-     *     "em"            = @DI\Inject("doctrine.orm.entity_manager")
+     *     "userManager"    = @DI\Inject("claroline.manager.user_manager"),
+     *     "ut"             = @DI\Inject("claroline.utilities.misc"),
+     *     "em"             = @DI\Inject("doctrine.orm.entity_manager")
      * })
      */
     public function __construct(
-        ObjectManager $om,
-        ResourceManager $resourceManager,
-        ClaroUtilities $ut,
-        EntityManager $em
+        ObjectManager        $om,
+        ResourceManager      $resourceManager,
+        UserManager          $userManager,
+        ClaroUtilities       $ut,
+        EntityManager        $em
     )
     {
         $this->om = $om;
@@ -60,6 +60,7 @@ class OfflineText extends OfflineResource
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
         $this->resourceManager = $resourceManager;
+        $this->userManager = $userManager;
         $this->ut = $ut;
         $this->em = $em;
     }

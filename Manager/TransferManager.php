@@ -130,7 +130,7 @@ class TransferManager
                 // Execute the post request sending informations online
                 $reponse = $browser->post($url.'/transfer/uploadArchive', array(), json_encode($metadatas));
                 $responseContent = $reponse->getContent();
-                echo "Content <br/>".$responseContent."<br/>";
+                // echo "Content <br/>".$responseContent."<br/>";
                 $status = $reponse->getStatusCode();
                 $responseContent = (array) json_decode($responseContent);
                 $fragmentNumber ++;

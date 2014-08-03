@@ -33,7 +33,7 @@ class OfflineFile extends OfflineResource
 {
     // private $om;
     // private $resourceManager;
-    private $userRepo;
+    // private $userRepo;
     private $resourceNodeRepo;
     private $ut;
 

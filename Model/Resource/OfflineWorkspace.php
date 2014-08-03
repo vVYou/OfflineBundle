@@ -15,6 +15,7 @@ use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
@@ -26,7 +27,6 @@ use \DateTime;
  */
 class OfflineWorkspace extends OfflineElement
 {
-    private $userRepo;
     private $resourceNodeRepo;
     private $roleRepo;
 
@@ -36,13 +36,15 @@ class OfflineWorkspace extends OfflineElement
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "em"            = @DI\Inject("doctrine.orm.entity_manager")
+     *     "userManager"    = @DI\Inject("claroline.manager.user_manager"),
+     *     "em"             = @DI\Inject("doctrine.orm.entity_manager")
      * })
      */
     public function __construct(
-        ObjectManager $om,
+        ObjectManager   $om,
         ResourceManager $resourceManager,
-        EntityManager $em
+        UserManager     $userManager,
+        EntityManager   $em
     )
     {
         $this->om = $om;
@@ -50,6 +52,7 @@ class OfflineWorkspace extends OfflineElement
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->roleRepo = $om->getRepository('ClarolineCoreBundle:Role');
         $this->resourceManager = $resourceManager;
+        $this->userManager = $userManager;
         $this->em = $em;
     }
 

@@ -16,6 +16,7 @@ use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\ForumBundle\Entity\Forum;
 use Claroline\ForumBundle\Entity\Category;
@@ -35,11 +36,7 @@ use \ZipArchive;
  */
 class OfflineForum extends OfflineResource
 {
-
-    // private $om;
-    // private $resourceManager;
     private $forumManager;
-    private $userRepo;
     private $subjectRepo;
     private $messageRepo;
     private $forumRepo;
@@ -53,14 +50,16 @@ class OfflineForum extends OfflineResource
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
+     *     "userManager"    = @DI\Inject("claroline.manager.user_manager"),
      *     "forumManager"   = @DI\Inject("claroline.manager.forum_manager"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc"),
-     *     "em"            = @DI\Inject("doctrine.orm.entity_manager")
+     *     "ut"             = @DI\Inject("claroline.utilities.misc"),
+     *     "em"             = @DI\Inject("doctrine.orm.entity_manager")
      * })
      */
     public function __construct(
         ObjectManager $om,
         ResourceManager $resourceManager,
+        UserManager $userManager,
         Manager $forumManager,
         ClaroUtilities $ut,
         EntityManager $em
@@ -75,6 +74,7 @@ class OfflineForum extends OfflineResource
         $this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
         $this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
         $this->resourceManager = $resourceManager;
+        $this->userManager = $userManager;
         $this->forumManager = $forumManager;
         $this->ut = $ut;
         $this->em = $em;

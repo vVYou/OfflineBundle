@@ -22,11 +22,13 @@ abstract class OfflineElement
     protected $om;
     protected $resourceManager;
     protected $em;
+    protected $userRepo;
+    protected $userManager;
 
     /**
      * Extract the text contains in the CDATA section of the XML file.
      */
-    public function extractCData($resource)
+    protected function extractCData($resource)
     {
         foreach ($resource->childNodes as $child) {
             if ($child->nodeType == XML_CDATA_SECTION_NODE) {
@@ -44,7 +46,7 @@ abstract class OfflineElement
      *
      * @return \Claroline\CoreBundle\Entity\Resource\ResourceNode
      */
-    public function changeDate(ResourceNode $node, $creationDate, $modificationDate)
+    protected function changeDate(ResourceNode $node, $creationDate, $modificationDate)
     {
         $listener = $this->getTimestampListener();
         $listener->forceTime($creationDate);
@@ -59,7 +61,10 @@ abstract class OfflineElement
         return $node;
     }
 
-    private function getTimestampListener()
+    /*
+    *   Method to catch the 
+    */
+    protected function getTimestampListener()
     {
         $evm = $this->em->getEventManager();
 
@@ -74,7 +79,10 @@ abstract class OfflineElement
         throw new \Exception('Cannot found timestamp listener');
     }
 
-    private function getCreator($domNode)
+    /*
+    *   Method that returns the creator from the domObject
+    */
+    protected function getCreator($domNode)
     {
         $creator = $this->userRepo->findOneBy(array('username' => $domNode->getAttribute('creator_username')));
         if ($creator == null) {
@@ -94,7 +102,7 @@ abstract class OfflineElement
      *
      * @return \Claroline\CoreBundle\Entity\User
      */
-    private function createRandomUser($username, $firstname, $lastname, $mail)
+    protected function createRandomUser($username, $firstname, $lastname, $mail)
     {
         $user = new User();
         $user->setFirstName($firstname);
@@ -109,7 +117,7 @@ abstract class OfflineElement
     }
 
     // Taken from http://stackoverflow.com/questions/4356289/php-random-string-generator
-    public function generateRandomString($length = 10)
+    protected function generateRandomString($length = 10)
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $randomString = '';
@@ -125,7 +133,7 @@ abstract class OfflineElement
      *
      * @param \Claroline\CoreBundle\Entity\User $creator
      */
-    public function addCreatorInformations($domManifest, $domRes, User $creator)
+    protected function addCreatorInformations($domManifest, $domRes, User $creator)
     {
         $creatorUserName = $domManifest->createAttribute('creator_username');
         $creatorUserName->value = $creator->getUsername();

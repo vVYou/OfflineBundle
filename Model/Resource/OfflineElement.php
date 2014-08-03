@@ -62,7 +62,7 @@ abstract class OfflineElement
     }
 
     /*
-    *   Method to catch the 
+    *   Method to catch the
     */
     protected function getTimestampListener()
     {

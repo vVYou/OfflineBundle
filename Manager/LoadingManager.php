@@ -341,15 +341,15 @@ class LoadingManager
 
     }
     
-    private function getCreator($workspace)
+    private function getCreator($domNode)
     {
-        $creator = $this->userRepo->findOneBy(array('username' => $workspace->getAttribute('creator_username')));
+        $creator = $this->userRepo->findOneBy(array('username' => $domNode->getAttribute('creator_username')));
         if($creator == null) {
             $creator = $this->createRandomUser(
-                $workspace->getAttribute('creator_username'),
-                $workspace->getAttribute('creator_firstname'),
-                $workspace->getAttribute('creator_lastname'),
-                $workspace->getAttribute('creator_mail')
+                $domNode->getAttribute('creator_username'),
+                $domNode->getAttribute('creator_firstname'),
+                $domNode->getAttribute('creator_lastname'),
+                $domNode->getAttribute('creator_mail')
             );
         }
         return $creator;
@@ -366,7 +366,7 @@ class LoadingManager
         $user->setFirstName($firstname);
         $user->setLastName($lastname);
         $user->setUserName($username);
-        $user->setMail($username);
+        $user->setMail($mail);
         // Generate the password randomly.
         $user->setPassword($this->generateRandomString());
         $this->userManager->createUser($user);

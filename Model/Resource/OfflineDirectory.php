@@ -98,7 +98,7 @@ class OfflineDirectory extends OfflineResource
         $modificationDate->setTimestamp($resource->getAttribute('modification_date'));
 
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
+        $creator = $this->userRepo->findOneBy(array('username' => $resource->getAttribute('creator')));
         $parentNode = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
 
         if (count($parentNode) < 1) {

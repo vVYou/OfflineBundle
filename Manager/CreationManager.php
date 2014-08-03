@@ -119,7 +119,7 @@ class CreationManager
         $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId();
         // Ca ne fonctionne pas chez moi
         if (!is_dir($dir)) {
-            echo $dir;
+            // echo $dir;
             mkdir($dir, 0777);
         }
         $hashname_zip = $this->ut->generateGuid();
@@ -170,7 +170,7 @@ class CreationManager
                         *   Check, if the resource is a forum, is there are new messages, subjects or category created offline.
                         */
                         $forum_content = $this->checkNewContent($userRes, $user, $date);
-                        echo count($forum_content);
+                        // echo count($forum_content);
                         $this->addForumToArchive($domManifest, $domWorkspace, $forum_content);
                     }
                 }
@@ -205,7 +205,7 @@ class CreationManager
 
         // Create the Directory if it does not exists.
         if (!is_dir($dir)) {
-            echo $dir;
+            // echo $dir;
             mkdir($dir, 0777);
         }
         

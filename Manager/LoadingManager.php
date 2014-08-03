@@ -20,7 +20,6 @@ use Claroline\ForumBundle\Manager\Manager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Resource\Directory;
-use Claroline\CoreBundle\Entity\Resource\Text;
 use Claroline\CoreBundle\Entity\Resource\Revision;
 use Claroline\CoreBundle\Library\Workspace\Configuration;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
@@ -149,12 +148,12 @@ class LoadingManager
         $this->evm = $evm;
 
     }
-    
+
     public function addOffline(OfflineResource  $offline)
     {
         $this->offline[$offline->getType()] = $offline;
-    } 
-    
+    }
+
     /**
      * This method open the zip file, call the loadXML function and
      * destroy the zip file while everything is done.
@@ -225,7 +224,7 @@ class LoadingManager
             *   Check if a workspace with the given guid already exists.
             *   - if it doesn't exist then it will be created
             *   - then proceed to the resources (no matter if we have to create the workspace previously)
-            */           
+            */
             $workspace = $this->workspaceRepo->findOneBy(array('guid' => $work->getAttribute('guid')));
 
             if ($workspace == NULL) {
@@ -249,26 +248,23 @@ class LoadingManager
         $wsInfo->setWorkspace($workspace->getName().' ('.$workspace->getCode().')');
 
         $resourceDirectory = $work->getElementsByTagName("resource-directory");
-        
-        foreach($resourceDirectory as $resource)
-        {
+
+        foreach ($resourceDirectory as $resource) {
             $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_node')));
             if (count($node) >= 1) {
                 $wsInfo = $this->offline['directory']->updateResource($resource, $node, $workspace, $this->user, $wsInfo, $this->path);
-            } 
-            else {
+            } else {
                 $wsInfo = $this->offline['directory']->createResource($resource, $workspace, $this->user, $wsInfo, $this->path);
             }
         }
-        
+
         for ($i=0; $i<$resourceList->length; $i++) {
             $res = $resourceList->item($i);
             if ((strpos($res->nodeName,'resource') !== false) && $res->nodeName != "resource-directory") {
                 $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $res->getAttribute('hashname_node')));
                 if (count($node) >= 1) {
                     $wsInfo = $this->offline[$res->getAttribute('type')]->updateResource($res, $node, $workspace, $this->user, $wsInfo, $this->path);
-                } 
-                else {
+                } else {
                     $wsInfo = $this->offline[$res->getAttribute('type')]->createResource($res, $workspace, $this->user, $wsInfo, $this->path);
                 }
             }
@@ -277,6 +273,7 @@ class LoadingManager
                 $this->offline['claroline_forum']->checkContent($res, $this->synchronizationDate);
             }
         }
+
         return $wsInfo;
     }
 
@@ -298,9 +295,9 @@ class LoadingManager
         $config = Configuration::fromTemplate(
             $this->templateDir . $ds . 'default.zip'
         );
-        
+
         $creator = $this->getCreator($workspace);
-        
+
         // $config->setWorkspaceType($type);
         $config->setWorkspaceName($workspace->getAttribute('name'));
         $config->setWorkspaceCode($workspace->getAttribute('code'));
@@ -339,11 +336,11 @@ class LoadingManager
         return $my_ws;
 
     }
-    
+
     private function getCreator($domNode)
     {
         $creator = $this->userRepo->findOneBy(array('username' => $domNode->getAttribute('creator_username')));
-        if($creator == null) {
+        if ($creator == null) {
             $creator = $this->createRandomUser(
                 $domNode->getAttribute('creator_username'),
                 $domNode->getAttribute('creator_firstname'),
@@ -351,9 +348,10 @@ class LoadingManager
                 $domNode->getAttribute('creator_mail')
             );
         }
+
         return $creator;
     }
-    
+
     /**
      * Create a fake user account to symbolise the creator of a workspace or a resource.
      *
@@ -369,19 +367,22 @@ class LoadingManager
         // Generate the password randomly.
         $user->setPassword($this->generateRandomString());
         $this->userManager->createUser($user);
+
         return $user;
     }
-    
+
     // Taken from http://stackoverflow.com/questions/4356289/php-random-string-generator
-    public function generateRandomString($length = 10) {
+    public function generateRandomString($length = 10)
+    {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $randomString = '';
         for ($i = 0; $i < $length; $i++) {
             $randomString .= $characters[rand(0, strlen($characters) - 1)];
         }
+
         return $randomString;
     }
-    
+
     private function getTimestampListener()
     {
         $em = $this->evm->getEventManager();

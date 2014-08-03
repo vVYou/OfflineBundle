@@ -12,7 +12,6 @@
 namespace Claroline\OfflineBundle\Model\Resource;
 
 use Claroline\CoreBundle\Entity\User;
-use Claroline\CoreBundle\Entity\Resource\ResourceType;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Resource\Text;
 use Claroline\CoreBundle\Entity\Resource\Revision;
@@ -20,13 +19,9 @@ use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
-use Symfony\Component\Translation\TranslatorInterface;
-use \DOMDocument;
 use \DateTime;
 use \ZipArchive;
 
@@ -42,7 +37,7 @@ class OfflineText extends OfflineResource
     private $userRepo;
     private $resourceNodeRepo;
     private $ut;
-    
+
     /**
      * Constructor.
      *
@@ -68,17 +63,18 @@ class OfflineText extends OfflineResource
         $this->ut = $ut;
         $this->em = $em;
     }
-    
-    // Return the type of resource supported by this service    
-    public function getType(){
+
+    // Return the type of resource supported by this service
+    public function getType()
+    {
         return 'text';
     }
-    
+
     /**
      * Add informations required to check and recreated a resource if necessary.
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
-     * @param \ZipArchive $archive
+     * @param \ZipArchive                                        $archive
      */
     public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
     {
@@ -92,22 +88,22 @@ class OfflineText extends OfflineResource
 
         $cdata = $domManifest->createCDATASection($revision->getContent());
         $domRes->appendChild($cdata);
-        
+
         return $domManifest;
     }
-   
+
     /**
      * Create a resource of the type supported by the service based on the XML file.
      *
      * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\User $user
-     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
-     * @param string $path
+     * @param \Claroline\CoreBundle\Entity\User                $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo          $wsInfo
+     * @param string                                           $path
      *
      * @return \Claroline\OfflineBundle\Model\SyncInfo
      */
     public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
-    { 
+    {
         $newResource = new Text();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -122,32 +118,33 @@ class OfflineText extends OfflineResource
             // If the parent node doesn't exist anymore, workspace will be the parent.
             $parentNode  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
-               
+
         $revision = new Revision();
         $revision->setContent($this->extractCData($resource));
         $revision->setUser($user);
         $revision->setText($newResource);
         $this->om->persist($revision);
-        
+
         $newResource->setName($resource->getAttribute('name'));
         $newResource->setMimeType($resource->getAttribute('mimetype'));
 
         $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
         $wsInfo->addToCreate($resource->getAttribute('name'));
-        
+
         $node = $newResource->getResourceNode();
         $this->changeDate($node, $creationDate, $modificationDate);
+
         return $wsInfo;
     }
-   
+
     /**
      * Update a resource of the type supported by the service based on the XML file.
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
-     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\User $user
-     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
-     * @param string $path
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace   $workspace
+     * @param \Claroline\CoreBundle\Entity\User                  $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo            $wsInfo
+     * @param string                                             $path
      *
      * @return \Claroline\OfflineBundle\Model\SyncInfo
      *
@@ -169,17 +166,17 @@ class OfflineText extends OfflineResource
                 $wsInfo->addToDoublon($resource->getAttribute('name'));
             }
         }
-        
+
         return $wsInfo;
     }
-   
+
     /**
      * Create a copy of the resource in case of conflict (e.g. if a ressource has been modified both offline
      * and online)
      *
-     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node     
-     * @param string $path
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace   $workspace
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
+     * @param string                                             $path
      */
     public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path)
     {
@@ -197,13 +194,13 @@ class OfflineText extends OfflineResource
             // If the parent node doesn't exist anymore, workspace will be the parent.
             $parentNode  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
-      
+
         $revision = new Revision();
         $revision->setContent($this->extractCData($resource));
         $revision->setUser($user);
         $revision->setText($newResource);
         $this->om->persist($revision);
-        
+
         /*
         *   We add the tag '@offline' to the name of the resource
         *   and modify the Hashname of the resource already present in the Database.
@@ -219,8 +216,8 @@ class OfflineText extends OfflineResource
         $node->setModificationDate($oldModificationDate);
         $this->om->endFlushSuite();
 
-        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));  
-            
+        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
+
         $node = $newResource->getResourceNode();
         $this->changeDate($node, $creationDate, $modificationDate);
 

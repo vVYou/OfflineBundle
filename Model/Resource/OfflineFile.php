@@ -12,20 +12,16 @@
 namespace Claroline\OfflineBundle\Model\Resource;
 
 use Claroline\CoreBundle\Entity\User;
-use Claroline\CoreBundle\Entity\Resource\ResourceType;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
-use Symfony\Component\Translation\TranslatorInterface;
-use \DOMDocument;
 use \DateTime;
 use \ZipArchive;
 
@@ -34,13 +30,13 @@ use \ZipArchive;
  * @DI\Tag("claroline_offline.offline")
  */
 class OfflineFile extends OfflineResource
-{    
+{
     // private $om;
     // private $resourceManager;
     private $userRepo;
     private $resourceNodeRepo;
     private $ut;
-    
+
     /**
      * Constructor.
      *
@@ -65,17 +61,18 @@ class OfflineFile extends OfflineResource
         $this->ut = $ut;
         $this->em = $em;
     }
-    
+
     // Return the type of resource supported by this service
-    public function getType(){
+    public function getType()
+    {
         return 'file';
     }
-    
+
     /**
      * Add informations required to check and recreated a resource if necessary.
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
-     * @param \ZipArchive $archive
+     * @param \ZipArchive                                        $archive
      */
     public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
     {
@@ -87,24 +84,25 @@ class OfflineFile extends OfflineResource
         $hashname = $domManifest->createAttribute('hashname');
         $hashname->value = $myRes->getHashName();
         $domRes->appendChild($hashname);
-        
+
         // Add the file corresponding to the resource inside de 'data' folder of the archive.
-        $archive->addFile('..'.SyncConstant::ZIPFILEDIR.$myRes->getHashName(), 'data'.SyncConstant::ZIPFILEDIR.$myRes->getHashName());      
+        $archive->addFile('..'.SyncConstant::ZIPFILEDIR.$myRes->getHashName(), 'data'.SyncConstant::ZIPFILEDIR.$myRes->getHashName());
+
         return $domManifest;
     }
-   
+
     /**
      * Create a resource of the type supported by the service based on the XML file.
      *
      * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\User $user
-     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
-     * @param string $path
+     * @param \Claroline\CoreBundle\Entity\User                $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo          $wsInfo
+     * @param string                                           $path
      *
      * @return \Claroline\OfflineBundle\Model\SyncInfo
      */
     public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
-    { 
+    {
         $newResource = new File();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -119,37 +117,38 @@ class OfflineFile extends OfflineResource
             // If the parent node doesn't exist anymore, workspace will be the parent.
             $parentNode  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
-                              
+
         $fileHashname = $resource->getAttribute('hashname');
         $newResource->setSize($resource->getAttribute('size'));
         $newResource->setHashName($fileHashname);
         rename($path.'data'.SyncConstant::ZIPFILEDIR.$fileHashname, '..'.SyncConstant::ZIPFILEDIR.$fileHashname);
-        
+
         $newResource->setName($resource->getAttribute('name'));
         $newResource->setMimeType($resource->getAttribute('mimetype'));
 
         $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
         $wsInfo->addToCreate($resource->getAttribute('name'));
-        
+
         $node = $newResource->getResourceNode();
         $this->changeDate($node, $creationDate, $modificationDate);
+
         return $wsInfo;
     }
-   
+
     /**
      * Update a resource of the type supported by the service based on the XML file.
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
-     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\User $user
-     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
-     * @param string $path
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace   $workspace
+     * @param \Claroline\CoreBundle\Entity\User                  $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo            $wsInfo
+     * @param string                                             $path
      *
      * @return \Claroline\OfflineBundle\Model\SyncInfo
      *
      */
     public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
-    {   
+    {
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modif_date = $resource->getAttribute('modification_date');
         $nodeModifDate = $node->getModificationDate()->getTimestamp();
@@ -163,22 +162,22 @@ class OfflineFile extends OfflineResource
                 // Doublon generation
                 $this->createDoublon($resource, $workspace, $node, $path);
                 $wsInfo->addToDoublon($resource->getAttribute('name'));
-            } 
+            }
         }
-        
+
         return $wsInfo;
     }
-   
+
     /**
      * Create a copy of the resource in case of conflict (e.g. if a ressource has been modified both offline
      * and online)
      *
-     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node     
-     * @param string $path
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace   $workspace
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
+     * @param string                                             $path
      */
     public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path)
-    {   
+    {
         $newResource = new File();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -193,7 +192,7 @@ class OfflineFile extends OfflineResource
             // If the parent node doesn't exist anymore, workspace will be the parent.
             $parentNode  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
-      
+
         $fileHashname = $resource->getAttribute('hashname');
         $newResource->setSize($resource->getAttribute('size'));
         $newResource->setHashName($fileHashname);
@@ -210,7 +209,7 @@ class OfflineFile extends OfflineResource
 
         rename('..'.SyncConstant::ZIPFILEDIR.$oldHashname, '..'.SyncConstant::ZIPFILEDIR.$newHashname);
         rename($path.'data'.SyncConstant::ZIPFILEDIR.$fileHashname, '..'.SyncConstant::ZIPFILEDIR.$fileHashname);
-        
+
         /*
         *   We add the tag '@offline' to the name of the resource
         *   and modify the Hashname of the resource already present in the Database.
@@ -226,7 +225,7 @@ class OfflineFile extends OfflineResource
         $node->setModificationDate($oldModificationDate);
         $this->om->endFlushSuite();
 
-        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));  
+        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
 
         $node = $newResource->getResourceNode();
         $this->changeDate($node, $creationDate, $modificationDate);

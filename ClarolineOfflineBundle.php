@@ -9,7 +9,6 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Claroline\OfflineBundle\DependencyInjection\Compiler\OfflineCompilerPass;
 
-
 /**
  * Bundle class.
  */
@@ -22,7 +21,7 @@ class ClarolineOfflineBundle extends PluginBundle
 
         $container->addCompilerPass(new OfflineCompilerPass());
     }
-    
+
     public function getConfiguration($environment)
     {
         $config = new ConfigurationBuilder();

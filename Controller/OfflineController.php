@@ -143,7 +143,7 @@ class OfflineController extends Controller
         $result2->addToDoublon('un_autre_doublon.calc');
 
         $results[] = $result2;
-        
+
         $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
 
         $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
@@ -157,7 +157,7 @@ class OfflineController extends Controller
         );
 
     }
-    
+
     /**
     *   Options of synchronisation modifications
     *
@@ -169,7 +169,7 @@ class OfflineController extends Controller
     * @EXT\Template("ClarolineOfflineBundle:Offline:sync_param.html.twig")
     */
     public function syncParamAction()
-    {       
+    {
         return array(
            'msg' => ''
         );
@@ -190,13 +190,13 @@ class OfflineController extends Controller
     public function testTrans($user)
     {
         $this->get('claroline.manager.test_offline_manager')->testTransfer($user);
-            
+
         return array(
             'user' => "plouf"
          );
     }
-    
-    
+
+
     /**
     *   Create userSyncrhonized entity
     *
@@ -451,7 +451,7 @@ class OfflineController extends Controller
             'user' => $username
          );
     }
-    
+
     /**
      *  Allow the user to modify the URL contacted during the synchronisation
      *
@@ -467,20 +467,20 @@ class OfflineController extends Controller
      * @return Response
      */
     public function editUrlAction(User $user)
-    {             
+    {
         $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
         $results = array();
-        foreach($value as $elem){
-            if($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()){
+        foreach ($value as $elem) {
+            if ($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()) {
                 $results = $elem;
             }
         }
-        
+
         return array(
             'value' => $results
         );
     }
-    
+
     /**
      * @Route(
      *     "/url/edit",
@@ -500,23 +500,23 @@ class OfflineController extends Controller
         $new_yaml = array();
 
         $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
-        
-        foreach($value as $elem){
-            if($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()){
+
+        foreach ($value as $elem) {
+            if ($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()) {
                 $elem['url'] = $new_url;
             }
             $new_yaml[] = $elem;
-        }   
+        }
         $yaml = $this->yaml_dump->dump($new_yaml);
         file_put_contents(SyncConstant::PLAT_CONF, $yaml);
-        
+
         return $this->redirect($this->generateUrl('claro_desktop_open_tool', array('toolName' => "claroline_offline_tool")));
 
     }
-    
-    
-    // METHODE DE TEST 
-    
+
+
+    // METHODE DE TEST
+
     /**
     *
     *   Test New OfflineText
@@ -543,7 +543,7 @@ class OfflineController extends Controller
            'results' => $results
         );
     }
-    
+
     /**
     *
     *   Test New OfflineText
@@ -564,10 +564,9 @@ class OfflineController extends Controller
                 $results = array();
         $results = $this->get('claroline.manager.loading_manager')->loadZip('sync_8D689C13-C2B7-4118-9740-3CF7C4E17D7B.zip', $user);
 
-
         return array(
             'results' => $results
          );
     }
-    
+
 }

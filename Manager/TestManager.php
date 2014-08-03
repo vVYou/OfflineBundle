@@ -14,7 +14,6 @@ namespace Claroline\OfflineBundle\Manager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\SyncConstant;
-use Claroline\OfflineBundle\Entity\UserSynchronized;
 use JMS\DiExtraBundle\Annotation as DI;
 use \DateTime;
 
@@ -50,27 +49,26 @@ class TestManager
         'fichier10M' =>  SyncConstant::SYNCHRO_DOWN_DIR.$user->getId()."/sync_3F28AD04-58DC-458C-B09E-4A19E630588D.zip",
         'fichier25M' =>  SyncConstant::SYNCHRO_DOWN_DIR.$user->getId()."/sync_C179B49F-5183-4D96-A13A-97816E97EA16.zip",
         'fichier50M' =>  SyncConstant::SYNCHRO_DOWN_DIR.$user->getId()."/sync_9FEAF80B-DB57-4737-9CCB-DCE01871608F.zip");
-        
+
         echo "DEBUT DU TEST<br/>";
         $rFile = fopen("test_transfer.txt", "w");
         fwrite($rFile, "DEBUT FICHIER TEST TAILLE PACKET\n");
         fwrite($rFile, "Taille des fragments : ".SyncConstant::MAX_PACKET_SIZE);
-        foreach($zipArray as $file){
+        foreach ($zipArray as $file) {
             echo "DOING ".$file."   ----------------<br/>";
             $this->testUploadFile($rFile, $file, $user);
         }
         fclose($rFile);
         echo "FIN DU TEST <br/>";
     }
-    
+
     private function testUploadFile($report, $file, $user)
     {
         ini_set('max_execution_time', 0);
         fwrite($report, "\n------------------------------\n");
         fwrite($report, "TEST envoi fichier : ".$file."\n");
         fwrite($report, "Taille du fichier : ".filesize($file)."\n");
-        for($i = 0; $i < 10; $i++)
-        {
+        for ($i = 0; $i < 10; $i++) {
             $begin = new Datetime;
             $this->transferManager->uploadArchive($file, $user, 0);
             $stop = new Datetime;
@@ -83,7 +81,7 @@ class TestManager
         }
         fwrite($report, "\nEND TEST\n");
     }
-    
+
     private function testDownloadFile($report, $file, $user)
     {
         ini_set('max_execution_time', 0);
@@ -91,8 +89,7 @@ class TestManager
         fwrite($report, "TEST telechargement fichier : ".$file."\n");
         fwrite($report, "Taille du fichier : ".filesize($file)."\n");
         $totalFrag = $this->transferManager->getNumberOfFragmentsOnline($file, $user);
-        for($i = 0; $i < 20; $i++)
-        {
+        for ($i = 0; $i < 20; $i++) {
             $begin = new Datetime;
             $this->transferManager->downloadArchive($file, $totalFrag, $user, 0);
             $stop = new Datetime;

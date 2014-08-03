@@ -63,7 +63,7 @@ class SynchronisationManager
     /*
     *   @param User $user
     *   @param UserSynchronized $userSync
-    *   
+    *
     *   This method determine where the execution has to restart.
     *   This is based on the status from the UserSynchronized entity.
     */
@@ -178,7 +178,7 @@ class SynchronisationManager
     }
 
     // Method implementing the fourth step of the global process
-    // It will load the downloaded from the archive into 
+    // It will load the downloaded from the archive into
     private function step4Load(User $user, UserSynchronized $userSync, $filename)
     {
         // Load synchronisation archive ($filename) in offline database
@@ -186,6 +186,7 @@ class SynchronisationManager
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
         $userSync->setLastSynchronization($userSync->getSentTime());
         $this->userSyncManager->updateUserSync($userSync);
+
         return $loadArray['infoArray'];
     }
 

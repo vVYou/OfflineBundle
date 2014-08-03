@@ -69,7 +69,7 @@ class TestManager
         fwrite($report, "\n------------------------------\n");
         fwrite($report, "TEST envoi fichier : ".$file."\n");
         fwrite($report, "Taille du fichier : ".filesize($file)."\n");
-        for($i = 0; $i < 20; $i++)
+        for($i = 0; $i < 10; $i++)
         {
             $begin = new Datetime;
             $this->transferManager->uploadArchive($file, $user, 0);

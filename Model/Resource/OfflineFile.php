@@ -23,6 +23,7 @@ use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
+use Doctrine\ORM\EntityManager;
 use Symfony\Component\Translation\TranslatorInterface;
 use \DOMDocument;
 use \DateTime;
@@ -34,8 +35,8 @@ use \ZipArchive;
  */
 class OfflineFile extends OfflineResource
 {    
-    private $om;
-    private $resourceManager;
+    // private $om;
+    // private $resourceManager;
     private $userRepo;
     private $resourceNodeRepo;
     private $ut;
@@ -46,13 +47,15 @@ class OfflineFile extends OfflineResource
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc")
+     *     "ut"            = @DI\Inject("claroline.utilities.misc"),
+     *     "em"            = @DI\Inject("doctrine.orm.entity_manager")
      * })
      */
     public function __construct(
         ObjectManager $om,
         ResourceManager $resourceManager,
-        ClaroUtilities $ut
+        ClaroUtilities $ut,
+        EntityManager $em
     )
     {
         $this->om = $om;
@@ -60,6 +63,7 @@ class OfflineFile extends OfflineResource
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
+        $this->em = $em;
     }
     
     // Return the type of resource supported by this service
@@ -76,16 +80,16 @@ class OfflineFile extends OfflineResource
     public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
     {
         $domRes = parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
-        $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
+        $myRes = $this->resourceManager->getResourceFromNode($resToAdd);
         $size = $domManifest->createAttribute('size');
-        $size->value = $my_res->getSize();
+        $size->value = $myRes->getSize();
         $domRes->appendChild($size);
         $hashname = $domManifest->createAttribute('hashname');
-        $hashname->value = $my_res->getHashName();
+        $hashname->value = $myRes->getHashName();
         $domRes->appendChild($hashname);
         
         // Add the file corresponding to the resource inside de 'data' folder of the archive.
-        $archive->addFile('..'.SyncConstant::ZIPFILEDIR.$my_res->getHashName(), 'data'.SyncConstant::ZIPFILEDIR.$my_res->getHashName());      
+        $archive->addFile('..'.SyncConstant::ZIPFILEDIR.$myRes->getHashName(), 'data'.SyncConstant::ZIPFILEDIR.$myRes->getHashName());      
         return $domManifest;
     }
    
@@ -102,33 +106,33 @@ class OfflineFile extends OfflineResource
     public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
     { 
         $newResource = new File();
-        $creation_date = new DateTime();
-        $modification_date = new DateTime();
-        $creation_date->setTimestamp($resource->getAttribute('creation_date'));
-        $modification_date->setTimestamp($resource->getAttribute('modification_date'));
+        $creationDate = new DateTime();
+        $modificationDate = new DateTime();
+        $creationDate->setTimestamp($resource->getAttribute('creation_date'));
+        $modificationDate->setTimestamp($resource->getAttribute('modification_date'));
 
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
-        $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
+        $parentNode = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
 
-        if (count($parent_node) < 1) {
+        if (count($parentNode) < 1) {
             // If the parent node doesn't exist anymore, workspace will be the parent.
-            $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
+            $parentNode  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
                               
-        $file_hashname = $resource->getAttribute('hashname');
+        $fileHashname = $resource->getAttribute('hashname');
         $newResource->setSize($resource->getAttribute('size'));
-        $newResource->setHashName($file_hashname);
-        rename($path.'data'.SyncConstant::ZIPFILEDIR.$file_hashname, '..'.SyncConstant::ZIPFILEDIR.$file_hashname);
+        $newResource->setHashName($fileHashname);
+        rename($path.'data'.SyncConstant::ZIPFILEDIR.$fileHashname, '..'.SyncConstant::ZIPFILEDIR.$fileHashname);
         
         $newResource->setName($resource->getAttribute('name'));
         $newResource->setMimeType($resource->getAttribute('mimetype'));
 
-        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));
+        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
         $wsInfo->addToCreate($resource->getAttribute('name'));
         
         $node = $newResource->getResourceNode();
-        $this->changeDate($node, $creation_date, $modification_date, $this->om, $this->resourceManager);
+        $this->changeDate($node, $creationDate, $modificationDate);
         return $wsInfo;
     }
    
@@ -148,20 +152,18 @@ class OfflineFile extends OfflineResource
     {   
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modif_date = $resource->getAttribute('modification_date');
-        $creation_date = $resource->getAttribute('creation_date'); //USELESS?
-        $node_modif_date = $node->getModificationDate()->getTimestamp();
-        $user_sync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $nodeModifDate = $node->getModificationDate()->getTimestamp();
 
-        if ($node_modif_date <= $resource->getAttribute('synchronization_date')) {
+        if ($nodeModifDate <= $resource->getAttribute('synchronization_date')) {
             $this->resourceManager->delete($node);
             $this->createResource($resource, $workspace);
             $wsInfo->addToUpdate($resource->getAttribute('name'));
         } else {
-            if ($node_modif_date != $modif_date) {
+            if ($nodeModifDate != $modif_date) {
                 // Doublon generation
                 $this->createDoublon($resource, $workspace, $node, $path);
                 $wsInfo->addToDoublon($resource->getAttribute('name'));
-            }
+            } 
         }
         
         return $wsInfo;
@@ -178,36 +180,36 @@ class OfflineFile extends OfflineResource
     public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path)
     {   
         $newResource = new File();
-        $creation_date = new DateTime();
-        $modification_date = new DateTime();
-        $creation_date->setTimestamp($resource->getAttribute('creation_date'));
-        $modification_date->setTimestamp($resource->getAttribute('modification_date'));
+        $creationDate = new DateTime();
+        $modificationDate = new DateTime();
+        $creationDate->setTimestamp($resource->getAttribute('creation_date'));
+        $modificationDate->setTimestamp($resource->getAttribute('modification_date'));
 
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
-        $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
+        $parentNode = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
 
-        if (count($parent_node) < 1) {
+        if (count($parentNode) < 1) {
             // If the parent node doesn't exist anymore, workspace will be the parent.
-            $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
+            $parentNode  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
       
-        $file_hashname = $resource->getAttribute('hashname');
+        $fileHashname = $resource->getAttribute('hashname');
         $newResource->setSize($resource->getAttribute('size'));
-        $newResource->setHashName($file_hashname);
+        $newResource->setHashName($fileHashname);
 
         // The file already exist inside the database. We have to modify the Hashname of the file already present.
-        $old_file = $this->resourceManager->getResourceFromNode($node);
-        $old_hashname = $old_file->getHashName();
-        $extension_name = substr($old_hashname, strlen($old_hashname)-4, 4);
-        $new_hashname = $this->ut->generateGuid().$extension_name;
+        $oldFile = $this->resourceManager->getResourceFromNode($node);
+        $oldHashname = $oldFile->getHashName();
+        $extensionName = substr($oldHashname, strlen($oldHashname)-4, 4);
+        $newHashname = $this->ut->generateGuid().$extensionName;
 
         $this->om->startFlushSuite();
-        $old_file->setHashName($new_hashname);
+        $oldFile->setHashName($newHashname);
         $this->om->endFlushSuite();
 
-        rename('..'.SyncConstant::ZIPFILEDIR.$old_hashname, '..'.SyncConstant::ZIPFILEDIR.$new_hashname);
-        rename($path.'data'.SyncConstant::ZIPFILEDIR.$file_hashname, '..'.SyncConstant::ZIPFILEDIR.$file_hashname);
+        rename('..'.SyncConstant::ZIPFILEDIR.$oldHashname, '..'.SyncConstant::ZIPFILEDIR.$newHashname);
+        rename($path.'data'.SyncConstant::ZIPFILEDIR.$fileHashname, '..'.SyncConstant::ZIPFILEDIR.$fileHashname);
         
         /*
         *   We add the tag '@offline' to the name of the resource
@@ -224,10 +226,10 @@ class OfflineFile extends OfflineResource
         $node->setModificationDate($oldModificationDate);
         $this->om->endFlushSuite();
 
-        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));  
+        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));  
 
         $node = $newResource->getResourceNode();
-        $this->changeDate($node, $creation_date, $modification_date, $this->om, $this->resourceManager);
+        $this->changeDate($node, $creationDate, $modificationDate);
 
     }
 }

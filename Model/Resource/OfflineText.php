@@ -24,6 +24,7 @@ use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
+use Doctrine\ORM\EntityManager;
 use Symfony\Component\Translation\TranslatorInterface;
 use \DOMDocument;
 use \DateTime;
@@ -35,8 +36,8 @@ use \ZipArchive;
  */
 class OfflineText extends OfflineResource
 {
-    private $om;
-    private $resourceManager;
+    // private $om;
+    // private $resourceManager;
     private $revisionRepo;
     private $userRepo;
     private $resourceNodeRepo;
@@ -48,13 +49,15 @@ class OfflineText extends OfflineResource
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc")
+     *     "ut"            = @DI\Inject("claroline.utilities.misc"),
+     *     "em"            = @DI\Inject("doctrine.orm.entity_manager")
      * })
      */
     public function __construct(
         ObjectManager $om,
         ResourceManager $resourceManager,
-        ClaroUtilities $ut
+        ClaroUtilities $ut,
+        EntityManager $em
     )
     {
         $this->om = $om;
@@ -63,6 +66,7 @@ class OfflineText extends OfflineResource
         $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
+        $this->em = $em;
     }
     
     // Return the type of resource supported by this service    
@@ -79,11 +83,11 @@ class OfflineText extends OfflineResource
     public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
     {
         $domRes = parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
-        $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
-        $revision = $this->revisionRepo->findOneBy(array('text' => $my_res));
+        $myRes = $this->resourceManager->getResourceFromNode($resToAdd);
+        $revision = $this->revisionRepo->findOneBy(array('text' => $myRes));
 
         $version = $domManifest->createAttribute('version');
-        $version->value = $my_res->getVersion();
+        $version->value = $myRes->getVersion();
         $domRes->appendChild($version);
 
         $cdata = $domManifest->createCDATASection($revision->getContent());
@@ -105,18 +109,18 @@ class OfflineText extends OfflineResource
     public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
     { 
         $newResource = new Text();
-        $creation_date = new DateTime();
-        $modification_date = new DateTime();
-        $creation_date->setTimestamp($resource->getAttribute('creation_date'));
-        $modification_date->setTimestamp($resource->getAttribute('modification_date'));
+        $creationDate = new DateTime();
+        $modificationDate = new DateTime();
+        $creationDate->setTimestamp($resource->getAttribute('creation_date'));
+        $modificationDate->setTimestamp($resource->getAttribute('modification_date'));
 
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
-        $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
+        $parentNode = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
 
-        if (count($parent_node) < 1) {
+        if (count($parentNode) < 1) {
             // If the parent node doesn't exist anymore, workspace will be the parent.
-            $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
+            $parentNode  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
                
         $revision = new Revision();
@@ -128,11 +132,11 @@ class OfflineText extends OfflineResource
         $newResource->setName($resource->getAttribute('name'));
         $newResource->setMimeType($resource->getAttribute('mimetype'));
 
-        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));
+        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
         $wsInfo->addToCreate($resource->getAttribute('name'));
         
         $node = $newResource->getResourceNode();
-        $this->changeDate($node, $creation_date, $modification_date, $this->om, $this->resourceManager);
+        $this->changeDate($node, $creationDate, $modificationDate);
         return $wsInfo;
     }
    
@@ -151,17 +155,15 @@ class OfflineText extends OfflineResource
     public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
     {
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        $modif_date = $resource->getAttribute('modification_date');
-        $creation_date = $resource->getAttribute('creation_date'); //USELESS?
-        $node_modif_date = $node->getModificationDate()->getTimestamp();
-        $user_sync = $this->om->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
+        $modifDate = $resource->getAttribute('modification_date');
+        $nodeModifDate = $node->getModificationDate()->getTimestamp();
 
-        if ($node_modif_date <= $resource->getAttribute('synchronization_date')) {
+        if ($nodeModifDate <= $resource->getAttribute('synchronization_date')) {
             $this->resourceManager->delete($node);
             $this->createResource($resource, $workspace, $user, $wsInfo);
             $wsInfo->addToUpdate($resource->getAttribute('name'));
         } else {
-            if ($node_modif_date != $modif_date) {
+            if ($nodeModifDate != $modifDate) {
                 // Doublon generation
                 $this->createDoublon($resource, $workspace, $node, $path);
                 $wsInfo->addToDoublon($resource->getAttribute('name'));
@@ -182,18 +184,18 @@ class OfflineText extends OfflineResource
     public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path)
     {
         $newResource = new Text();
-        $creation_date = new DateTime();
-        $modification_date = new DateTime();
-        $creation_date->setTimestamp($resource->getAttribute('creation_date'));
-        $modification_date->setTimestamp($resource->getAttribute('modification_date'));
+        $creationDate = new DateTime();
+        $modificationDate = new DateTime();
+        $creationDate->setTimestamp($resource->getAttribute('creation_date'));
+        $modificationDate->setTimestamp($resource->getAttribute('modification_date'));
 
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
-        $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
+        $parentNode = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
 
-        if (count($parent_node) < 1) {
+        if (count($parentNode) < 1) {
             // If the parent node doesn't exist anymore, workspace will be the parent.
-            $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
+            $parentNode  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
       
         $revision = new Revision();
@@ -217,10 +219,10 @@ class OfflineText extends OfflineResource
         $node->setModificationDate($oldModificationDate);
         $this->om->endFlushSuite();
 
-        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));  
+        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));  
             
         $node = $newResource->getResourceNode();
-        $this->changeDate($node, $creation_date, $modification_date, $this->om, $this->resourceManager);
+        $this->changeDate($node, $creationDate, $modificationDate);
 
     }
 }

@@ -3,7 +3,7 @@ Feature: First Synchronisation
   As a website user
   I need to retrieved my account first
 
-
+  @clarof
   Scenario: Test Claroffline Configuration
     Given the admin account "user_test" is created
     Given I log in with "user_test"/"user_test"

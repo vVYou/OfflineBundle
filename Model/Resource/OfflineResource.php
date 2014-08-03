@@ -17,11 +17,16 @@ use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\User;
+use Doctrine\ORM\EntityManager;
 use \DateTime;
 use \ZipArchive;
 
 abstract class OfflineResource
 {
+    protected $om;
+    protected $resourceManager;    
+    protected $em;
+    
     /**
      * Add informations required to check and recreated a resource if necessary.
      *
@@ -77,8 +82,8 @@ abstract class OfflineResource
     public function addNodeToManifest($domManifest, $off_type, $domWorkspace, ResourceNode $resToAdd)
     {  
         $typeNode = $resToAdd->getResourceType()->getId();
-        $creation_time = $resToAdd->getCreationDate()->getTimestamp();
-        $modification_time = $resToAdd->getModificationDate()->getTimestamp();
+        $creationTime = $resToAdd->getCreationDate()->getTimestamp();
+        $modificationTime = $resToAdd->getModificationDate()->getTimestamp();
 
         if (!($resToAdd->getParent() == NULL && $typeNode == SyncConstant::DIR)) {
             $domRes = $domManifest->createElement('resource-'.$off_type);
@@ -103,10 +108,10 @@ abstract class OfflineResource
             $hashname_parent->value = $resToAdd->getParent()->getNodeHashName();
             $domRes->appendChild($hashname_parent);
             $creation_date = $domManifest->createAttribute('creation_date');
-            $creation_date->value = $creation_time;
+            $creation_date->value = $creationTime;
             $domRes->appendChild($creation_date);
             $modification_date = $domManifest->createAttribute('modification_date');
-            $modification_date->value = $modification_time;
+            $modification_date->value = $modificationTime;
             $domRes->appendChild($modification_date);
             
             return $domRes;
@@ -131,17 +136,38 @@ abstract class OfflineResource
      * Change the creation and modification dates of a node.
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
+     * @param \DateTime $creationDate
+     * @param \DateTime $modificationDate
      *
      * @return \Claroline\CoreBundle\Entity\Resource\ResourceNode
      */
-    public function changeDate($node, $creation_date, $modification_date, $om, $resourceManager)
+    public function changeDate(ResourceNode $node, $creationDate, $modificationDate)
     {
-        $node->setCreationDate($creation_date);
-        $node->setModificationDate($modification_date);
-        $om->persist($node);
-        $resourceManager->logChangeSet($node);
-        $om->flush();
+        $listener = $this->getTimestampListener();
+        $listener->forceTime($creationDate);
+        $node->setCreationDate($creationDate);
+        $listener = $this->getTimestampListener();
+        $listener->forceTime($modificationDate);
+        $node->setModificationDate($modificationDate);
+        $this->om->persist($node);
+        $this->resourceManager->logChangeSet($node);
+        $this->om->flush();
 
         return $node;
+    }   
+        
+    private function getTimestampListener()
+    {
+        $evm = $this->em->getEventManager();
+
+        foreach ($evm->getListeners() as $listenersByEvent) {
+            foreach ($listenersByEvent as $listener) {
+                if ($listener instanceof TimestampableListener) {
+                    return $listener;
+                }
+            }
+        }
+
+        throw new \Exception('Cannot found timestamp listener');
     }
 }

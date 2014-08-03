@@ -143,18 +143,17 @@ class OfflineController extends Controller
         $result2->addToDoublon('un_autre_doublon.calc');
 
         $results[] = $result2;
+        
+        $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
 
-            $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
-            $user_inf = $user->getUserAsTab();
-            $user_inf[] = $user_ws_rn->getNodeHashName();
-            $returnContent = $user_inf;
-        // echo $returnContent[0];
-        foreach ($returnContent as $elem) {
-            echo $elem.'</br>';
-        }
-        // $result = array(array('Mon Workspace 123', array('mon_premier_cours.pdf', 'bonjour.txt'), array('une_maj.odt'), array('un_doublon.calc')), array('Mon Workspace 10000000000', array('mon_premier_cours.pdf', 'bonjour.txt'), array('une_maj.odt'), array('un_doublon.calc')));
+        $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
+        $user_inf = $user->getUserAsTab();
+        $user_inf[] = $user_ws_rn->getNodeHashName();
+        $returnContent = $user_inf;
+
         return array(
-           'results' => $results
+           'results' => $results,
+           'msg' => $msg
         );
 
     }
@@ -300,7 +299,8 @@ class OfflineController extends Controller
         $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
 
         return array(
-            'results' => $infoArray
+            'results' => $infoArray,
+            'msg' => $msg
          );
 
     }
@@ -522,8 +522,8 @@ class OfflineController extends Controller
     *   Test New OfflineText
     *
     *   @EXT\Route(
-    *       "/sync/seek_text",
-    *       name="claro_sync_seek_text"
+    *       "/sync/seek_test",
+    *       name="claro_sync_seek_test"
     *   )
     *
     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
@@ -549,8 +549,8 @@ class OfflineController extends Controller
     *   Test New OfflineText
     *
     *   @EXT\Route(
-    *       "/sync/load_text",
-    *       name="claro_sync_load_text"
+    *       "/sync/load_test",
+    *       name="claro_sync_load_test"
     *   )
     *
     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})

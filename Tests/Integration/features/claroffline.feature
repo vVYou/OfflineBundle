@@ -13,3 +13,9 @@ Feature: Claroffline Page
     Given I am not logged in
     And I am on "/sync"
     Then I should be on "/login"
+    
+  Scenario: Test archive creation
+    Given I log in with "root"/"password"
+    When I am "/sync/seek_test"
+    Then I should have a folder with my "
+    Then I should have an archive

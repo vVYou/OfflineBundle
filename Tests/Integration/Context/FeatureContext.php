@@ -62,6 +62,14 @@ class FeatureContext extends MinkContext
      */
     public function closeBrowser()
     {
+        if (file_exists('./app/config/sync_config.yml')){
+            if(file_get_contents('./app/config/sync_config.yml') == 'test'){
+                unlink('./app/config/sync_config.yml');
+            }
+        }
+        if(file_exists('./app/config/sync_config_unreal.yml')){
+            copy('./app/config/sync_config_unreal.yml', './app/config/sync_config.yml');
+        }
         $this->getSession()->stop();
     }
 
@@ -104,20 +112,22 @@ class FeatureContext extends MinkContext
     /**
      * @Given /^I have not retrieved my account$/
      */
-
     public function iHaveNotRetrievedMyAccount()
     {
+        if ((file_exists('./app/config/sync_config.yml'))) {
+            copy('./app/config/sync_config.yml', './app/config/sync_config_unreal.yml');
+        }
+        unlink('./app/config/sync_config.yml');
         return true;
     }
 
     /**
      * @Given /^I have retrieved my account$/
      */
-
     public function iHaveRetrievedMyAccount()
     {
         if (!(file_exists('./app/config/sync_config.yml'))) {
-            file_put_contents('./app/config/sync_config_x.txt', 'test');
+            file_put_contents('./app/config/sync_config.yml', 'test');
         }
 
         return true;
@@ -126,13 +136,32 @@ class FeatureContext extends MinkContext
     /**
      * @When /^I go on the platform$/
      */
-
     public function iGoOnThePlatform()
     {
         $this->getMink()
             ->getSession()
             ->visit($this->locatePath(''))
         ;
+    }
+    
+    /**
+     * @When /^I go on the plugin$/
+     */
+    public function iGoOnThePlugin()
+    {
+        $this->getMink()
+            ->getSession()
+            ->visit($this->locatePath('/desktop/tool/open/claroline_offline_tool'))
+        ;
+    }
+    
+    /**
+     * @Then /^I should have an archive$/
+     */
+    public function iShouldHaveAnArchive($id){
+    
+        return file_exists('./web/synchronize_down/{id})
+    
     }
 
     /**

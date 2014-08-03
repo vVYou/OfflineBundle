@@ -8,6 +8,13 @@
 
 
 {% block content %}
+    {{ macros.flashBox() }}
+        {% if msg %}
+            <div class="alert alert-danger">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                {{ msg }}
+            </div>
+        {% endif %}
     <div class='panel panel-default'>
         <div class="panel-heading">
             <h3 class="panel-title">{{ 'sync_mode_result'|trans({}, 'offline') }}</h3>

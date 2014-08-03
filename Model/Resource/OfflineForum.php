@@ -30,6 +30,7 @@ use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\Translation\TranslatorInterface;
 use \DOMDocument;
 use \DateTime;
+use \ZipArchive;
 
 /**
  * @DI\Service("claroline_offline.offline.forum")
@@ -89,9 +90,8 @@ class OfflineForum extends OfflineResource
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
      * @param \ZipArchive $archive
-     * @param \DateTime $date
      */
-    public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, DateTime $date)
+    public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
     {
         $domRes = parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
         $forum_content = $this->checkNewContent($resToAdd, $date);
@@ -181,11 +181,10 @@ class OfflineForum extends OfflineResource
      * Check all the messages, subjects and categories of the forums and return the ones that have been created or updated.
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node_forum
-     * @param \DateTime $date_sync
      *
      * @return array()
      */
-    private function checkNewContent(ResourceNode $node_forum, DateTime $date_sync)
+    private function checkNewContent(ResourceNode $node_forum, $date_sync)
     {
         $elem_to_sync = array();
         $current_forum = $this->forumRepo->findOneBy(array('resourceNode' => $node_forum));
@@ -199,11 +198,10 @@ class OfflineForum extends OfflineResource
     /**
      * Check all categories of a list and see if they are new or updated.
      *
-     * @param \DateTime $date_sync
      *
      * @return array()
      */
-    private function checkCategory($categories, $elem_to_sync, DateTime $date_sync)
+    private function checkCategory($categories, $elem_to_sync, $date_sync)
     {
         foreach ($categories as $category) {
             if ($category->getModificationDate()->getTimestamp() > $date_sync) {
@@ -221,11 +219,10 @@ class OfflineForum extends OfflineResource
     /**
      * Check all subjects of a list and see if they are new or updated.
      *
-     * @param \DateTime $date_sync
      *
      * @return array()
      */
-    private function checkSubject($subjects, $elem_to_sync, DateTime $date_sync)
+    private function checkSubject($subjects, $elem_to_sync, $date_sync)
     {
         foreach ($subjects as $subject) {
             if ($subject->getModificationDate()->getTimestamp() > $date_sync) {
@@ -244,7 +241,6 @@ class OfflineForum extends OfflineResource
     /**
      *   Check all message of a list and see if they are new or updated.
      *
-     * @param \DateTime $date_sync
      *
      * @return array()
      */
@@ -458,10 +454,6 @@ class OfflineForum extends OfflineResource
                 $this->forumManager->editCategory($category, $dbName, $xmlName);
             }
         }
-        else{
-
-        echo 'Category already in DB!'.'<br/>';
-        }
     }
 
     /**
@@ -496,10 +488,6 @@ class OfflineForum extends OfflineResource
                 $this->forumManager->editSubject($subject, $dbName, $xmlName);
                 $subject->setIsSticked($xmlSubject->getAttribute('sticked'));
             }
-        }
-
-        else{
-        echo 'Subject already in DB!'.'<br/>';
         }
     }
 
@@ -540,10 +528,6 @@ class OfflineForum extends OfflineResource
             else{
                 $this->createMessageDoublon($xmlMessage, $message, $date);
             }
-        }
-
-        else{
-        echo 'Message already in DB!'.'<br/>';
         }
 
     }

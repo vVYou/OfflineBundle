@@ -26,6 +26,7 @@ use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\Translation\TranslatorInterface;
 use \DOMDocument;
 use \DateTime;
+use \ZipArchive;
 
 /**
  * @DI\Service("claroline_offline.offline.file")
@@ -71,9 +72,8 @@ class OfflineFile extends OfflineResource
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
      * @param \ZipArchive $archive
-     * @param \DateTime $date
      */
-    public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, DateTime $date)
+    public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
     {
         $domRes = parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
         $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
@@ -161,8 +161,6 @@ class OfflineFile extends OfflineResource
                 // Doublon generation
                 $this->createDoublon($resource, $workspace, $node, $path);
                 $wsInfo->addToDoublon($resource->getAttribute('name'));
-            } else {
-                // echo 'Already in Database'.'<br/>';
             }
         }
         

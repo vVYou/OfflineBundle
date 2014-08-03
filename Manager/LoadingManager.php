@@ -15,6 +15,7 @@ use JMS\DiExtraBundle\Annotation as DI;
 use Claroline\CoreBundle\Manager\WorkspaceManager;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\RoleManager;
+use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\ForumBundle\Manager\Manager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\File;
@@ -33,8 +34,8 @@ use Claroline\ForumBundle\Entity\Forum;
 use Claroline\ForumBundle\Entity\Category;
 use Claroline\ForumBundle\Entity\Subject;
 use Claroline\ForumBundle\Entity\Message;
-use Claroline\OfflineBundle\SyncConstant;
-use Claroline\OfflineBundle\SyncInfo;
+use Claroline\OfflineBundle\Model\SyncConstant;
+use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 use Symfony\Component\Translation\TranslatorInterface;
@@ -67,6 +68,7 @@ class LoadingManager
     private $workspaceManager;
     private $roleManager;
     private $forumManager;
+    private $userManager;
     private $templateDir;
     private $user;
     private $synchronizationDate;
@@ -91,6 +93,7 @@ class LoadingManager
      *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
      *     "roleManager"    =   @DI\Inject("claroline.manager.role_manager"),
      *     "forumManager"   = @DI\Inject("claroline.manager.forum_manager"),
+     *     "userManager"    = @DI\Inject("claroline.manager.user_manager"),
      *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc"),
      *     "dispatcher"      = @DI\Inject("claroline.event.event_dispatcher"),
@@ -108,6 +111,7 @@ class LoadingManager
         WorkspaceManager $workspaceManager,
         RoleManager $roleManager,
         Manager $forumManager,
+        UserManager $userManager,
         $templateDir,
         ClaroUtilities $ut,
         StrictDispatcher $dispatcher,
@@ -134,6 +138,7 @@ class LoadingManager
         $this->workspaceManager = $workspaceManager;
         $this->roleManager = $roleManager;
         $this->forumManager = $forumManager;
+        $this->userManager = $userManager;
         $this->templateDir = $templateDir;
         $this->ut = $ut;
         $this->dispatcher = $dispatcher;
@@ -364,7 +369,8 @@ class LoadingManager
                 $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $res->getAttribute('hashname_node')));
                 if (count($node) >= 1) {
                     $wsInfo = $this->offline[$res->getAttribute('type')]->updateResource($res, $node, $workspace, $this->user, $wsInfo, $this->path);
-                } else {
+                } 
+                else {
                     $wsInfo = $this->offline[$res->getAttribute('type')]->createResource($res, $workspace, $this->user, $wsInfo, $this->path);
                 }
             }
@@ -392,26 +398,31 @@ class LoadingManager
         $config = Configuration::fromTemplate(
             $this->templateDir . $ds . 'default.zip'
         );
+        
+        $creator = $this->getCreator($workspace);
+        
         // $config->setWorkspaceType($type);
         $config->setWorkspaceName($workspace->getAttribute('name'));
         $config->setWorkspaceCode($workspace->getAttribute('code'));
         $config->setDisplayable($workspace->getAttribute('displayable'));
         $config->setSelfRegistration($workspace->getAttribute('selfregistration'));
         $config->setSelfUnregistration($workspace->getAttribute('selfunregistration'));
+        $config->setWorkspaceDescription($workspace->getAttribute('description'));
         $config->setGuid($workspace->getAttribute('guid'));
         // $user = $this->security->getToken()->getUser();
 
-        // $my_ws = $this->workspaceManager->create($config, $creator);
-        $my_ws = $this->workspaceManager->create($config, $user);
+        $my_ws = $this->workspaceManager->create($config, $creator);
+        // $my_ws = $this->workspaceManager->create($config, $user);
         // $this->tokenUpdater->update($this->security->getToken());
         //$route = $this->router->generate('claro_workspace_list');
 
-        if (!($workspace->getAttribute('creator') == $user->getExchangeToken())) {
-            $role = $this->roleRepo->findByUserAndWorkspace($user, $my_ws);
-            $this->roleManager->dissociateUserRole($user, $role);
-            $role = $this->roleRepo->findOneBy(array('name' => $workspace->getAttribute('role')));
-            $this->roleManager->associateUserRole($user, $role);
-        }
+        // if ($workspace->getAttribute('creator_username') != $user->getUsername()) {
+            // $role = $this->roleRepo->findByUserAndWorkspace($user, $my_ws);
+            // $this->roleManager->dissociateUserRole($user, $role);
+            // $role = $this->roleRepo->findOneBy(array('name' => $workspace->getAttribute('role')));
+            // $this->roleManager->associateUserRole($user, $role);
+        // }
+        $this->roleManager->associateUserRole($user, $this->roleManager->getRoleByName($workspace->getAttribute('role')));
 
         $NodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $my_ws));
 
@@ -428,7 +439,49 @@ class LoadingManager
         return $my_ws;
 
     }
-
+    
+    private function getCreator($workspace)
+    {
+        $creator = $this->userRepo->findOneBy(array('username' => $workspace->getAttribute('creator_username')));
+        if($creator == null) {
+            $creator = $this->createRandomUser(
+                $workspace->getAttribute('creator_username'),
+                $workspace->getAttribute('creator_firstname'),
+                $workspace->getAttribute('creator_lastname'),
+                $workspace->getAttribute('creator_mail')
+            );
+        }
+        return $creator;
+    }
+    
+    /**
+     * Create a fake user account to symbolise the creator of a workspace or a resource.
+     *
+     * @return \Claroline\CoreBundle\Entity\User
+     */
+    private function createRandomUser($username, $firstname, $lastname, $mail)
+    {
+        $user = new User();
+        $user->setFirstName($firstname);
+        $user->setLastName($lastname);
+        $user->setUserName($username);
+        $user->setMail($username);
+        // Generate the password randomly.
+        $user->setPassword($this->generateRandomString());
+        $this->userManager->createUser($user);
+        return $user;
+    }
+    
+    // Taken from http://stackoverflow.com/questions/4356289/php-random-string-generator
+    public function generateRandomString($length = 10) {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        return $randomString;
+    }
+    
     private function getTimestampListener()
     {
         $em = $this->evm->getEventManager();

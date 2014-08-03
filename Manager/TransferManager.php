@@ -12,11 +12,14 @@
 namespace Claroline\OfflineBundle\Manager;
 
 use Claroline\CoreBundle\Entity\User;
+use Claroline\CoreBundle\Entity\Role;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Manager\RoleManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
+use Claroline\CoreBundle\Library\Security\PlatformRoles;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
 use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
@@ -49,6 +52,7 @@ class TransferManager
     private $creationManager;
     private $userSyncManager;
     private $userManager;
+    private $roleManager;
     private $ut;
     private $yaml_dump;
     private $yaml_parser;
@@ -64,6 +68,7 @@ class TransferManager
      *     "loadingManager"     = @DI\Inject("claroline.manager.loading_manager"),
      *     "userManager"        = @DI\Inject("claroline.manager.user_manager"),
      *     "userSyncManager"    = @DI\Inject("claroline.manager.user_sync_manager"),
+     *     "roleManager"        = @DI\Inject("claroline.manager.role_manager"),
      *     "ut"                 = @DI\Inject("claroline.utilities.misc")
      * })
      */
@@ -75,6 +80,7 @@ class TransferManager
         LoadingManager $loadingManager,
         UserManager $userManager,
         UserSyncManager $userSyncManager,
+        RoleManager $roleManager,
         ClaroUtilities $ut
     )
     {
@@ -88,6 +94,7 @@ class TransferManager
         $this->creationManager = $creationManager;
         $this->loadingManager = $loadingManager;
         $this->userSyncManager = $userSyncManager;
+        $this->roleManager = $roleManager;
         $this->ut = $ut;
         $this->yaml_dump = new Dumper();
         $this->yaml_parser = new Parser();
@@ -123,7 +130,7 @@ class TransferManager
                 // Execute the post request sending informations online
                 $reponse = $browser->post($url.'/transfer/uploadArchive', array(), json_encode($metadatas));
                 $responseContent = $reponse->getContent();
-                // echo "Content <br/>".$responseContent."<br/>";
+                echo "Content <br/>".$responseContent."<br/>";
                 $status = $reponse->getStatusCode();
                 $responseContent = (array) json_decode($responseContent);
                 $fragmentNumber ++;
@@ -281,7 +288,7 @@ class TransferManager
             }
         }
     }
-     
+    
     //  This method try to catch and create the profile of a user present in the online database.
     public function retrieveProfil($username, $password, $result, $url)
     {
@@ -291,7 +298,12 @@ class TransferManager
         $new_user->setUsername($result['username']);
         $new_user->setMail($result['mail']);
         $new_user->setPlainPassword($password);
+        
         $this->userManager->createUser($new_user);
+        // Demander à Nico, probleme que l'on est pas admin donc pas le droit de créer le rôle admin
+        // if($result['admin']) {
+            // $this->roleManager->associateUserRole($new_user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN));
+        // }
         $my_user = $this->userRepo->findOneBy(array('username' => $username));
         $ws_perso = $my_user->getPersonalWorkspace();
         $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $ws_perso, 'parent' => NULL));

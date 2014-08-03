@@ -18,6 +18,7 @@ use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\User;
 use \DateTime;
+use \ZipArchive;
 
 abstract class OfflineResource
 {
@@ -26,9 +27,8 @@ abstract class OfflineResource
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
      * @param \ZipArchive $archive
-     * @param \DateTime $date
      */
-    abstract public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, DateTime $date);
+    abstract public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date);
     
     /**
      * Create a resource of the type supported by the service based on the XML file.

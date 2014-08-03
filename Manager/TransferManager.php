@@ -124,6 +124,7 @@ class TransferManager
         $status = 200;
 
         try {
+            ini_set('max_execution_time', 0);
             while ($fragmentNumber < $totalFragments && $status == 200) {
                 $metadatas['file'] = base64_encode($this->getFragment($fragmentNumber, $toTransfer, $user));
                 $metadatas['fragmentNumber'] = $fragmentNumber;
@@ -163,6 +164,7 @@ class TransferManager
         $processContent = null;
         $status = 200;
         try {
+            ini_set('max_execution_time', 0);
             while ($fragmentNumber < $totalFragments && $status == 200) {
                 $metadatas['fragmentNumber'] = $fragmentNumber;
                 $reponse = $browser->post($url.'/transfer/getzip', array(), json_encode($metadatas));

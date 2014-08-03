@@ -12,6 +12,7 @@
 namespace Claroline\OfflineBundle\Model\Resource;
 
 use \DOMDocument;
+use Claroline\CoreBundle\Listener\TimestampableListener;
 use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;

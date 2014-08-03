@@ -97,6 +97,7 @@ class SynchronisationManager
             case UserSynchronized::FAIL_DOWNLOAD :
                 // Restart download
                 $fragmentNumber = $this->getDownloadStop($userSync->getFilename(), $user);
+
                 return $this->step3Download($user, $userSync, $userSync->getFilename(), null, $fragmentNumber);
                 break;
             // Download finished

@@ -154,7 +154,8 @@ class FeatureContext extends MinkContext
     /**
      * @Then /^I should have an archive$/
      */
-    public function iShouldHaveAnArchive(){
+    public function iShouldHaveAnArchive()
+    {
         return file_exists('./web/synchronize_down/1/');
     }
 

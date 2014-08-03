@@ -16,7 +16,6 @@ Feature: First Synchronisation
     When I go on the platform
     Then I should see "Claroline" 
 
-  @clarof
   Scenario: User not logged in but account retrieved
     Given I am not logged in
     And I have retrieved my account

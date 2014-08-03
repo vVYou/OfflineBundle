@@ -20,7 +20,6 @@ use Claroline\ForumBundle\Manager\Manager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Resource\Directory;
-use Claroline\CoreBundle\Entity\Resource\Text;
 use Claroline\CoreBundle\Entity\Resource\Revision;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Library\Workspace\Configuration;
@@ -154,8 +153,8 @@ class LoadingManager
     public function addOffline(OfflineElement  $offline)
     {
         $this->offline[$offline->getType()] = $offline;
-    } 
-    
+    }
+
     /**
      * This method open the zip file, call the loadXML function and
      * destroy the zip file while everything is done.
@@ -226,7 +225,7 @@ class LoadingManager
             *   Check if a workspace with the given guid already exists.
             *   - if it doesn't exist then it will be created
             *   - then proceed to the resources (no matter if we have to create the workspace previously)
-            */           
+            */
             $workspace = $this->workspaceRepo->findOneBy(array('guid' => $work->getAttribute('guid')));
 
             if ($workspace == NULL) {
@@ -250,26 +249,23 @@ class LoadingManager
         $wsInfo->setWorkspace($workspace->getName().' ('.$workspace->getCode().')');
 
         $resourceDirectory = $work->getElementsByTagName("resource-directory");
-        
-        foreach($resourceDirectory as $resource)
-        {
+
+        foreach ($resourceDirectory as $resource) {
             $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_node')));
             if (count($node) >= 1) {
                 $wsInfo = $this->offline['directory']->updateResource($resource, $node, $workspace, $this->user, $wsInfo, $this->path);
-            } 
-            else {
+            } else {
                 $wsInfo = $this->offline['directory']->createResource($resource, $workspace, $this->user, $wsInfo, $this->path);
             }
         }
-        
+
         for ($i=0; $i<$resourceList->length; $i++) {
             $res = $resourceList->item($i);
             if ((strpos($res->nodeName,'resource') !== false) && $res->nodeName != "resource-directory") {
                 $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $res->getAttribute('hashname_node')));
                 if (count($node) >= 1) {
                     $wsInfo = $this->offline[$res->getAttribute('type')]->updateResource($res, $node, $workspace, $this->user, $wsInfo, $this->path);
-                } 
-                else {
+                } else {
                     $wsInfo = $this->offline[$res->getAttribute('type')]->createResource($res, $workspace, $this->user, $wsInfo, $this->path);
                 }
             }
@@ -278,7 +274,7 @@ class LoadingManager
                 $this->offline['claroline_forum']->checkContent($res, $this->synchronizationDate);
             }
         }
+
         return $wsInfo;
     }
-    
 }

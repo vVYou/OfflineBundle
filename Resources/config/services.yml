@@ -4,7 +4,7 @@ parameters:
 services:
     claroline_offline.creation_manager:
         class: %claroline.manager.creation_manager.class%
-        
+
     claroline_offline.offline.text:
         class: Claroline\OfflineBundle\Model\Resource\OfflineText
         arguments:

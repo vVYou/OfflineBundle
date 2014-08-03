@@ -75,7 +75,7 @@ class FirstConnectionListener
             // If online.
             return $event;
         }
-        
+
         if ($event->isMasterRequest()) {
             if ($first_route !== $_route) {
                 if ($token && $token->getUser() == 'anon.') {

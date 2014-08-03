@@ -12,7 +12,6 @@
 namespace Claroline\OfflineBundle\Manager;
 
 use Claroline\CoreBundle\Entity\User;
-use Claroline\CoreBundle\Entity\Role;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
@@ -103,7 +102,7 @@ class TransferManager
     /*
     *******   METHODS EXECUTED OFFLINE *******
     */
-    
+
     /*
     *   @param User $user
     *   @param $toTransfer is the filname of the archive to upload on the online plateform
@@ -149,7 +148,7 @@ class TransferManager
             }
         }
     }
-    
+
     // This method will download the file with the name $hashToGet from the online plateform
     // It will begin at $fragmentNumber and go up to the end of the file
     public function downloadArchive($hashToGet, $totalFragments, $fragmentNumber, $user, $firstTime = true)
@@ -184,32 +183,35 @@ class TransferManager
                 throw $e;
             }
         }
-    } 
-    
+    }
+
     // Method to analyse the status received after a request on the online server
     // @return throw exception matching with the errors status
     //      If no error (or default) return true
     private function analyseStatusCode($status)
-    {   
+    {
         switch ($status) {
             case 200:
                 return true;
             case 401:
                 throw new AuthenticationException();
+
                 return false;
             case 404:
                 throw new PageNotFoundException();
             case 424:
                 throw new ProcessSyncException();
+
                 return false;
             case 500:
                 throw new ServeurException();
+
                 return false;
             default:
                 return true;
         }
-    } 
-    
+    }
+
     // This Method returns the number of the last fragment of the file $filename uploaded on the online plateform
     // If the file was not yet uploaded it returns -1
     public function getLastFragmentUploaded($filename, $user)
@@ -246,7 +248,7 @@ class TransferManager
 
         return $responseArray['totalFragments'];
     }
-        
+
     // This method is used to contact the online plateform and request to delete $filename
     public function deleteFile($user, $filename, $dir, $firstTime=true)
     {
@@ -268,7 +270,7 @@ class TransferManager
             }
         }
     }
-    
+
     // Retruns the informations of the user in order to retrieve his profile.
     public function getUserInfo($username, $password, $url, $firstTime = true)
     {
@@ -290,7 +292,7 @@ class TransferManager
             }
         }
     }
-    
+
     //  This method try to catch and create the profile of a user present in the online database.
     public function retrieveProfil($username, $password, $result, $url)
     {
@@ -300,10 +302,10 @@ class TransferManager
         $new_user->setUsername($result['username']);
         $new_user->setMail($result['mail']);
         $new_user->setPlainPassword($password);
-        
+
         $this->userManager->createUser($new_user);
         // Demander à Nico, probleme que l'on est pas admin donc pas le droit de créer le rôle admin
-        // if($result['admin']) {
+        // if ($result['admin']) {
             // $this->roleManager->associateUserRole($new_user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN));
         // }
         $my_user = $this->userRepo->findOneBy(array('username' => $username));
@@ -319,12 +321,12 @@ class TransferManager
         // Creation of sync_config file
         $this->createSyncConfigFile($result, $url);
 
-    }  
-    
+    }
+
     /*
     *******   METHODS EXECUTED ONLINE *******
     */
-    
+
     // This method is used to delete files on the online plateform
     public function unlinkSynchronisationFile($content, $user)
     {
@@ -333,11 +335,11 @@ class TransferManager
 
         return $content;
     }
-    
+
     /*
     *******   METHODS USED IN BOTH SIDES *******
     */
-    
+
     // The Browser is the Curl client used to create the HTTP request
     private function getBrowser()
     {
@@ -347,7 +349,7 @@ class TransferManager
 
         return $browser;
     }
-    
+
     // Method returning a table of the metadatas that are sent with the post requests
     public function getMetadataArray($user, $filename)
     {
@@ -363,7 +365,7 @@ class TransferManager
             );
         }
     }
-    
+
     // Method returning the number of fragment of a file
     // If file doesn't exist it returns -1
     public function getTotalFragments($filename)
@@ -374,7 +376,7 @@ class TransferManager
             return (int) (filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1;
         }
     }
-    
+
     // Method returning the fragment number $fragmentNumber of the file $filename
     // If file doesn't exists throw a SynchronisationFailsException and reset the UserSynchronized entity of $user
     public function getFragment($fragmentNumber, $filename, $user)
@@ -481,48 +483,46 @@ class TransferManager
             return null;
         }
     }
-    
-    // Create and/or add a new User profil in the synchronisation file.    
-    public function createSyncConfigFile($result, $url){
-    
-        if(!(file_exists(SyncConstant::PLAT_CONF))){
+
+    // Create and/or add a new User profil in the synchronisation file.
+    public function createSyncConfigFile($result, $url)
+    {
+        if (!(file_exists(SyncConstant::PLAT_CONF))) {
             $yaml_array = array();
             $sync_config = array(
                 'username' => $result['username'],
                 'mail' => $result['mail'],
                 'url' => $url
-            );           
+            );
             $yaml_array[] = $sync_config;
-            
+
             $yaml = $this->yaml_dump->dump($yaml_array);
             file_put_contents(SyncConstant::PLAT_CONF, $yaml);
-        
-        }
-        
-        else{
+
+        } else {
             $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
             $sync_config = array(
                 'username' => $result['username'],
                 'mail' => $result['mail'],
                 'url' => $url
-            );           
+            );
             $value[] = $sync_config;
-            
+
             $yaml = $this->yaml_dump->dump($value);
-            file_put_contents(SyncConstant::PLAT_CONF, $yaml);   
+            file_put_contents(SyncConstant::PLAT_CONF, $yaml);
         }
     }
-    
+
     // Return the URL specify for the given User in the synchronisation file.
-    public function getUserUrl(User $user){
-    
+    public function getUserUrl(User $user)
+    {
         $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
-        foreach($value as $elem){
-            if($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()){
+        foreach ($value as $elem) {
+            if ($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()) {
                 return $elem['url'];
             }
         }
-        
+
         return NULL;
     }
 }

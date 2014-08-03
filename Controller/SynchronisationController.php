@@ -291,7 +291,7 @@ class SynchronisationController extends Controller
     public function getNumberOfPacketsToDownload()
     {
         $authTab = $this->authWithToken($this->getRequest()->getContent());
-        
+
         // echo "CONTENT received : ".$content."<br/>";
         $status = $authTab['status'];
         $user = $authTab['user'];
@@ -366,7 +366,6 @@ class SynchronisationController extends Controller
                     // TRUE route if auto-log.
                     $this->authenticator->authenticate($cred->getName(), $cred->getPassword());
                     // file_put_contents(SyncConstant::PLAT_CONF, $cred->getUrl());
-
                     return $this->render('ClarolineOfflineBundle:Offline:connect_ok.html.twig', array(
                     'first_sync' => true
                     ) );

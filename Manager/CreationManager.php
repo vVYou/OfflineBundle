@@ -84,13 +84,12 @@ class CreationManager
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
         $this->offline = array();
-    }
-    
+    }   
         
     public function addOffline(OfflineElement  $offline)
     {
         $this->offline[$offline->getType()] = $offline;
-    }   
+    }
 
     /**
      * Create a the archive based on the user
@@ -98,7 +97,7 @@ class CreationManager
      *
      * @param \Claroline\CoreBundle\Entity\User $user
      *
-     */   
+     */
     public function createSyncZip(User $user, $date)
     {
         ini_set('max_execution_time', 0);
@@ -121,7 +120,7 @@ class CreationManager
         if (!is_dir($dir)) {
             mkdir($dir, 0777);
         }
-        
+
         $hashname_zip = $this->ut->generateGuid();
         $fileName = $dir.'/sync_'.$hashname_zip.'.zip';
 
@@ -130,8 +129,7 @@ class CreationManager
 
         if ($archive->open($fileName, ZipArchive::CREATE) === true) {
             $this->fillSyncZip($userWS, $domManifest, $sectManifest, $types, $user, $archive, $date);
-        }
-        else {
+        } else {
             throw new \Exception('Impossible to open the zip file');
         }
 
@@ -143,39 +141,38 @@ class CreationManager
         // unlink($manifestName);
         return $archivePath;
     }
-    
-    /** 
+
+    /**
      * Add all the informations required to synchronized the resources in the Manifest and add
      * in the archive the file required for the synchronization
      *
      * @param \Claroline\CoreBundle\Entity\User $user
-     * @param \ZipArchive $archive
+     * @param \ZipArchive                       $archive
      */
     public function fillSyncZip($userWS, $domManifest, $sectManifest, $types, User $user, ZipArchive $archive, $date)
     {
-        foreach ($userWS as $element) {
-        
+        foreach ($userWS as $element) {  
             $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);         
             $dateTimeStamp = new DateTime();
             $dateTimeStamp->setTimeStamp($date);
             $ressourcesToSync = $this->findResourceToSync($element, $types, $dateTimeStamp);// Remove all the resources not modified.
-            
+
             if (count($ressourcesToSync) >= 1) {
 
                 foreach ($ressourcesToSync as $res) {
-                     
+
                     $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);
-                }                                 
+                }
             }
         }
     }
-    
+
     /**
      * Filter all the resources based on the user's last synchronization and
      * check which one need to be synchronized.
      *
      * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     */   
+     */
     private function findResourceToSync(Workspace $workspace, $types, $date)
     {
         $query = $this->resourceNodeRepo->createQueryBuilder('res')
@@ -189,7 +186,7 @@ class CreationManager
             ->getQuery();
 
         return $query->getResult();
-    
+
     }
 
     /************************************************************

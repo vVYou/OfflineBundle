@@ -12,19 +12,13 @@
 namespace Claroline\OfflineBundle\Model\Resource;
 
 use Claroline\CoreBundle\Entity\User;
-use Claroline\CoreBundle\Entity\Resource\ResourceType;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
-use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
-use Symfony\Component\Translation\TranslatorInterface;
-use \DOMDocument;
 use \DateTime;
 use \ZipArchive;
 
@@ -37,7 +31,7 @@ class OfflineWorkspace extends OfflineElement
     private $userRepo;
     private $resourceNodeRepo;
     private $roleRepo;
-    
+
     /**
      * Constructor.
      *
@@ -62,10 +56,11 @@ class OfflineWorkspace extends OfflineElement
     }
 
     // Return the type of resource supported by this service
-    public function getType(){
+    public function getType()
+    {
         return 'workspace';
     }
- 
+        
     /**
      * Add informations of a specific workspace in the manifest.
      *
@@ -166,6 +161,5 @@ class OfflineWorkspace extends OfflineElement
         $this->om->endFlushSuite();
 
         return $myWs;
-
     }
 }

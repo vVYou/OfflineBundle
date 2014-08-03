@@ -9,13 +9,8 @@ use Behat\Behat\Context\BehatContext,
     Behat\Behat\Exception\PendingException;
 use Behat\Gherkin\Node\PyStringNode,
     Behat\Gherkin\Node\TableNode;
-use Behat\Mink\Exception\ElementNotFoundException;
-use Behat\Mink\Exception\ExpectationException;
-use Behat\Symfony2Extension\Context\KernelDictionary;
 use Claroline\CoreBundle\Tests\Integration\Context;
 use Behat\Behat\Context\Step;
-use Behat\Behat\Event\ScenarioEvent;
-use Claroline\CoreBundle\Library\Installation\Settings\SettingChecker;
 use Goutte\Client;
 
 //
@@ -54,7 +49,7 @@ class FeatureContext extends MinkContext
     {
         $this->kernel = $kernel;
     }
-    
+
     /**
      * After each scenario, we close the browser
      *
@@ -62,12 +57,12 @@ class FeatureContext extends MinkContext
      */
     public function closeBrowser()
     {
-        if (file_exists('./app/config/sync_config.yml')){
-            if(file_get_contents('./app/config/sync_config.yml') == 'test'){
+        if (file_exists('./app/config/sync_config.yml')) {
+            if (file_get_contents('./app/config/sync_config.yml') == 'test') {
                 unlink('./app/config/sync_config.yml');
             }
         }
-        if(file_exists('./app/config/sync_config_unreal.yml')){
+        if (file_exists('./app/config/sync_config_unreal.yml')) {
             copy('./app/config/sync_config_unreal.yml', './app/config/sync_config.yml');
         }
         $this->getSession()->stop();
@@ -118,6 +113,7 @@ class FeatureContext extends MinkContext
             copy('./app/config/sync_config.yml', './app/config/sync_config_unreal.yml');
         }
         unlink('./app/config/sync_config.yml');
+
         return true;
     }
 
@@ -143,7 +139,7 @@ class FeatureContext extends MinkContext
             ->visit($this->locatePath(''))
         ;
     }
-    
+
     /**
      * @When /^I go on the plugin$/
      */
@@ -154,14 +150,13 @@ class FeatureContext extends MinkContext
             ->visit($this->locatePath('/desktop/tool/open/claroline_offline_tool'))
         ;
     }
-    
+
     /**
      * @Then /^I should have an archive$/
      */
-    public function iShouldHaveAnArchive(){
-    
+    public function iShouldHaveAnArchive()
+    {
         return file_exists('./web/synchronize_down/1/');
-    
     }
 
     /**

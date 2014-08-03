@@ -12,20 +12,14 @@
 namespace Claroline\OfflineBundle\Model\Resource;
 
 use Claroline\CoreBundle\Entity\User;
-use Claroline\CoreBundle\Entity\Resource\ResourceType;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Resource\Directory;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
-use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
-use Symfony\Component\Translation\TranslatorInterface;
-use \DOMDocument;
 use \DateTime;
 use \ZipArchive;
 
@@ -39,7 +33,7 @@ class OfflineDirectory extends OfflineResource
     // private $resourceManager;
     private $userRepo;
     private $resourceNodeRepo;
-    
+
     /**
      * Constructor.
      *
@@ -62,20 +56,22 @@ class OfflineDirectory extends OfflineResource
         $this->em = $em;
     }
 
-   // Return the type of resource supported by this service
-   public function getType(){
+    // Return the type of resource supported by this service
+    public function getType()
+    {
         return 'directory';
     }
- 
+
     /**
      * Add informations required to check and recreated a resource if necessary.
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
-     * @param \ZipArchive $archive
-     */ 
+     * @param \ZipArchive                                        $archive
+     */
     public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
     {
         parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
+
         return $domManifest;
     }
 
@@ -83,14 +79,14 @@ class OfflineDirectory extends OfflineResource
      * Create a resource of the type supported by the service based on the XML file.
      *
      * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\User $user
-     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
-     * @param string $path
+     * @param \Claroline\CoreBundle\Entity\User                $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo          $wsInfo
+     * @param string                                           $path
      *
      * @return \Claroline\OfflineBundle\Model\SyncInfo
-     */    
+     */
     public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
-    { 
+    {
         $newResource = new Directory();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -106,37 +102,38 @@ class OfflineDirectory extends OfflineResource
             // If the parent node doesn't exist anymore, workspace will be the parent.
             $parentNode  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
-        
+
         $newResource->setName($resource->getAttribute('name'));
         $newResource->setMimeType($resource->getAttribute('mimetype'));
 
         $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
         $wsInfo->addToCreate($resource->getAttribute('name'));
-        
+
         $node = $newResource->getResourceNode();
         $this->changeDate($node, $creationDate, $modificationDate);
+
         return $wsInfo;
     }
-    
+
     /**
      * Update a resource of the type supported by the service based on the XML file.
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
-     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\User $user
-     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
-     * @param string $path
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace   $workspace
+     * @param \Claroline\CoreBundle\Entity\User                  $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo            $wsInfo
+     * @param string                                             $path
      *
      * @return \Claroline\OfflineBundle\Model\SyncInfo
      *
-     */   
+     */
     public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
     {
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modificationDate = $resource->getAttribute('modification_date');
         $creationDate = $resource->getAttribute('creation_date');
         $NodeModifDate = $node->getModificationDate()->getTimestamp();
-                
+
         if ($NodeModifDate < $modificationDate) {
             $this->resourceManager->rename($node, $resource->getAttribute('name'));
             $wsInfo->addToUpdate($resource->getAttribute('name'));
@@ -146,16 +143,17 @@ class OfflineDirectory extends OfflineResource
             $modif->setTimeStamp($modificationDate);
             $this->changeDate($node, $creation, $modif);
         }
+
         return $wsInfo;
     }
-   
+
     /**
      * Create a copy of the resource in case of conflict (e.g. if a ressource has been modified both offline
      * and online)
      *
-     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
-     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node     
-     * @param string $path
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace   $workspace
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
+     * @param string                                             $path
      */
     public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path)
     {

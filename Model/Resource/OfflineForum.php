@@ -24,12 +24,13 @@ use Claroline\ForumBundle\Entity\Subject;
 use Claroline\ForumBundle\Entity\Message;
 use Claroline\ForumBundle\Manager\Manager;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Claroline\OfflineBundle\SyncConstant;
-use Claroline\OfflineBundle\SyncInfo;
+use Claroline\OfflineBundle\Model\SyncConstant;
+use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\Translation\TranslatorInterface;
 use \DOMDocument;
 use \DateTime;
+use \ZipArchive;
 
 /**
  * @DI\Service("claroline_offline.offline.forum")
@@ -47,6 +48,7 @@ class OfflineForum extends OfflineResource
     private $forumRepo;
     private $categoryRepo;
     private $resourceNodeRepo;
+    private $ut;
     
     /**
      * Constructor.
@@ -54,13 +56,15 @@ class OfflineForum extends OfflineResource
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "forumManager"   = @DI\Inject("claroline.manager.forum_manager")
+     *     "forumManager"   = @DI\Inject("claroline.manager.forum_manager"),
+     *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
     public function __construct(
         ObjectManager $om,
         ResourceManager $resourceManager,
-        Manager $forumManager
+        Manager $forumManager,
+        ClaroUtilities $ut
 
     )
     {
@@ -73,21 +77,40 @@ class OfflineForum extends OfflineResource
         $this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
         $this->resourceManager = $resourceManager;
         $this->forumManager = $forumManager;
+        $this->ut = $ut;
     }
     
+    // Return the type of resource supported by this service
     public function getType(){
         return 'claroline_forum';
     }
     
-   public function addResourceToManifest($domManifest, $domWorkspace, $resToAdd, $archive, $date){
-       $domRes = parent::addResourceToManifest($domManifest, $domWorkspace, $resToAdd, $archive, $date);
-       $forum_content = $this->checkNewContent($resToAdd, $date);
-       $this->addForumToArchive($domManifest, $domWorkspace, $forum_content);
-       return $domManifest;            
-   }
+    /**
+     * Add informations required to check and recreated a resource if necessary.
+     *
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
+     * @param \ZipArchive $archive
+     */
+    public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
+    {
+        $domRes = parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
+        $forum_content = $this->checkNewContent($resToAdd, $date);
+        $this->addForumToArchive($domManifest, $domWorkspace, $forum_content);
+        return $domManifest;            
+    }
    
-   public function createResource($resource, $workspace, $user, $wsInfo, $path){
-   
+    /**
+     * Create a resource of the type supported by the service based on the XML file.
+     *
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\User $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
+     * @param string $path
+     *
+     * @return \Claroline\OfflineBundle\Model\SyncInfo
+     */
+    public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
+    { 
         $newResource = new Forum();
         $creation_date = new DateTime();
         $modification_date = new DateTime();
@@ -100,7 +123,6 @@ class OfflineForum extends OfflineResource
 
         if (count($parent_node) < 1) {
             // If the parent node doesn't exist anymore, workspace will be the parent.
-            // echo 'Mon parent est mort ! '.'<br/>';
             $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
         
@@ -113,10 +135,22 @@ class OfflineForum extends OfflineResource
         $node = $newResource->getResourceNode();
         $this->changeDate($node, $creation_date, $modification_date, $this->om, $this->resourceManager);
         return $wsInfo;
-   }
+    }
    
-   public function updateResource($resource, $node, $workspace, $user, $wsInfo, $path){
-   
+    /**
+     * Update a resource of the type supported by the service based on the XML file.
+     *
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\User $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
+     * @param string $path
+     *
+     * @return \Claroline\OfflineBundle\Model\SyncInfo
+     *
+     */
+    public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
+    {   
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modif_date = $resource->getAttribute('modification_date');
         $creation_date = $resource->getAttribute('creation_date'); //USELESS?
@@ -127,59 +161,32 @@ class OfflineForum extends OfflineResource
             $this->resourceManager->rename($node, $resource->getAttribute('name'));
             $wsInfo->addToUpdate($resource->getAttribute('name'));
         }
-   }
+        return $wsInfo;
+    }
    
-   public function createDoublon($resource, $workspace, $node, $path){
-   
-        $newResource = new Forum();
-        $creation_date = new DateTime();
-        $modification_date = new DateTime();
-        $creation_date->setTimestamp($resource->getAttribute('creation_date'));
-        $modification_date->setTimestamp($resource->getAttribute('modification_date'));
-
-        $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
-        $parent_node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
-
-        if (count($parent_node) < 1) {
-            // If the parent node doesn't exist anymore, workspace will be the parent.
-            // echo 'Mon parent est mort ! '.'<br/>';
-            $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
-        }
-        
-        /*
-        *   We add the tag '@offline' to the name of the resource
-        *   and modify the Hashname of the resource already present in the Database.
-        */
-
-        $newResource->setName($resource->getAttribute('name').'@offline');
-        $newResource->setMimeType($resource->getAttribute('mimetype'));
-        $oldModificationDate = $node->getModificationDate();
-
-        $this->om->startFlushSuite();
-        $node->setNodeHashName($this->ut->generateGuid());
-        $this->resourceManager->logChangeSet($node);
-        $node->setModificationDate($oldModificationDate);
-        $this->om->endFlushSuite();
-
-        $this->resourceManager->create($newResource, $type, $creator, $workspace, $parent_node, null, array(), $resource->getAttribute('hashname_node'));  
-            
-        $node = $newResource->getResourceNode();
-        $this->changeDate($node, $creation_date, $modification_date, $this->om, $this->resourceManager);
-
-   }
-   
-   /*
-    *   Check all the messages, subjects and categories of the forums
-    *   and return the ones that have been created or updated.
-    */
-    private function checkNewContent($node_forum, $date_sync)
+    /**
+     * Create a copy of the resource in case of conflict (e.g. if a ressource has been modified both offline
+     * and online)
+     *
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node     
+     * @param string $path
+     */
+    public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path)
     {
-        // $date_tmp = $this->userSynchronizedRepo->findUserSynchronized($user);
-        // $date_sync = $date_tmp[0]->getLastSynchronization()->getTimestamp();
-
+        return;
+    }
+   
+    /**
+     * Check all the messages, subjects and categories of the forums and return the ones that have been created or updated.
+     *
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node_forum
+     *
+     * @return array()
+     */
+    private function checkNewContent(ResourceNode $node_forum, $date_sync)
+    {
         $elem_to_sync = array();
-            //echo 'Un forum'.'<br/>';
         $current_forum = $this->forumRepo->findOneBy(array('resourceNode' => $node_forum));
         $categories = $this->categoryRepo->findBy(array('forum' => $current_forum));
         $elem_to_sync = $this->checkCategory($categories, $elem_to_sync, $date_sync);
@@ -188,17 +195,15 @@ class OfflineForum extends OfflineResource
 
     }    
     
-    /*
-    *   Check all categories of a list and see if they are new or updated.
-    */
+    /**
+     * Check all categories of a list and see if they are new or updated.
+     *
+     *
+     * @return array()
+     */
     private function checkCategory($categories, $elem_to_sync, $date_sync)
     {
         foreach ($categories as $category) {
-            /*
-            *   TODO :  Profiter de ce passage pour voir si la category a ete mise a jour
-            *           ou si elle est nouvelle.
-            */
-
             if ($category->getModificationDate()->getTimestamp() > $date_sync) {
                  $elem_to_sync[] = $category;
             }
@@ -211,16 +216,15 @@ class OfflineForum extends OfflineResource
     }
 
 
-    /*
-    *   Check all subjects of a list and see if they are new or updated.
-    */
+    /**
+     * Check all subjects of a list and see if they are new or updated.
+     *
+     *
+     * @return array()
+     */
     private function checkSubject($subjects, $elem_to_sync, $date_sync)
     {
         foreach ($subjects as $subject) {
-            /*
-            *   TODO :  Profiter de ce passage pour voir si le sujet a ete mis a jour
-            *           ou si il est nouveau.
-            */
             if ($subject->getModificationDate()->getTimestamp() > $date_sync) {
                  $elem_to_sync[] = $subject;
             }
@@ -234,15 +238,15 @@ class OfflineForum extends OfflineResource
     }
 
 
-    /*
-    *   Check all message of a list and see if they are new or updated.
-    */
+    /**
+     *   Check all message of a list and see if they are new or updated.
+     *
+     *
+     * @return array()
+     */
     private function checkMessage($messages, $elem_to_sync, $date_sync)
     {
         foreach ($messages as $message) {
-            /*
-            *   TODO :  Gerer les messages update.
-            */
             if ($message->getModificationDate()->getTimestamp() > $date_sync) {
                 $elem_to_sync[] = $message;
             }
@@ -251,22 +255,20 @@ class OfflineForum extends OfflineResource
         return $elem_to_sync;
     }
     
-     /*
-    *   Add the content of the forum in the Archive.
-    */
+    /**
+     * Add the content of the forum in the Archive.
+     */
     private function addForumToArchive($domManifest, $domWorkspace, $forum_content)
     {
         foreach ($forum_content as $element) {
-        
-            $class_name = ''.get_class($element);
 
             $this->addContentToManifest($domManifest, $domWorkspace, $element);
         }
     }
     
-    /*
-    *   Add a specific Category, Subject or Message to the Manifest.
-    */
+    /**
+     * Add the content of a forum to the Manifest.
+     */
     private function addContentToManifest($domManifest, $domWorkspace, $content)
     {
 
@@ -301,7 +303,12 @@ class OfflineForum extends OfflineResource
 
     }
     
-    private function addCategory($domManifest, $content, $domRes)
+    /**
+     * Add a specific Category to the Manifest.
+     *
+     * @param \Claroline\ForumBundle\Entity\Category $content
+     */
+    private function addCategory($domManifest, Category $content, $domRes)
     {
         $modification_time = $content->getModificationDate()->getTimestamp();
         $node_forum = $content->getForum()->getResourceNode();
@@ -318,7 +325,12 @@ class OfflineForum extends OfflineResource
     
     }
     
-    private function addSubject($domManifest, $content, $domRes)
+    /**
+     * Add a specific Subject to the Manifest.
+     *
+     * @param \Claroline\ForumBundle\Entity\Subject $content
+     */
+    private function addSubject($domManifest, Subject $content, $domRes)
     {
         $modification_time = $content->getModificationDate()->getTimestamp();
         $category_hash = $content->getCategory()->getHashName();
@@ -341,7 +353,12 @@ class OfflineForum extends OfflineResource
     
     }
     
-    private function addMessage($domManifest, $content, $domRes)
+    /**
+     * Add a specific Message to the Manifest.
+     *
+     * @param \Claroline\ForumBundle\Entity\Message $content
+     */
+    private function addMessage($domManifest, Message $content, $domRes)
     {
         $modification_time = $content->getModificationDate()->getTimestamp();
         $subject_hash = $content->getSubject()->getHashName();
@@ -359,11 +376,10 @@ class OfflineForum extends OfflineResource
         $domRes->appendChild($cdata);  
     }
     
-        /*
-    *   Check the content of a forum described in the XML file and
-    *   either create or update this content.
-    */
-    public function checkContent($content)
+    /**
+     * Check the content of a forum described in the XML file and either create or update this content. 
+     */
+    public function checkContent($content, $date)
     {
         $content_type = $content->getAttribute('class');
         switch ($content_type) {
@@ -398,7 +414,7 @@ class OfflineForum extends OfflineResource
                 if ($message == null) {
                     $this->createMessage($content);
                 } else {
-                    $this->updateMessage($content, $message);
+                    $this->updateMessage($content, $message, $date);
                 }
 
                 // Update of the Dates
@@ -409,13 +425,11 @@ class OfflineForum extends OfflineResource
 
     }
 
-    /*
-    *   Create a new Forum Category based on the XML file in the Archive.
-    */
+    /**
+     * Create a new Forum Category based on the XML file in the Archive.
+     */
     private function createCategory($category)
     {
-        // echo 'Category created'.'<br/>';
-
         $node_forum = $this->resourceNodeRepo->findOneBy(array('hashName' => $category->getAttribute('forum_node')));
         $forum = $this->resourceManager->getResourceFromNode($node_forum);
 
@@ -424,10 +438,12 @@ class OfflineForum extends OfflineResource
         $this->forumManager->createCategory($forum, $category_name, true, $category->getAttribute('hashname'));
     }
 
-    /*
-    *   Update a Forum Category based on the XML file in the Archive.
-    */
-    private function updateCategory($xmlCategory, $category)
+    /**
+     * Update a Forum Category based on the XML file in the Archive.
+     *
+     * @param \Claroline\ForumBundle\Entity\Category $category
+     */
+    private function updateCategory($xmlCategory, Category $category)
     {
         $xmlName = $xmlCategory->getAttribute('name');
         $dbName = $category->getName();
@@ -438,21 +454,17 @@ class OfflineForum extends OfflineResource
                 $this->forumManager->editCategory($category, $dbName, $xmlName);
             }
         }
-
-        // echo 'Category already in DB!'.'<br/>';
     }
 
-    /*
-    *   Create a new Forum Subject based on the XML file in the Archive.
-    */
+    /**
+     * Create a new Forum Subject based on the XML file in the Archive.
+     */
     private function createSubject($subject)
     {
-        // echo 'Subject created'.'<br/>';
-
         $category = $this->categoryRepo->findOneBy(array('hashName' => $subject->getAttribute('category')));
         $creator = $this->userRepo->findOneBy(array('exchangeToken' => $subject->getAttribute('creator_id')));
         $sub = new Subject();
-        $sub->setTitle($subject->getAttribute('name'));
+        $sub->setTitle($subject->getAttribute('title'));
         $sub->setCategory($category);
         $sub->setCreator($creator);
         $sub->setIsSticked($subject->getAttribute('sticked'));
@@ -460,35 +472,33 @@ class OfflineForum extends OfflineResource
         $this->forumManager->createSubject($sub, $subject->getAttribute('hashname'));
     }
 
-    /*
-    *   Update a Forum Subject based on the XML file in the Archive.
-    */
-    private function updateSubject($xmlSubject, $subject)
+    /**
+     * Update a Forum Subject based on the XML file in the Archive.
+     *
+     * @param \Claroline\ForumBundle\Entity\Subject $subject
+     */
+    private function updateSubject($xmlSubject, Subject $subject)
     {
-        $xmlName = $xmlSubject->getAttribute('name');
+        $xmlName = $xmlSubject->getAttribute('title');
         $dbName = $subject->getTitle();
         $xmlModificationDate = $xmlSubject->getAttribute('update_date');
         $dbModificationDate = $subject->getModificationDate()->getTimestamp();
         if ($xmlName != $dbName) {
-            if ($xmlModificationDate > $dbModificationDate) {
+            if ($xmlModificationDate >= $dbModificationDate) {
                 $this->forumManager->editSubject($subject, $dbName, $xmlName);
                 $subject->setIsSticked($xmlSubject->getAttribute('sticked'));
             }
         }
-
-        // echo 'Subject already in DB!'.'<br/>';
     }
 
-    /*
-    *   Create a new Forum message based on the XML file in the Archive.
-    */
+    /**
+     * Create a new Forum message based on the XML file in the Archive.
+     */
     private function createMessage($message)
     {
         $creation_date = new DateTime();
         $creation_date->setTimestamp($message->getAttribute('creation_date'));
-        // Message Creation
-        // echo 'Message created'.'<br/>';
-
+        
         $subject = $this->subjectRepo->findOneBy(array('hashName' => $message->getAttribute('subject')));
         $creator = $this->userRepo->findOneBy(array('exchangeToken' => $message->getAttribute('creator_id')));
         $content = $this->extractCData($message);
@@ -500,28 +510,45 @@ class OfflineForum extends OfflineResource
 
     }
 
-    /*
-    *   Update a Forum message based on the XML file in the Archive.
-    */
-    private function updateMessage($xmlMessage, $message)
+    /**
+     * Update a Forum Message based on the XML file in the Archive.
+     *
+     * @param \Claroline\ForumBundle\Entity\Message $subject
+     */
+    private function updateMessage($xmlMessage, Message $message, $date)
     {
         $xmlContent = $this->extractCData($xmlMessage);
         $dbContent = $message->getContent();
         $xmlModificationDate = $xmlMessage->getAttribute('update_date');
         $dbModificationDate = $message->getModificationDate()->getTimestamp();
         if ($xmlContent != $dbContent) {
-            if ($xmlModificationDate > $dbModificationDate) {
+            if ($dbModificationDate < $date) {
                 $this->forumManager->editMessage($message, $dbContent, $xmlContent);
+            }
+            else{
+                $this->createMessageDoublon($xmlMessage, $message, $date);
             }
         }
 
-        // echo 'Message already in DB!'.'<br/>';
-
+    }
+    
+    /**
+     * Create a doublon for a Forum Message based on the XML file in the Archive.
+     *
+     * @param \Claroline\ForumBundle\Entity\Message $subject
+     */
+    private function createMessageDoublon($xmlMessage, Message $message, $date){
+        $new_hashname = $this->ut->generateGuid();
+        $this->om->startFlushSuite();
+        $message->setHashName($new_hashname);
+        $this->om->endFlushSuite();
+        
+        $this->createMessage($xmlMessage);
     }
 
-    /*
-    *   Update the creation and modification/update dates of a category, subject or message.
-    */
+    /**
+     * Update the creation and modification/update dates of a category, subject or message.
+     */
     private function updateDate($forumContent, $content)
     {
         $creation_date = new DateTime();

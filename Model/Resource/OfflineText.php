@@ -21,12 +21,13 @@ use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Claroline\OfflineBundle\SyncConstant;
-use Claroline\OfflineBundle\SyncInfo;
+use Claroline\OfflineBundle\Model\SyncConstant;
+use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\Translation\TranslatorInterface;
 use \DOMDocument;
 use \DateTime;
+use \ZipArchive;
 
 /**
  * @DI\Service("claroline_offline.offline.text")
@@ -39,6 +40,7 @@ class OfflineText extends OfflineResource
     private $revisionRepo;
     private $userRepo;
     private $resourceNodeRepo;
+    private $ut;
     
     /**
      * Constructor.
@@ -46,11 +48,13 @@ class OfflineText extends OfflineResource
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
+     *     "ut"            = @DI\Inject("claroline.utilities.misc")
      * })
      */
     public function __construct(
         ObjectManager $om,
-        ResourceManager $resourceManager
+        ResourceManager $resourceManager,
+        ClaroUtilities $ut
     )
     {
         $this->om = $om;
@@ -58,15 +62,23 @@ class OfflineText extends OfflineResource
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
         $this->resourceManager = $resourceManager;
+        $this->ut = $ut;
     }
-        
+    
+    // Return the type of resource supported by this service    
     public function getType(){
         return 'text';
     }
     
-    public function addResourceToManifest($domManifest, $domWorkspace, $resToAdd, $archive, $date){
-   
-        $domRes = parent::addResourceToManifest($domManifest, $domWorkspace, $resToAdd, $archive, $date);
+    /**
+     * Add informations required to check and recreated a resource if necessary.
+     *
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
+     * @param \ZipArchive $archive
+     */
+    public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
+    {
+        $domRes = parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
         $my_res = $this->resourceManager->getResourceFromNode($resToAdd);
         $revision = $this->revisionRepo->findOneBy(array('text' => $my_res));
 
@@ -80,8 +92,18 @@ class OfflineText extends OfflineResource
         return $domManifest;
     }
    
-    public function createResource($resource, $workspace, $user, $wsInfo, $path){
-   
+    /**
+     * Create a resource of the type supported by the service based on the XML file.
+     *
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\User $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
+     * @param string $path
+     *
+     * @return \Claroline\OfflineBundle\Model\SyncInfo
+     */
+    public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
+    { 
         $newResource = new Text();
         $creation_date = new DateTime();
         $modification_date = new DateTime();
@@ -94,7 +116,6 @@ class OfflineText extends OfflineResource
 
         if (count($parent_node) < 1) {
             // If the parent node doesn't exist anymore, workspace will be the parent.
-            // echo 'Mon parent est mort ! '.'<br/>';
             $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
                
@@ -115,8 +136,20 @@ class OfflineText extends OfflineResource
         return $wsInfo;
     }
    
-    public function updateResource($resource, $node, $workspace, $user, $wsInfo, $path){
-   
+    /**
+     * Update a resource of the type supported by the service based on the XML file.
+     *
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\User $user
+     * @param \Claroline\OfflineBundle\Model\SyncInfo $wsInfo
+     * @param string $path
+     *
+     * @return \Claroline\OfflineBundle\Model\SyncInfo
+     *
+     */
+    public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
+    {
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modif_date = $resource->getAttribute('modification_date');
         $creation_date = $resource->getAttribute('creation_date'); //USELESS?
@@ -132,16 +165,22 @@ class OfflineText extends OfflineResource
                 // Doublon generation
                 $this->createDoublon($resource, $workspace, $node, $path);
                 $wsInfo->addToDoublon($resource->getAttribute('name'));
-            } else {
-                echo 'Already in Database'.'<br/>';
             }
         }
         
         return $wsInfo;
     }
    
-    public function createDoublon($resource, $workspace, $node, $path){
-        
+    /**
+     * Create a copy of the resource in case of conflict (e.g. if a ressource has been modified both offline
+     * and online)
+     *
+     * @param \Claroline\CoreBundle\Entity\Workspace\Workspace $workspace
+     * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $node     
+     * @param string $path
+     */
+    public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path)
+    {
         $newResource = new Text();
         $creation_date = new DateTime();
         $modification_date = new DateTime();
@@ -154,7 +193,6 @@ class OfflineText extends OfflineResource
 
         if (count($parent_node) < 1) {
             // If the parent node doesn't exist anymore, workspace will be the parent.
-            // echo 'Mon parent est mort ! '.'<br/>';
             $parent_node  = $this->resourceNodeRepo->findOneBy(array('workspace' => $workspace));
         }
       

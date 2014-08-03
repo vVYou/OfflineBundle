@@ -5,7 +5,7 @@
  * in the synchronisation process.
  */
 
-namespace Claroline\OfflineBundle;
+namespace Claroline\OfflineBundle\Model;
 
 class SyncConstant
 {

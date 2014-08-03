@@ -13,7 +13,7 @@ namespace Claroline\OfflineBundle\Manager;
 
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\OfflineBundle\SyncConstant;
+use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use JMS\DiExtraBundle\Annotation as DI;
 use \DateTime;
@@ -134,7 +134,13 @@ class SynchronisationManager
         } else {
             // $toDownload will be the synchronisation archive of the online plateform.
             // this information is received when the upload is finished.
+            echo 'BONJOUR';
             $toDownload = $this->transferManager->uploadArchive($filename, $user, $fragmentNumber);
+            foreach($toDownload as $key => $val)
+            {
+                echo "super cle : ".$key." avec la val ".$val."<br/>";
+            }
+            echo 'BOUM';
             //Saves informations and update status
             $userSync->setFilename($toDownload['hashname']);
             $userSync->setStatus(UserSynchronized::SUCCESS_UPLOAD);

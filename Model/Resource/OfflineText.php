@@ -35,6 +35,7 @@ class OfflineText extends OfflineResource
     private $revisionRepo;
     private $resourceNodeRepo;
     private $ut;
+    private $isUpdate;
 
     /**
      * Constructor.
@@ -63,6 +64,7 @@ class OfflineText extends OfflineResource
         $this->userManager = $userManager;
         $this->ut = $ut;
         $this->em = $em;
+        $this->isUpdate = false;
     }
 
     // Return the type of resource supported by this service
@@ -131,8 +133,9 @@ class OfflineText extends OfflineResource
         $newResource->setMimeType($resource->getAttribute('mimetype'));
 
         $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
-        $wsInfo->addToCreate($resource->getAttribute('name'));
-
+        if(!$this->isUpdate){
+            $wsInfo->addToCreate($resource->getAttribute('name'));
+        }
         $node = $newResource->getResourceNode();
         $this->changeDate($node, $creationDate, $modificationDate);
 
@@ -159,8 +162,10 @@ class OfflineText extends OfflineResource
 
         if ($nodeModifDate <= $resource->getAttribute('synchronization_date')) {
             $this->resourceManager->delete($node);
+            $this->isUpdate = true;
             $this->createResource($resource, $workspace, $user, $wsInfo);
             $wsInfo->addToUpdate($resource->getAttribute('name'));
+            $this->isUpdate = false;
         } else {
             if ($nodeModifDate != $modifDate) {
                 // Doublon generation

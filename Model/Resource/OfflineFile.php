@@ -17,6 +17,7 @@ use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
@@ -36,6 +37,7 @@ class OfflineFile extends OfflineResource
     // private $userRepo;
     private $resourceNodeRepo;
     private $ut;
+    private $isUpdate;
 
     /**
      * Constructor.
@@ -43,6 +45,7 @@ class OfflineFile extends OfflineResource
      * @DI\InjectParams({
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
+     *     "userManager"     = @DI\Inject("claroline.manager.user_manager"),
      *     "ut"            = @DI\Inject("claroline.utilities.misc"),
      *     "em"            = @DI\Inject("doctrine.orm.entity_manager")
      * })
@@ -50,6 +53,7 @@ class OfflineFile extends OfflineResource
     public function __construct(
         ObjectManager $om,
         ResourceManager $resourceManager,
+        UserManager $userManager,
         ClaroUtilities $ut,
         EntityManager $em
     )
@@ -58,8 +62,10 @@ class OfflineFile extends OfflineResource
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->resourceManager = $resourceManager;
+        $this->userManager = $userManager;
         $this->ut = $ut;
         $this->em = $em;
+        $this->isUpdate = false;
     }
 
     // Return the type of resource supported by this service
@@ -128,8 +134,9 @@ class OfflineFile extends OfflineResource
         $newResource->setMimeType($resource->getAttribute('mimetype'));
 
         $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
-        $wsInfo->addToCreate($resource->getAttribute('name'));
-
+        if(!$this->isUpdate){
+            $wsInfo->addToCreate($resource->getAttribute('name'));
+        }
         $node = $newResource->getResourceNode();
         $this->changeDate($node, $creationDate, $modificationDate);
 
@@ -156,8 +163,10 @@ class OfflineFile extends OfflineResource
 
         if ($nodeModifDate <= $resource->getAttribute('synchronization_date')) {
             $this->resourceManager->delete($node);
+            $this->isUpdate = true;
             $this->createResource($resource, $workspace);
             $wsInfo->addToUpdate($resource->getAttribute('name'));
+            $this->isUpdate = false;
         } else {
             if ($nodeModifDate != $modif_date) {
                 // Doublon generation

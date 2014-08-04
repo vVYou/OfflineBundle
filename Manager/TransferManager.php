@@ -170,7 +170,9 @@ class TransferManager
                 $content = $reponse->getContent();
                 // echo "Content <br/>".$content."<br/>";
                 $status = $reponse->getStatusCode();
+                $this->analyseStatusCode($status);
                 $processContent = $this->processSyncRequest((array) json_decode($content), false);
+                $status = $processContent['status'];
                 $fragmentNumber++;
             }
             $this->analyseStatusCode($status);

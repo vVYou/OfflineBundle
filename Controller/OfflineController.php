@@ -80,28 +80,6 @@ class OfflineController extends Controller
      */
     public function helloAction(User $user)
     {
-        // $em = $this->getDoctrine()->getManager();
-        // $userSync = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-
-        // $username = $user->getFirstName() . ' ' . $user->getLastName();
-
-        // if ($userSync) {
-        // TODO Liens vers la route de synchronisation
-            // return $this->render('ClarolineOfflineBundle:Offline:sync.html.twig', array(
-                // 'user' => $username,
-                // 'user_sync_date' => $userSync[0]->getLastSynchronization()
-            // ) );
-        // } else {
-        // TODO Methode d'installation
-            // return $this->render('ClarolineOfflineBundle:Offline:first_sync.html.twig', array(
-                // 'user' => $username
-            // ) );
-        // }
-
-        // $route = $this->router->generate('claro_sync_exchange');
-
-        // return new RedirectResponse($route);
-
         $first_sync = false;
 
         return array(
@@ -213,35 +191,6 @@ class OfflineController extends Controller
     */
     public function loadAction(User $user)
     {
-        //$userSynchro = $this->get('claroline.manager.user_sync_manager')->createUserSynchronized($user);
-
-        //$em = $this->getDoctrine()->getManager();
-        //$userSynchroDate = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-
-        //$zip = $this->get('claroline.manager.loading_manager')->loadXML('manifest_test_3.xml');
-        /*
-        $em = $this->getDoctrine()->getManager();
-        $lol = $em->getEventManager();
-        $tmp = array();
-        $tmp = $lol->getListener();
-
-        foreach ($tmp as $listener) {
-            echo 'Listener found';
-        }*/
-        /*
-        $dispatcher = $this->get('event_dispatcher');
-        $tmp = array();
-        $tmp = $dispatcher->getListeners();
-        foreach ($tmp as $listener) {
-            echo 'Boulou'.'<br/>';
-        }
-        */
-       // $em = this->getDoctrine->
-
-        //$bool = $dispatcher->hasListeners('Gedmo\Timestampable');
-
-        //echo 'Bool : '.$bool.'<br/>';
-
         $zip = $this->get('claroline.manager.loading_manager')->loadZip('sync_D2DF8F72-D0E5-4E7A-A48D-08379822500D.zip', $user);
 
         $username = $user->getFirstName() . ' ' . $user->getLastName();
@@ -332,8 +281,6 @@ class OfflineController extends Controller
 
         return array(
             'user' => $username,
-            //'user_courses' => $test['user_courses'],
-            //'user_res' => $test['user_res']
         );
     }
 

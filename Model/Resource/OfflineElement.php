@@ -61,9 +61,9 @@ abstract class OfflineElement
         return $node;
     }
 
-    /*
-    *   Method to catch the
-    */
+    /**
+     * Catch the listener responsible for the auto-update of the Date in the database.
+     */
     protected function getTimestampListener()
     {
         $evm = $this->em->getEventManager();
@@ -79,9 +79,9 @@ abstract class OfflineElement
         throw new \Exception('Cannot found timestamp listener');
     }
 
-    /*
-    *   Method that returns the creator from the domObject
-    */
+    /**
+     * Method that returns the creator from the domObject
+     */
     protected function getCreator($domNode)
     {
         $creator = $this->userRepo->findOneBy(array('username' => $domNode->getAttribute('creator_username')));

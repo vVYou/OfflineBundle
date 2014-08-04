@@ -60,12 +60,14 @@ class FirstConnectionListener
         $event = $this->isFlagOk($event);
     }
 
+    /**
+     * If the user is not connected and the first connection has not be done yet.
+     * He will be redirect to the first connection page.
+     * 
+     * @param GetResponseEvent $event
+     */
     private function isFlagOk(GetResponseEvent $event)
     {
-        /*
-        *   If the user is not connected and the first connection has not be done yet.
-        *   He will be redirect to the first connection page.
-        */
         $first_route = 'claro_sync_config';
         $_route = $event->getRequest()->get('_route');
         $token = $this->securityContext->getToken();

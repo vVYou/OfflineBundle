@@ -15,8 +15,11 @@ use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
+use Claroline\CoreBundle\Manager\WorkspaceManager;
+use Claroline\CoreBundle\Manager\RoleManager;
 use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
+use Claroline\CoreBundle\Library\Workspace\Configuration;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
 use \DateTime;
@@ -29,6 +32,9 @@ class OfflineWorkspace extends OfflineElement
 {
     private $resourceNodeRepo;
     private $roleRepo;
+    private $templateDir;
+    private $workspaceManager;
+    private $roleManager;
 
     /**
      * Constructor.
@@ -37,14 +43,20 @@ class OfflineWorkspace extends OfflineElement
      *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
      *     "userManager"    = @DI\Inject("claroline.manager.user_manager"),
-     *     "em"             = @DI\Inject("doctrine.orm.entity_manager")
+     *     "em"             = @DI\Inject("doctrine.orm.entity_manager"),
+     *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%"),
+     *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
+     *     "roleManager"    =   @DI\Inject("claroline.manager.role_manager")
      * })
      */
     public function __construct(
         ObjectManager   $om,
         ResourceManager $resourceManager,
         UserManager     $userManager,
-        EntityManager   $em
+        EntityManager   $em,
+        $templateDir,
+        WorkspaceManager $workspaceManager,
+        RoleManager $roleManager
     )
     {
         $this->om = $om;
@@ -54,6 +66,9 @@ class OfflineWorkspace extends OfflineElement
         $this->resourceManager = $resourceManager;
         $this->userManager = $userManager;
         $this->em = $em;
+        $this->templateDir = $templateDir;
+        $this->workspaceManager = $workspaceManager;
+        $this->roleManager = $roleManager;
     }
 
     // Return the type of resource supported by this service
@@ -158,7 +173,7 @@ class OfflineWorkspace extends OfflineElement
 
         // Need to change the hashname of the node corresponding to the workspace.
         $this->om->startFlushSuite();
-        $NodeWorkspace->setNodeHashName($workspace->getAttribute('hashname_node'));
+        $nodeWorkspace->setNodeHashName($workspace->getAttribute('hashname_node'));
         $this->om->endFlushSuite();
 
         return $myWs;

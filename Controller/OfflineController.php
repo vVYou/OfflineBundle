@@ -14,7 +14,6 @@ namespace Claroline\OfflineBundle\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
@@ -173,7 +172,6 @@ class OfflineController extends Controller
             'user' => "plouf"
          );
     }
-
 
     /**
     *   Create userSyncrhonized entity
@@ -375,7 +373,6 @@ class OfflineController extends Controller
          );
     }
 
-
     /**
     *   @EXT\Route(
     *       "/sync/getuser",
@@ -461,7 +458,6 @@ class OfflineController extends Controller
         return $this->redirect($this->generateUrl('claro_desktop_open_tool', array('toolName' => "claroline_offline_tool")));
 
     }
-
 
     /*
     *   METHODE DE TEST : Those methods are used for the creation and loading tests.

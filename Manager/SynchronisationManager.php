@@ -69,44 +69,46 @@ class SynchronisationManager
     */
     public function synchroniseUser(User $user, UserSynchronized $userSync)
     {
+        $infoToDisplay = null;
         $status = $userSync->getStatus();
         switch ($status) {
             // Last synchronisation was well ended.
             case UserSynchronized::SUCCESS_SYNC :
                 // restart from the begining
-                return $this->step1Create($user, $userSync);
+                $infoToDisplay = $this->step1Create($user, $userSync);
                 break;
             // Has a synchronisation archive
             case UserSynchronized::STARTED_UPLOAD :
                 // Where did we stopped the transmission ?
                 $fragmentNumber = $this->transferManager->getLastFragmentUploaded($userSync->getFilename(), $user);
                 // Restart uploading from the last stop
-                return $this->step2Upload($user, $userSync, $userSync->getFilename(), $fragmentNumber+1);
+                $infoToDisplay = $this->step2Upload($user, $userSync, $userSync->getFilename(), $fragmentNumber+1);
                 break;
             // Uploading failed
             case UserSynchronized::FAIL_UPLOAD :
                 // Restart all the upload
-                return $this->step2Upload($user, $userSync, $userSync->getFilename());
+                $infoToDisplay = $this->step2Upload($user, $userSync, $userSync->getFilename());
                 break;
             // Upload finished
             case UserSynchronized::SUCCESS_UPLOAD :
                 // Let's download from the online
-                return $this->step3Download($user, $userSync, $userSync->getFilename());
+                $infoToDisplay = $this->step3Download($user, $userSync, $userSync->getFilename());
                 break;
             // Download fail
             case UserSynchronized::FAIL_DOWNLOAD :
                 // Restart download
                 $fragmentNumber = $this->getDownloadStop($userSync->getFilename(), $user);
-
-                return $this->step3Download($user, $userSync, $userSync->getFilename(), null, $fragmentNumber);
+                $infoToDisplay = $this->step3Download($user, $userSync, $userSync->getFilename(), null, $fragmentNumber);
                 break;
             // Download finished
             case UserSynchronized::SUCCESS_DOWNLOAD :
                 $toLoad = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$userSync->getFilename().'.zip';
                 // Load the online synchronisation archive on the plateform
-                return $this->step4Load($user, $userSync, $toLoad);
+                $infoToDisplay = $this->step4Load($user, $userSync, $toLoad);
                 break;
         }
+
+        return $infoToDisplay;
     }
 
     // Method implementing the first step of the global process

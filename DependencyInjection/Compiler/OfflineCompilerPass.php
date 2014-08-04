@@ -34,36 +34,10 @@ class OfflineCompilerPass implements CompilerPassInterface
 
         $definition_load = $container->getDefinition('claroline.manager.loading_manager');
 
-        $taggedServices = $container->findTaggedServiceIds('claroline_offline.offline');
+        $taggedServicess = $container->findTaggedServiceIds('claroline_offline.offline');
 
-        foreach ($taggedServices as $id => $attributes) {
+        foreach ($taggedServicess as $id => $attributes) {
             $definition_load->addMethodCall('addOffline', array(new Reference($id)));
         }
-
-        // if ($container->hasDefinition('claroline.manager.creation_manager')) {
-
-            // $definition = $container->getDefinition('claroline.manager.creation_manager');
-
-            // $taggedServices = $container->findTaggedServiceIds('claroline_offline.offline');
-
-            // foreach ($taggedServices as $id => $attributes) {
-                // $definition->addMethodCall('addOffline', array(new Reference($id)));
-            // }
-        // }
-
-        // elseif ($container->hasDefinition('claroline.manager.loading_manager')) {
-
-            // $definition = $container->getDefinition('claroline.manager.loading_manager');
-
-            // $taggedServices = $container->findTaggedServiceIds('claroline_offline.offline');
-
-            // foreach ($taggedServices as $id => $attributes) {
-                // $definition->addMethodCall('addOffline', array(new Reference($id)));
-            // }
-        // }
-
-        // else{
-            // return;
-        // }
     }
 }

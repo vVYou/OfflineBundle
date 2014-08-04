@@ -17,6 +17,9 @@ use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 
 class OfflineFormType extends AbstractType
 {
+    /**
+     * Form used in order to retrieve a specific account.
+     */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder->add('name', 'text', array('required' => true, 'label' => 'sync_name'));

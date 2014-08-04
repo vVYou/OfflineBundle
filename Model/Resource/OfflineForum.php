@@ -419,17 +419,17 @@ class OfflineForum extends OfflineResource
     /**
      * Create a new Forum Category based on the XML file in the Archive.
      */
-    private function createCategory($category)
+    private function createCategory($xmlCategory)
     {
-        $nodeForum = $this->resourceNodeRepo->findOneBy(array('hashName' => $category->getAttribute('forum_node')));
+        $nodeForum = $this->resourceNodeRepo->findOneBy(array('hashName' => $xmlCategory->getAttribute('forum_node')));
         $forum = $this->resourceManager->getResourceFromNode($nodeForum);
 
-        $category_name = $category->getAttribute('name');
+        $category_name = $xmlCategory->getAttribute('name');
 
-        $this->forumManager->createCategory($forum, $category_name, true, $category->getAttribute('hashname'));
+        $newCategory = $this->forumManager->createCategory($forum, $category_name, true, $xmlCategory->getAttribute('hashname'));
 
         // Update of the Dates
-        $this->updateDate($category, $content);
+        $this->updateDate($newCategory, $xmlCategory);
     }
 
     /**
@@ -447,7 +447,7 @@ class OfflineForum extends OfflineResource
             if ($xmlModificationDate > $dbModificationDate) {
                 $this->forumManager->editCategory($category, $dbName, $xmlName);
                 // Update of the Dates
-                $this->updateDate($category, $content);
+                $this->updateDate($category, $xmlCategory);
             }
         }
     }
@@ -455,22 +455,22 @@ class OfflineForum extends OfflineResource
     /**
      * Create a new Forum Subject based on the XML file in the Archive.
      */
-    private function createSubject($subject)
+    private function createSubject($xmlSubject)
     {
-        $category = $this->categoryRepo->findOneBy(array('hashName' => $subject->getAttribute('category')));
+        $category = $this->categoryRepo->findOneBy(array('hashName' => $xmlSubject->getAttribute('category')));
         // $creator = $this->userRepo->findOneBy(array('exchangeToken' => $subject->getAttribute('creator_id')));
-        $creator = $this->getCreator($subject);
+        $creator = $this->getCreator($xmlSubject);
         $sub = new Subject();
-        $sub->setTitle($subject->getAttribute('title'));
+        $sub->setTitle($xmlSubject->getAttribute('title'));
         $sub->setCategory($category);
         $sub->setCreator($creator);
-        $sub->setIsSticked($subject->getAttribute('sticked'));
+        $sub->setIsSticked($xmlSubject->getAttribute('sticked'));
         $sub->setIsClosed($xmlSubject->getAttribute('closed'));
 
-        $this->forumManager->createSubject($sub, $subject->getAttribute('hashname'));
+        $this->forumManager->createSubject($sub, $xmlSubject->getAttribute('hashname'));
 
         // Update of the Dates
-        $this->updateDate($subject, $content);
+        $this->updateDate($sub, $xmlSubject);
     }
 
     /**
@@ -491,7 +491,7 @@ class OfflineForum extends OfflineResource
                 $subject->setIsClosed($xmlSubject->getAttribute('closed'));
 
                 // Update of the Dates
-                $this->updateDate($subject, $content);
+                $this->updateDate($subject, $xmlSubject);
             }
         }
     }
@@ -499,22 +499,22 @@ class OfflineForum extends OfflineResource
     /**
      * Create a new Forum message based on the XML file in the Archive.
      */
-    private function createMessage($message)
+    private function createMessage($xmlMessage)
     {
         $creationDate = new DateTime();
-        $creationDate->setTimestamp($message->getAttribute('creation_date'));
+        $creationDate->setTimestamp($xmlMessage->getAttribute('creation_date'));
 
-        $subject = $this->subjectRepo->findOneBy(array('hashName' => $message->getAttribute('subject')));
+        $subject = $this->subjectRepo->findOneBy(array('hashName' => $xmlMessage->getAttribute('subject')));
         // $creator = $this->userRepo->findOneBy(array('exchangeToken' => $message->getAttribute('creator_id')));
-        $creator = $this->getCreator($message);
-        $content = $this->extractCData($message);
+        $creator = $this->getCreator($xmlMessage);
+        $content = $this->extractCData($xmlMessage);
         $msg = new Message();
         $msg->setContent($content.'<br/>'.'<strong>Message created during synchronisation at : '.$creationDate->format('d/m/Y H:i:s').'</strong>');
         $msg->setCreator($creator);
 
-        $this->forumManager->createMessage($msg, $subject, $message->getAttribute('hashname'));
+        $this->forumManager->createMessage($msg, $subject, $xmlMessage->getAttribute('hashname'));
         // Update of the Dates
-        $this->updateDate($message, $content);
+        $this->updateDate($msg, $xmlMessage);
 
     }
 
@@ -533,7 +533,7 @@ class OfflineForum extends OfflineResource
             if ($dbModificationDate < $date) {
                 $this->forumManager->editMessage($message, $dbContent, $xmlContent);
                 // Update of the Dates
-                $this->updateDate($message, $content);
+                $this->updateDate($message, $xmlMessage);
             } else {
                 $this->createMessageDoublon($xmlMessage, $message, $date);
             }
@@ -559,12 +559,12 @@ class OfflineForum extends OfflineResource
     /**
      * Update the creation and modification/update dates of a category, subject or message.
      */
-    private function updateDate($forumContent, $content)
+    private function updateDate($forumContent, $xmlContent)
     {
         $creationDate = new DateTime();
-        $creationDate->setTimestamp($content->getAttribute('creation_date'));
+        $creationDate->setTimestamp($xmlContent->getAttribute('creation_date'));
         $modificationDate = new DateTime();
-        $modificationDate->setTimestamp($content->getAttribute('update_date'));
+        $modificationDate->setTimestamp($xmlContent->getAttribute('update_date'));
 
         $listener = $this->getTimestampListener();
         $listener->forceTime($creationDate);
@@ -573,7 +573,7 @@ class OfflineForum extends OfflineResource
         $listener->forceTime($modificationDate);
         $forumContent->setModificationDate($modificationDate);
         $this->om->persist($forumContent);
-        $this->forumManager->logChangeSet($forumContent);
+        // $this->forumManager->logChangeSet($forumContent);
         $this->om->flush();
     }
 }

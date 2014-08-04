@@ -304,10 +304,9 @@ class TransferManager
         $new_user->setPlainPassword($password);
 
         $this->userManager->createUser($new_user);
-        // Demander à Nico, probleme que l'on est pas admin donc pas le droit de créer le rôle admin
-        // if ($result['admin']) {
-            // $this->roleManager->associateUserRole($new_user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN));
-        // }
+        if ($result['admin']) {
+            $this->roleManager->associateUserRole($new_user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN), false, true);
+        }
         $my_user = $this->userRepo->findOneBy(array('username' => $username));
         $ws_perso = $my_user->getPersonalWorkspace();
         $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $ws_perso, 'parent' => NULL));

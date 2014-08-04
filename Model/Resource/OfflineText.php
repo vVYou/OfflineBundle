@@ -133,7 +133,7 @@ class OfflineText extends OfflineResource
         $newResource->setMimeType($resource->getAttribute('mimetype'));
 
         $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
-        if(!$this->isUpdate){
+        if (!$this->isUpdate) {
             $wsInfo->addToCreate($resource->getAttribute('name'));
         }
         $node = $newResource->getResourceNode();

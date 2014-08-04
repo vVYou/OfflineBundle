@@ -107,6 +107,7 @@ class SynchronisationManager
                 $infoToDisplay = $this->step4Load($user, $userSync, $toLoad);
                 break;
         }
+
         return $infoToDisplay;
     }
 

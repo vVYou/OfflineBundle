@@ -23,7 +23,8 @@ class SyncConstant
     const PLATEFORM_URL = 'http://127.0.0.1/Claroline_2/web/app_dev.php';
     const SYNCHRO_UP_DIR = './synchronize_up/';
     const SYNCHRO_DOWN_DIR = './synchronize_down/';
-    const MAX_PACKET_SIZE = 524288; //Maximum packet sends by the network, fixed to size 1024Ko convert in byte (1024Ko = 1024 * 1024)
+    //Maximum fragment sends by the network, fixed to size 512Ko convert in byte (512Ko = 512 * 1024)
+    const MAX_FRAG_SIZE = 524288; // Value must be in bits.
     const PLAT_CONF = '../app/config/sync_config.yml';
 
     // ResourceType Constant

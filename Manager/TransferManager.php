@@ -373,7 +373,7 @@ class TransferManager
         if (! file_exists($filename)) {
             return -1;
         } else {
-            return (int) (filesize($filename)/SyncConstant::MAX_PACKET_SIZE)+1;
+            return (int) (filesize($filename)/SyncConstant::MAX_FRAG_SIZE)+1;
         }
     }
 
@@ -388,13 +388,13 @@ class TransferManager
             $fileSize = filesize($filename);
             $handle = fopen($filename, 'r');
             // Control that fragment exists
-            if ($fragmentNumber*SyncConstant::MAX_PACKET_SIZE > $fileSize || !$handle) {
+            if ($fragmentNumber*SyncConstant::MAX_FRAG_SIZE > $fileSize || !$handle) {
                 return null;
             } else {
-                $position = $fragmentNumber*SyncConstant::MAX_PACKET_SIZE;
+                $position = $fragmentNumber*SyncConstant::MAX_FRAG_SIZE;
                 fseek($handle, $position);
-                if ($fileSize > $position+SyncConstant::MAX_PACKET_SIZE) {
-                    $data = fread($handle, SyncConstant::MAX_PACKET_SIZE);
+                if ($fileSize > $position+SyncConstant::MAX_FRAG_SIZE) {
+                    $data = fread($handle, SyncConstant::MAX_FRAG_SIZE);
                 } else {
                     $data = fread($handle, $fileSize-$position);
                 }

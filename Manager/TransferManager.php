@@ -195,22 +195,24 @@ class TransferManager
         switch ($status) {
             case 200:
                 return true;
+            case $status/100 == 2:
+                return true;
             case 401:
                 throw new AuthenticationException();
-
-                return false;
+                break;
             case 404:
                 throw new PageNotFoundException();
+                break;
             case 424:
                 throw new ProcessSyncException();
-
-                return false;
+                break;
             case 500:
                 throw new ServeurException();
-
-                return false;
+                break;
             default:
-                return true;
+                //TODO Personalise error message with status
+                throw new SynchronisationFailsException();
+                return false;
         }
     }
 

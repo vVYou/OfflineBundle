@@ -1,16 +1,21 @@
 {
     "name": "claroline/offline-bundle",
     "type": "claroline-plugin",
-    "description": "Sync bundle for Claroline 2.0",
+    "description": "Offline Bundle for Claroline 3.0",
+    "keywords": ["Claroline", "Plugin", "Offline",  "Synchronisation"],
     "license": "GPL-3.0+",
     "authors": [
     {
         "name": "Legena Pierre-Yves et Van Ouytsel Vincent",
+        "email": "dev@claroline.net",
         "homepage": "https://github.com/vVYou/OfflineBundle"
     }
     ],
     "require": {
-        "claroline/core-bundle": "~3.0"
+        "claroline/core-bundle": "~3.0",
+        "claroline/forum-bundle": "~3.0",
+        "kriswallsmith/buzz":">=1.0",
+        
     },
     "autoload": {
         "psr-0": { "Claroline\\OfflineBundle": "" }

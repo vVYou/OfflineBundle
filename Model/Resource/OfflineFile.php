@@ -32,10 +32,6 @@ use \ZipArchive;
  */
 class OfflineFile extends OfflineResource
 {
-    // private $om;
-    // private $resourceManager;
-    // private $userRepo;
-    private $resourceNodeRepo;
     private $ut;
     private $isUpdate;
 

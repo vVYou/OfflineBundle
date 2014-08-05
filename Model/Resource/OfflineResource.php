@@ -72,14 +72,14 @@ abstract class OfflineResource extends OfflineElement
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
      */
-    public function addNodeToManifest($domManifest, $off_type, $domWorkspace, ResourceNode $resToAdd)
+    public function addNodeToManifest($domManifest, $offType, $domWorkspace, ResourceNode $resToAdd)
     {
         $typeNode = $resToAdd->getResourceType()->getId();
         $creationTime = $resToAdd->getCreationDate()->getTimestamp();
         $modificationTime = $resToAdd->getModificationDate()->getTimestamp();
 
         if (!($resToAdd->getParent() == NULL && $typeNode == SyncConstant::DIR)) {
-            $domRes = $domManifest->createElement('resource-'.$off_type);
+            $domRes = $domManifest->createElement('resource-'.$offType);
             $domWorkspace->appendChild($domRes);
 
             $type = $domManifest->createAttribute('type');

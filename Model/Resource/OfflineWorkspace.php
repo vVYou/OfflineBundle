@@ -30,7 +30,6 @@ use \DateTime;
  */
 class OfflineWorkspace extends OfflineElement
 {
-    private $resourceNodeRepo;
     private $roleRepo;
     private $templateDir;
     private $workspaceManager;

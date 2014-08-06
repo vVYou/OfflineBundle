@@ -32,12 +32,14 @@ use Claroline\OfflineBundle\Manager\Exception\ServeurException;
 use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
 use Claroline\OfflineBundle\Manager\TransferManager;
 use Claroline\OfflineBundle\Model\SyncConstant;
+use Claroline\OfflineBundle\Model\Security\OfflineAuthenticator;
 use \Buzz\Exception\ClientException;
 
 class SynchronisationController extends Controller
 {
     private $om;
     private $authenticator;
+    private $offlineAuthenticator;
     private $request;
     private $userManager;
     private $transferManager;
@@ -49,19 +51,21 @@ class SynchronisationController extends Controller
 
      /**
      * @DI\InjectParams({
-     *     "om"              = @DI\Inject("claroline.persistence.object_manager"),
-     *     "authenticator"   = @DI\Inject("claroline.authenticator"),
-     *     "userManager"     = @DI\Inject("claroline.manager.user_manager"),
-     *     "transferManager" = @DI\Inject("claroline.manager.transfer_manager"),
-     *     "request"         = @DI\Inject("request"),
-     *     "router"          = @DI\Inject("router"),
-     *     "session"         = @DI\Inject("session"),
-     *     "formFactory"     = @DI\Inject("form.factory")
+     *     "om"                   = @DI\Inject("claroline.persistence.object_manager"),
+     *     "authenticator"        = @DI\Inject("claroline.authenticator"),
+     *     "offlineAuthenticator" = @DI\Inject("claroline.offline_authenticator"),
+     *     "userManager"          = @DI\Inject("claroline.manager.user_manager"),
+     *     "transferManager"      = @DI\Inject("claroline.manager.transfer_manager"),
+     *     "request"              = @DI\Inject("request"),
+     *     "router"               = @DI\Inject("router"),
+     *     "session"              = @DI\Inject("session"),
+     *     "formFactory"          = @DI\Inject("form.factory")
      * })
      */
     public function __construct(
         ObjectManager $om,
         Authenticator $authenticator,
+        OfflineAuthenticator $offlineAuthenticator,
         UserManager $userManager,
         TransferManager $transferManager,
         Request $request,
@@ -72,6 +76,7 @@ class SynchronisationController extends Controller
     {
         $this->om = $om;
         $this->authenticator = $authenticator;
+        $this->offlineAuthenticator = $offlineAuthenticator;
         $this->userManager = $userManager;
         $this->transferManager = $transferManager;
         $this->request = $request;
@@ -96,7 +101,7 @@ class SynchronisationController extends Controller
         if ($user == null) {
             $status = 401;
         } else {
-            $status = $this->authenticator->authenticateWithToken($user->getUsername(), $informationsArray['token']) ? 200 : 401;
+            $status = $this->offlineAuthenticator->authenticateWithToken($user->getUsername(), $informationsArray['token']) ? 200 : 401;
         }
 
         return array(

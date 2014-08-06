@@ -11,6 +11,7 @@
 
 namespace Claroline\OfflineBundle\Model\Security;
 
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 
 class UserExchangeToken extends UsernamePasswordToken
 {

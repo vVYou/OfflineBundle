@@ -155,12 +155,12 @@ class SynchronisationManager
     private function step3Download(User $user, UserSynchronized $userSync, $filename, $totalFragments = null, $fragmentNumber = 0)
     {
         if ($totalFragments == null) {
-            echo "testons le nombre de frangments <br/>";
+            // echo "testons le nombre de frangments <br/>";
             $totalFragments = $this->transferManager->getNumberOfFragmentsOnline($filename, $user);
         }
         // The file doesn't exist online
         if ($totalFragments == -1) {
-            echo "j'en ai -1 <br/>";
+            // echo "j'en ai -1 <br/>";
             // Erase filename, set status and restart
             $userSync->setFilename(null);
             $userSync->setStatus(UserSynchronized::FAIL_UPLOAD);

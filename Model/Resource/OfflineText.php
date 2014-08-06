@@ -33,7 +33,6 @@ use \ZipArchive;
 class OfflineText extends OfflineResource
 {
     private $revisionRepo;
-    private $resourceNodeRepo;
     private $ut;
     private $isUpdate;
 

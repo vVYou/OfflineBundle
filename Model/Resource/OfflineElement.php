@@ -23,6 +23,7 @@ abstract class OfflineElement
     protected $resourceManager;
     protected $em;
     protected $userRepo;
+    protected $resourceNodeRepo;
     protected $userManager;
 
     /**

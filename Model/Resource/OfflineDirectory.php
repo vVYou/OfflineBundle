@@ -30,7 +30,6 @@ use \ZipArchive;
  */
 class OfflineDirectory extends OfflineResource
 {
-    private $resourceNodeRepo;
 
     /**
      * Constructor.

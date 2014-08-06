@@ -3,10 +3,11 @@ Feature: Claroffline Page
   As a website user
   I need to be logged in first
 
+  @clarof
   Scenario: Sucessfull acces to Claroffline
-    #Given the admin account "user_test" is created
-    #Given I log in with "user_test"/"user_test"
-    Given I log in with "root"/"password"
+    Given the admin account "user_test" is created
+    Given I log in with "user_test"/"user_test"
+    #Given I log in with "root"/"password"
     And I am on "/sync"
     Then I should see "Claroffline"
     

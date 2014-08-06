@@ -440,9 +440,7 @@ class TransferManager
     {
         $zipName = $this->assembleParts($content);
         if ($zipName != null) {
-            //Load archive
-            // $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
-            // $loadingResponse = $this->loadingManager->loadZip($zipName, $user);
+			//If online, load and create archive.
             if ($createSync) {
                 //Create synchronisation archive (when online)
 				$user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));

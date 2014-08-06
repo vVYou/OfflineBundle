@@ -197,34 +197,71 @@ class OfflineForum extends OfflineResource
         $elemToSync = array();
         $currentForum = $this->forumRepo->findOneBy(array('resourceNode' => $nodeForum));
         $categories = $this->categoryRepo->findBy(array('forum' => $currentForum));
-        $elemToSync = $this->checkCategory($categories, $elemToSync, $dateSync);
-
+		$subjects = $this->checkSubjectToSync($categories);
+		$messages = $this->checkMessageToSync($subjects);
+		
+		$elemToSync = $this->checkObsolete($categories, $dateSync, $elemToSync);
+		$elemToSync = $this->checkObsolete($subjects, $dateSync, $elemToSync);
+		$elemToSync = $this->checkObsolete($messages, $dateSync, $elemToSync);
+		
+        // $elemToSync = $this->checkCategory($categories, $elemToSync, $dateSync);
         return $elemToSync;
 
     }
+	
+	private function checkSubjectToSync($categories)
+	{
+		$query = $this->subjectRepo->createQueryBuilder('sub')
+			->where('sub.category IN (:categories)')
+			->setParameter('categories', $categories)
+			->getQuery();
 
+		return $query->getResult();
+	}
+
+	private function checkMessageToSync($subjects)
+	{
+		$query = $this->messageRepo->createQueryBuilder('mes')
+            ->where('mes.subject IN (:subjects)')
+            ->setParameter('subjects', $subjects)
+            ->getQuery();
+
+        return $query->getResult();
+	}
+	
+	private function checkObsolete($content, $dateSync, $elemToSync)
+	{
+		foreach($content as $element){
+			if ($element->getModificationDate()->getTimestamp() > $dateSync) {
+				 $elemToSync[] = $element;
+            }
+		}
+		
+		return $elemToSync;
+	}
+	
     /**
      * Check all categories of a list and see if they are new or updated.
      *
      *
      * @return array()
      */
-    private function checkCategory($categories, $elemToSync, $dateSync)
-    {
-        foreach ($categories as $category) {
-            if ($category->getModificationDate()->getTimestamp() > $dateSync) {
-                echo 'ma date de modif '.$category->getModificationDate()->getTimestamp().' '.'ma date de sync'.$dateSync.'<br/>';
-                $tot = new DateTime();
-                echo 'ma date de modif '.$category->getModificationDate()->format('d/m/Y H:i:s').' '.'ma date de sync'.$tot->setTimeStamp($dateSync)->format('d/m/Y H:i:s').'<br/>';
-                 $elemToSync[] = $category;
-            }
-            $subjects = $this->subjectRepo->findBy(array('category' => $category));
-            $elemToSync = $this->checkSubject($subjects, $elemToSync, $dateSync);
-        }
+    // private function checkCategory($categories, $elemToSync, $dateSync)
+    // {
+        // foreach ($categories as $category) {
+            // if ($category->getModificationDate()->getTimestamp() > $dateSync) {
+                // echo 'ma date de modif '.$category->getModificationDate()->getTimestamp().' '.'ma date de sync'.$dateSync.'<br/>';
+                // $tot = new DateTime();
+                // echo 'ma date de modif '.$category->getModificationDate()->format('d/m/Y H:i:s').' '.'ma date de sync'.$tot->setTimeStamp($dateSync)->format('d/m/Y H:i:s').'<br/>';
+                 // $elemToSync[] = $category;
+            // }
+            // $subjects = $this->subjectRepo->findBy(array('category' => $category));
+            // $elemToSync = $this->checkSubject($subjects, $elemToSync, $dateSync);
+        // }
 
-        return $elemToSync;
+        // return $elemToSync;
 
-    }
+    // }
 
 
     /**
@@ -233,23 +270,23 @@ class OfflineForum extends OfflineResource
      *
      * @return array()
      */
-    private function checkSubject($subjects, $elemToSync, $dateSync)
-    {
-        foreach ($subjects as $subject) {
-            if ($subject->getModificationDate()->getTimestamp() > $dateSync) {
-            echo 'ma date de modif '.$subject->getModificationDate()->getTimestamp().' '.'ma date de sync'.$dateSync.'<br/>';
-            $tot = new DateTime();
-            echo 'ma date de modif '.$subject->getModificationDate()->format('d/m/Y H:i:s').' '.'ma date de sync'.$tot->setTimeStamp($dateSync)->format('d/m/Y H:i:s').'<br/>';
-                 $elemToSync[] = $subject;
-            }
+    // private function checkSubject($subjects, $elemToSync, $dateSync)
+    // {
+        // foreach ($subjects as $subject) {
+            // if ($subject->getModificationDate()->getTimestamp() > $dateSync) {
+            // echo 'ma date de modif '.$subject->getModificationDate()->getTimestamp().' '.'ma date de sync'.$dateSync.'<br/>';
+            // $tot = new DateTime();
+            // echo 'ma date de modif '.$subject->getModificationDate()->format('d/m/Y H:i:s').' '.'ma date de sync'.$tot->setTimeStamp($dateSync)->format('d/m/Y H:i:s').'<br/>';
+                 // $elemToSync[] = $subject;
+            // }
 
-            $messages = $this->messageRepo->findBySubject($subject);
-            $elemToSync = $this->checkMessage($messages, $elemToSync, $dateSync);
-        }
+            // $messages = $this->messageRepo->findBySubject($subject);
+            // $elemToSync = $this->checkMessage($messages, $elemToSync, $dateSync);
+        // }
 
-        return $elemToSync;
+        // return $elemToSync;
 
-    }
+    // }
 
 
     /**
@@ -258,19 +295,19 @@ class OfflineForum extends OfflineResource
      *
      * @return array()
      */
-    private function checkMessage($messages, $elemToSync, $dateSync)
-    {
-        foreach ($messages as $message) {
-            if ($message->getModificationDate()->getTimestamp() > $dateSync) {
-            echo 'ma date de modif '.$message->getModificationDate()->getTimestamp().' '.'ma date de sync'.$dateSync.'<br/>';
-            $tot = new DateTime();
-            echo 'ma date de modif '.$message->getModificationDate()->format('d/m/Y H:i:s').' '.'ma date de sync'.$tot->setTimeStamp($dateSync)->format('d/m/Y H:i:s').'<br/>';
-            $elemToSync[] = $message;
-            }
-        }
+    // private function checkMessage($messages, $elemToSync, $dateSync)
+    // {
+        // foreach ($messages as $message) {
+            // if ($message->getModificationDate()->getTimestamp() > $dateSync) {
+            // echo 'ma date de modif '.$message->getModificationDate()->getTimestamp().' '.'ma date de sync'.$dateSync.'<br/>';
+            // $tot = new DateTime();
+            // echo 'ma date de modif '.$message->getModificationDate()->format('d/m/Y H:i:s').' '.'ma date de sync'.$tot->setTimeStamp($dateSync)->format('d/m/Y H:i:s').'<br/>';
+            // $elemToSync[] = $message;
+            // }
+        // }
 
-        return $elemToSync;
-    }
+        // return $elemToSync;
+    // }
 
     /**
      * Add the content of the forum in the Archive.
@@ -543,8 +580,10 @@ class OfflineForum extends OfflineResource
                 // Update of the Dates
                 $this->updateDate($message, $xmlMessage);
             } else {
-                $this->createMessageDoublon($xmlMessage, $message, $date);
-            }
+				if($dbModificationDate != $xmlModificationDate){
+					$this->createMessageDoublon($xmlMessage, $message, $date);
+				}
+			}
         }
 
     }
@@ -574,11 +613,11 @@ class OfflineForum extends OfflineResource
         $modificationDate = new DateTime();
         $modificationDate->setTimestamp($xmlContent->getAttribute('update_date'));
 
-        $listener = $this->getTimestampListener();
-        $listener->forceTime($creationDate);
+        // $listener = $this->getTimestampListener();
+        // $listener->forceTime($creationDate);
         $forumContent->setCreationDate($creationDate);
-        $listener = $this->getTimestampListener();
-        $listener->forceTime($modificationDate);
+        // $listener = $this->getTimestampListener();
+        // $listener->forceTime($modificationDate);
         $forumContent->setModificationDate($modificationDate);
         $this->om->persist($forumContent);
         // $this->forumManager->logChangeSet($forumContent);

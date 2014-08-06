@@ -1,13 +1,24 @@
-{% from _self import renderPager %}
-
-{% set layout = "ClarolineOfflineBundle:Offline:content.html.twig" %}
-
-{% extends layout%}
+{% extends "ClarolineCoreBundle:Desktop:layout.html.twig" %}
 
 {% block title %}{{ parent() ~ ' - ' ~ 'sync_mode' | trans({}, 'offline') | striptags | raw }}{% endblock %}
 
+{% block breadcrumb %}
+    {{
+        macros.breadcrumbs([
+            {
+                'icon': 'icon-briefcase',
+                'name': 'desktop'|trans({}, 'platform'),
+                'href': path('claro_desktop_open')
+            },
+            {
+                'name': 'claroline_offline_tool'|trans({}, 'tools'),
+                'href': ''
+            }
+        ])
+    }}
+{% endblock %}
 
-{% block content %}
+{% block section_content %}
     {{ macros.flashBox() }}
         {% if msg %}
             <div class="alert alert-danger">

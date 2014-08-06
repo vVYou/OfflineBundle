@@ -14,6 +14,7 @@ namespace Claroline\OfflineBundle\Model\Security;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 use Claroline\CoreBundle\Library\Security\PlatformRoles;
+use Claroline\OfflineBundle\Model\Security\UserExchangeToken;
 use JMS\DiExtraBundle\Annotation as DI;
 
 /**
@@ -33,17 +34,12 @@ class exchangeTokenVoter implements VoterInterface
 
     protected function isConnectedByToken(TokenInterface $token)
     {
-        foreach ($token->getRoles() as $role) {
-            if (PlatformRoles::ADMIN === $role->getRole()) {
-                return true;
-            }
-        }
-        
         // if($token->getCredentials() == $user->getExchangeToken()){
             // return true;
         // }
 
-        return false;
+        $vote = $token instanceof UserExchangeToken ? true: false;
+        return $vote;
     }
 
     public function supportsAttribute($attribute)

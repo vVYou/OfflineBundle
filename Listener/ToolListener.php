@@ -47,7 +47,8 @@ class ToolListener
         $content = $this->templating->render(
             "ClarolineOfflineBundle:Offline:connect_ok.html.twig",
             array(
-                'first_sync' => false
+                'first_sync' => false,
+				'msg' => ''
             )
         );
         $event->setContent($content);

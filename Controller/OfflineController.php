@@ -82,7 +82,8 @@ class OfflineController extends Controller
         $first_sync = false;
 
         return array(
-           'first_sync' => $first_sync
+           'first_sync' => $first_sync,
+		   'msg' => ''
         );
 
     }

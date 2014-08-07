@@ -211,7 +211,7 @@ class TransferManager
                 break;
             default:
                 //TODO Personalise error message with status
-                throw new SynchronisationFailsException();
+                throw new SynchronisationFailsException("Transfer fails with status ".$status, $status);
                 return false;
         }
     }
@@ -358,7 +358,7 @@ class TransferManager
     {
         if (!file_exists($filename)) {
             $this->userSyncManager->resetSync($user);
-            throw new SynchronisationFailsException();
+            throw new SynchronisationFailsException("File requiered for the transfer doesn't exist");
         } else {
             return array(
                 'token' => $user->getExchangeToken(),
@@ -386,7 +386,7 @@ class TransferManager
     {
         if (!file_exists($filename)) {
             $this->userSyncManager->resetSync($user);
-            throw new SynchronisationFailsException();
+            throw new SynchronisationFailsException("Can't calculate the fragment of the archive, the file doesn't exist");
         } else {
             $fileSize = filesize($filename);
             $handle = fopen($filename, 'r');

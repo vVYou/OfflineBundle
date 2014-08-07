@@ -191,22 +191,29 @@ class LoadingManager
         $xmlDocument = new DOMDocument();
         $xmlDocument->load($xmlFilePath);
 
-        $this->importDescription($xmlDocument);
-        $this->importWorkspaces($xmlDocument);
-
+        if(!$this->importDescription($xmlDocument)){	
+			$this->importWorkspaces($xmlDocument);
+		}
     }
 
     /**
-     * This method is used to work on the different fields inside the
-     * <description> tags in the XML file.
+     * This method is used to check if the user described in the description section of the XML
+	 * is the user that try to synchronise. Return false if he's not.
+	 *
+	 * @return boolean
      */
     private function importDescription($xmlDocument)
     {
         $descriptions = $xmlDocument->getElementsByTagName("description");
         foreach ($descriptions as $description) {
-            // $this->user = $this->userRepo->findOneBy(array('username' => $description->getAttribute('username'), 'mail' => $description->getAttribute('user_mail')));
-            $this->synchronizationDate = $description->getAttribute('synchronization_date');
+            $manifestUser = $this->userRepo->findOneBy(array('username' => $description->getAttribute('username'), 'mail' => $description->getAttribute('user_mail')));	
+			if($manifestUser->getExchangeToken() == $this->user->getExchangeToken()){
+				$this->synchronizationDate = $description->getAttribute('synchronization_date');
+				return true;
+			}
         }
+		
+		return false;
     }
 
     /**

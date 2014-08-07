@@ -332,7 +332,8 @@ class SynchronisationController extends Controller
                     return $this->render(
                         'ClarolineOfflineBundle:Offline:connect_ok.html.twig',
                         array(
-                            'first_sync' => true
+                            'first_sync' => true,
+							'msg' => ''
                         ));
                 } catch (AuthenticationException $e) {
                     $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');

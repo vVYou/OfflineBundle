@@ -29,7 +29,7 @@ use \DOMDocument;
 use \DateTime;
 use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 
-class CreationManager
+class TestDQLManager
 {
     private $om;
     private $pagerFactory;

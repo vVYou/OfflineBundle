@@ -191,7 +191,7 @@ class LoadingManager
         $xmlDocument = new DOMDocument();
         $xmlDocument->load($xmlFilePath);
 
-        if(!$this->importDescription($xmlDocument)){	
+        if($this->importDescription($xmlDocument)){	
 			$this->importWorkspaces($xmlDocument);
 		}
     }

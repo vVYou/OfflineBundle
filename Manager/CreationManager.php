@@ -20,14 +20,12 @@ use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Claroline\OfflineBundle\Model\SyncConstant;
+use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 use JMS\DiExtraBundle\Annotation as DI;
-//use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
 use \ZipArchive;
 use \DOMDocument;
 use \DateTime;
-use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 
 /**
  * @DI\Service("claroline.manager.creation_manager")
@@ -49,6 +47,8 @@ class CreationManager
     private $roleRepo;
     private $ut;
     private $offline;
+    private $manifestName;
+    private $syncDownDir;
 
     /**
      * Constructor.
@@ -58,7 +58,9 @@ class CreationManager
      *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
      *     "translator"     = @DI\Inject("translator"),
      *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc")
+     *     "ut"            = @DI\Inject("claroline.utilities.misc"),
+     *     "manifestName"  = @DI\Inject("%claroline.synchronisation.manifest%"),
+     *     "syncDownDir"   = @DI\Inject("%claroline.synchronisation.down_directory%")
      * })
      */
     public function __construct(
@@ -66,7 +68,9 @@ class CreationManager
         PagerFactory $pagerFactory,
         TranslatorInterface $translator,
         ResourceManager $resourceManager,
-        ClaroUtilities $ut
+        ClaroUtilities $ut,
+        $manifestName,
+        $syncDownDir
     )
     {
         $this->om = $om;
@@ -84,6 +88,8 @@ class CreationManager
         $this->resourceManager = $resourceManager;
         $this->ut = $ut;
         $this->offline = array();
+        $this->manifestName = $manifestName;
+        $this->syncDownDir = $syncDownDir;
     }
 
     public function addOffline(OfflineElement  $offline)
@@ -105,7 +111,7 @@ class CreationManager
         $archive = new ZipArchive();
         $domManifest = new DOMDocument('1.0', "UTF-8");
         $domManifest->formatOutput = true;
-        $manifestName = SyncConstant::MANIFEST.'_'.$user->getUsername().'.xml';
+        $manifestName = $this->manifestName.'_'.$user->getUsername().'.xml';
 
         // Manifest section
         $sectManifest = $domManifest->createElement('manifest');
@@ -114,7 +120,7 @@ class CreationManager
         //Description section
         $this->writeManifestDescription($domManifest, $sectManifest, $user, $date);
 
-        $dir = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId();
+        $dir = $this->syncDownDir.$user->getId();
 
         // Create the Directory if it does not exists.
         if (!is_dir($dir)) {

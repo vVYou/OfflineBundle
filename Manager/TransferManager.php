@@ -55,6 +55,9 @@ class TransferManager
     private $ut;
     private $yaml_dump;
     private $yaml_parser;
+    private $syncUpDir;
+    private $fragSize;
+    private $offlineConfig;
 
     /**
      * Constructor.
@@ -68,7 +71,10 @@ class TransferManager
      *     "userManager"        = @DI\Inject("claroline.manager.user_manager"),
      *     "userSyncManager"    = @DI\Inject("claroline.manager.user_sync_manager"),
      *     "roleManager"        = @DI\Inject("claroline.manager.role_manager"),
-     *     "ut"                 = @DI\Inject("claroline.utilities.misc")
+     *     "ut"                 = @DI\Inject("claroline.utilities.misc"),
+     *     "syncUpDir"          = @DI\Inject("%claroline.synchronisation.manifest%"),
+     *     "fragSize"           = @DI\Inject("%claroline.synchronisation.frag_size%"),
+     *     "offlineConfig"      = @DI\Inject("%claroline.synchronisation.offline_config%")
      * })
      */
     public function __construct(
@@ -80,7 +86,10 @@ class TransferManager
         UserManager $userManager,
         UserSyncManager $userSyncManager,
         RoleManager $roleManager,
-        ClaroUtilities $ut
+        ClaroUtilities $ut,
+        $syncUpDir,
+        $fragSize,
+        $offlineConfig
     )
     {
         $this->om = $om;
@@ -97,6 +106,9 @@ class TransferManager
         $this->ut = $ut;
         $this->yaml_dump = new Dumper();
         $this->yaml_parser = new Parser();
+        $this->syncUpDir = $syncUpDir;
+        $this->fragSize = $fragSize;
+        $this->offlineConfig = $offlineConfig;
     }
 
     /*
@@ -377,7 +389,7 @@ class TransferManager
         if (! file_exists($filename)) {
             return -1;
         } else {
-            return (int) (filesize($filename)/SyncConstant::MAX_FRAG_SIZE)+1;
+            return (int) (filesize($filename)/$this->fragSize)+1;
         }
     }
 
@@ -392,13 +404,13 @@ class TransferManager
             $fileSize = filesize($filename);
             $handle = fopen($filename, 'r');
             // Control that fragment exists
-            if ($fragmentNumber*SyncConstant::MAX_FRAG_SIZE > $fileSize || !$handle) {
+            if ($fragmentNumber*$this->fragSize > $fileSize || !$handle) {
                 return null;
             } else {
-                $position = $fragmentNumber*SyncConstant::MAX_FRAG_SIZE;
+                $position = $fragmentNumber*$this->fragSize;
                 fseek($handle, $position);
-                if ($fileSize > $position+SyncConstant::MAX_FRAG_SIZE) {
-                    $data = fread($handle, SyncConstant::MAX_FRAG_SIZE);
+                if ($fileSize > $position+$this->fragSize) {
+                    $data = fread($handle, $this->fragSize);
                 } else {
                     $data = fread($handle, $fileSize-$position);
                 }
@@ -414,7 +426,7 @@ class TransferManager
     public function processSyncRequest($content, $createSync)
     {
         $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
-        $dir = SyncConstant::SYNCHRO_UP_DIR.$user->getId();
+        $dir = $this->syncUpDir.$user->getId();
         // If directory doesn't exists create it
         if (!is_dir($dir)) {
             mkdir($dir, 0777);
@@ -468,11 +480,11 @@ class TransferManager
     private function assembleParts($content)
     {
         $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
-        $zipName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$content['hashname'].'.zip';
+        $zipName = $this->syncUpDir.$user->getId().'/sync_'.$content['hashname'].'.zip';
         $zipFile = fopen($zipName, 'w+');
         if(!$zipFile) return null;
         for ($i = 0; $i<$content['totalFragments']; $i++) {
-            $fragmentName = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$content['hashname'].'_'.$i;
+            $fragmentName = $this->syncUpDir.$user->getId().'/'.$content['hashname'].'_'.$i;
             $partFile = fopen($fragmentName, 'r');
             if(!$partFile) return null;
             $write = fwrite($zipFile, fread($partFile, filesize($fragmentName)));
@@ -491,7 +503,7 @@ class TransferManager
     // Create and/or add a new User profil in the synchronisation file.
     public function createSyncConfigFile($result, $url)
     {
-        if (!(file_exists(SyncConstant::PLAT_CONF))) {
+        if (!(file_exists($this->offlineConfig))) {
             $yaml_array = array();
             $sync_config = array(
                 'username' => $result['username'],
@@ -501,10 +513,10 @@ class TransferManager
             $yaml_array[] = $sync_config;
 
             $yaml = $this->yaml_dump->dump($yaml_array);
-            file_put_contents(SyncConstant::PLAT_CONF, $yaml);
+            file_put_contents($this->offlineConfig, $yaml);
 
         } else {
-            $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+            $value = $this->yaml_parser->parse(file_get_contents($this->offlineConfig));
             $sync_config = array(
                 'username' => $result['username'],
                 'mail' => $result['mail'],
@@ -513,14 +525,14 @@ class TransferManager
             $value[] = $sync_config;
 
             $yaml = $this->yaml_dump->dump($value);
-            file_put_contents(SyncConstant::PLAT_CONF, $yaml);
+            file_put_contents($this->offlineConfig, $yaml);
         }
     }
 
     // Return the URL specify for the given User in the synchronisation file.
     public function getUserUrl(User $user)
     {
-        $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+        $value = $this->yaml_parser->parse(file_get_contents($this->offlineConfig));
         foreach ($value as $elem) {
             if ($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()) {
                 return $elem['url'];

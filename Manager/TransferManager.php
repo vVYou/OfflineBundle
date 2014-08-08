@@ -21,12 +21,12 @@ use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Library\Security\PlatformRoles;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
+use Claroline\OfflineBundle\Manager\Exception\DownloadFailsException;
+use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
 use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
 use Claroline\OfflineBundle\Manager\Exception\ServeurException;
-use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
 use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
 use Claroline\CoreBundle\Manager\UserManager;
-// use Claroline\OfflineBundle\Model\SyncConstant;
 use Symfony\Component\Translation\TranslatorInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use \Buzz\Browser;
@@ -56,6 +56,7 @@ class TransferManager
     private $yaml_dump;
     private $yaml_parser;
     private $syncUpDir;
+    private $syncDownDir;
     private $fragSize;
     private $offlineConfig;
 
@@ -73,6 +74,7 @@ class TransferManager
      *     "roleManager"        = @DI\Inject("claroline.manager.role_manager"),
      *     "ut"                 = @DI\Inject("claroline.utilities.misc"),
      *     "syncUpDir"          = @DI\Inject("%claroline.synchronisation.up_directory%"),
+     *     "syncDownDir"          = @DI\Inject("%claroline.synchronisation.down_directory%"),
      *     "fragSize"           = @DI\Inject("%claroline.synchronisation.frag_size%"),
      *     "offlineConfig"      = @DI\Inject("%claroline.synchronisation.offline_config%")
      * })
@@ -88,6 +90,7 @@ class TransferManager
         RoleManager $roleManager,
         ClaroUtilities $ut,
         $syncUpDir,
+        $syncDownDir,
         $fragSize,
         $offlineConfig
     )
@@ -107,6 +110,7 @@ class TransferManager
         $this->yaml_dump = new Dumper();
         $this->yaml_parser = new Parser();
         $this->syncUpDir = $syncUpDir;
+        $this->syncDownDir = $syncDownDir;
         $this->fragSize = $fragSize;
         $this->offlineConfig = $offlineConfig;
     }
@@ -140,7 +144,6 @@ class TransferManager
                 $metadatas['file'] = base64_encode($this->getFragment($fragmentNumber, $toTransfer, $user));
                 $metadatas['fragmentNumber'] = $fragmentNumber;
                 // Execute the post request sending informations online
-                echo "Je contacte cet URL : ".$url."<br/>";
                 $reponse = $browser->post($url.'/sync/uploadArchive', array(), json_encode($metadatas));
                 $responseContent = $reponse->getContent();
                 echo "Content <br/>".$responseContent."<br/>";
@@ -149,7 +152,7 @@ class TransferManager
                 $fragmentNumber ++;
             }
             // Control result of the requests
-            // $this->analyseStatusCode($status);
+            $this->analyseStatusCode($status);
 
             return $responseContent;
         } catch (ClientException $e) {
@@ -183,7 +186,7 @@ class TransferManager
                 $content = $reponse->getContent();
                 echo "Content <br/>".$content."<br/>";
                 $status = $reponse->getStatusCode();
-                // $this->analyseStatusCode($status);
+                $this->analyseStatusCode($status);
                 $processContent = $this->processSyncRequest((array) json_decode($content), false);
                 $status = $processContent['status'];
                 $fragmentNumber++;
@@ -206,6 +209,8 @@ class TransferManager
     private function analyseStatusCode($status)
     {
         switch ($status) {
+            case $status/100 == 1:
+                return true;
             case 200:
                 return true;
             case $status/100 == 2:
@@ -219,13 +224,15 @@ class TransferManager
             case 424:
                 throw new ProcessSyncException();
                 break;
+            case 480:
+                throw new DownloadFailsException();
+                break;
             case 500:
                 throw new ServeurException();
                 break;
             default:
                 //TODO Personalise error message with status
                 throw new SynchronisationFailsException("Transfer fails with status ".$status, $status);
-
                 return false;
         }
     }
@@ -347,8 +354,25 @@ class TransferManager
     // This method is used to delete files on the online plateform
     public function unlinkSynchronisationFile($content, $user)
     {
-        unlink($content['dir'].$user->getId().'/sync_'.$content['hashname'].'.zip');
-        $content['status'] = 200;
+        $dir = null;
+        switch ($content['dir']){
+            case 'UP' :
+            echo "DELETE UP";
+                $dir = $this->syncUpDir;
+                break;
+            case 'DOWN':
+            echo "DELETE DOWN";
+                $dir = $this->syncDownDir;
+                break;
+            default:
+                $dir = null;
+        }
+        if ($dir != null){
+            unlink($dir.$user->getId().'/sync_'.$content['hashname'].'.zip');
+            $content['status'] = 200;
+        }else{
+            $content['status'] = 424;
+        }
 
         return $content;
     }

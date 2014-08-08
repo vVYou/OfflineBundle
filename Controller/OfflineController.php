@@ -11,22 +11,21 @@
 
 namespace Claroline\OfflineBundle\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\ResourceNode;
-// use Claroline\OfflineBundle\Model\SyncConstant;
-use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\CoreBundle\Persistence\ObjectManager;
+use Claroline\OfflineBundle\Model\SyncInfo;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Dumper;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -458,11 +457,11 @@ class OfflineController extends Controller
     *   )
     *
     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-     * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
-     * @param User $user
-     *
-     * @return Response
-     */
+    * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
+    * @param User $user
+    *
+    * @return Response
+    */
     public function seekTestAction(User $user)
     {
         $results = array();
@@ -486,11 +485,11 @@ class OfflineController extends Controller
     *   )
     *
     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-     * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
-     * @param User $user
-     *
-     * @return Response
-     */
+    * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
+    * @param User $user
+    *
+    * @return Response
+    */
     public function loadTestAction(User $user)
     {
         $results = array();

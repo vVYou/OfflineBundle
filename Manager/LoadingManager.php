@@ -97,7 +97,7 @@ class LoadingManager
 
             //Call LoadXML
             $this->loadXML($this->path.$this->manifestName.'_'.$user->getUsername().'.xml');
-            // $this->delTree($this->path);
+            $this->delTree($this->path);
         } else {
             throw new \Exception('Impossible to load the zip file');
         }
@@ -108,14 +108,14 @@ class LoadingManager
         );
     }
     
+    public static function delTree($dir) { 
+        $files = array_diff(scandir($dir), array('.','..')); 
+        foreach ($files as $file) { 
+            (is_dir("$dir/$file")) ? delTree("$dir/$file") : unlink("$dir/$file"); 
+        } 
+        return rmdir($dir); 
+    } 
     
-    // public static function delTree($dir) { 
-        // $files = array_diff(scandir($dir), array('.','..')); 
-        // foreach ($files as $file) { 
-            // (is_dir("$dir/$file")) ? delTree("$dir/$file") : unlink("$dir/$file"); 
-        // } 
-        // return rmdir($dir); 
-    // } 
     /**
      * This method will load and parse the manifest XML file
      */

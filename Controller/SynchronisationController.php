@@ -197,13 +197,17 @@ class SynchronisationController extends Controller
         $content = array();
         if ($status == 200) {
             $fileName =$this->syncDownDir.$user->getId().'/sync_'.$informationsArray['hashname'].'.zip';
-            $content = $this->transferManager->getMetadataArray($user, $fileName);
-            $content['fragmentNumber']=$informationsArray['fragmentNumber'];
-            $data = $this->transferManager->getFragment($informationsArray['fragmentNumber'], $fileName, $user);
-            if ($data == null) {
-                $status = 424;
-            } else {
-                $content['file'] = base64_encode($data);
+            if(file_exists($fileName)){
+                $content = $this->transferManager->getMetadataArray($user, $fileName);
+                $content['fragmentNumber']=$informationsArray['fragmentNumber'];
+                $data = $this->transferManager->getFragment($informationsArray['fragmentNumber'], $fileName, $user);
+                if ($data == null) {
+                    $status = 424;
+                } else {
+                    $content['file'] = base64_encode($data);
+                }
+            }else{
+                $status = 480;
             }
         }
         return new JsonResponse($content, $status);

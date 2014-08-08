@@ -21,7 +21,7 @@ use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\ResourceNode;
-use Claroline\OfflineBundle\Model\SyncConstant;
+// use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -41,26 +41,30 @@ class OfflineController extends Controller
     private $yamlparser;
     private $yaml_parser;
     private $yaml_dump;
+    private $plateformConf;
 
     /**
     * @DI\InjectParams({
-    *      "router"             = @DI\Inject("router"),
-    *     "request"            = @DI\Inject("request"),
-         *     "om"             = @DI\Inject("claroline.persistence.object_manager")
+    *   "router"        = @DI\Inject("router"),
+    *   "request"       = @DI\Inject("request"),
+    *   "om"            = @DI\Inject("claroline.persistence.object_manager"),
+    *   "plateformConf" = @DI\Inject("%claroline.synchronisation.offline_config%")
     * })
     */
     public function __construct(
         UrlGeneratorInterface $router,
         Request $request,
-                ObjectManager $om
+        ObjectManager $om,
+        $plateformConf
     )
     {
        $this->router = $router;
        $this->request = $request;
-               $this->om = $om;
+       $this->om = $om;
        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
        $this->yaml_parser = new Parser();
        $this->yaml_dump = new Dumper();
+       $this->plateformConf = $plateformConf;
     }
 
     /**
@@ -234,19 +238,14 @@ class OfflineController extends Controller
 
         } catch (AuthenticationException $e) {
             $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
-            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
         } catch (ProcessSyncException $e) {
             $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
         } catch (ServeurException $e) {
             $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
         } catch (PageNotFoundException $e) {
             $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
-            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
         } catch (ClientException $e) {
             $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
-            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
         } catch (SynchronisationFailsException $e) {
             $msg = $this->get('translator')->trans('sync_fail', array(), 'offline');
         }
@@ -268,7 +267,7 @@ class OfflineController extends Controller
     *   Seek and show all the modified courses and ressources
     *
     *   @EXT\Route(
-    *       "//seek",
+    *       "/seek",
     *       name="claro_sync_seek"
     *   )
     *
@@ -297,7 +296,7 @@ class OfflineController extends Controller
     *  Transfer a file (sync archive) from a computer to another
     *
     *   @EXT\Route(
-    *       "//transfer/{user}",
+    *       "/transfer/{user}",
     *       name="claro_sync_transfertest"
     *   )
     *
@@ -330,7 +329,7 @@ class OfflineController extends Controller
     *  Transfer a file (sync archive) from a computer to another
     *
     *   @EXT\Route(
-    *       "//getsync/{user}",
+    *       "/getsync/{user}",
     *       name="claro_sync_gettest"
     *   )
     *
@@ -362,30 +361,7 @@ class OfflineController extends Controller
 
     /**
     *   @EXT\Route(
-    *       "//loadWorkspaces",
-    *       name="claro_sync_load_workspace"
-    *   )
-    *
-    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-    * @EXT\Template("ClarolineOfflineBundle:Offline:load.html.twig")
-    *
-    * @param User $user
-    * @return Response
-    */
-    public function loadWorkspacesAction(User $user)
-    {
-        $zip = $this->get('claroline.manager.loading_manager')->loadPublicWorkspaceList(SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/all_workspaces.xml');
-
-        $username = $user->getFirstName() . ' ' . $user->getLastName();
-
-        return array(
-            'user' => $username
-         );
-    }
-
-    /**
-    *   @EXT\Route(
-    *       "//getuser",
+    *       "/getuser",
     *       name="claro_sync_getuser"
     *   )
     *
@@ -423,7 +399,7 @@ class OfflineController extends Controller
      */
     public function editUrlAction(User $user)
     {
-        $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+        $value = $this->yaml_parser->parse(file_get_contents($this->plateformConf));
         $results = array();
         foreach ($value as $elem) {
             if ($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()) {
@@ -454,7 +430,7 @@ class OfflineController extends Controller
         $new_url = $request->request->get('_url');
         $new_yaml = array();
 
-        $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+        $value = $this->yaml_parser->parse(file_get_contents($this->plateformConf));
 
         foreach ($value as $elem) {
             if ($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()) {
@@ -463,7 +439,7 @@ class OfflineController extends Controller
             $new_yaml[] = $elem;
         }
         $yaml = $this->yaml_dump->dump($new_yaml);
-        file_put_contents(SyncConstant::PLAT_CONF, $yaml);
+        file_put_contents($this->plateformConf, $yaml);
 
         return $this->redirect($this->generateUrl('claro_desktop_open_tool', array('toolName' => "claroline_offline_tool")));
 
@@ -477,7 +453,7 @@ class OfflineController extends Controller
     *   Test Creation
     *
     *   @EXT\Route(
-    *       "//seek_test",
+    *       "/seek_test",
     *       name="claro_sync_seek_test"
     *   )
     *
@@ -505,7 +481,7 @@ class OfflineController extends Controller
     *   Test Creation
     *
     *   @EXT\Route(
-    *       "//load_test",
+    *       "/load_test",
     *       name="claro_sync_load_test"
     *   )
     *

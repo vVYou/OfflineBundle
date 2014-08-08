@@ -54,13 +54,13 @@ class CreationManager
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
-     *     "translator"     = @DI\Inject("translator"),
-     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc"),
-     *     "manifestName"  = @DI\Inject("%claroline.synchronisation.manifest%"),
-     *     "syncDownDir"   = @DI\Inject("%claroline.synchronisation.down_directory%")
+     *     "om"              = @DI\Inject("claroline.persistence.object_manager"),
+     *     "pagerFactory"    = @DI\Inject("claroline.pager.pager_factory"),
+     *     "translator"      = @DI\Inject("translator"),
+     *     "resourceManager" = @DI\Inject("claroline.manager.resource_manager"),
+     *     "ut"              = @DI\Inject("claroline.utilities.misc"),
+     *     "manifestName"    = @DI\Inject("%claroline.synchronisation.manifest%"),
+     *     "syncDownDir"     = @DI\Inject("%claroline.synchronisation.down_directory%")
      * })
      */
     public function __construct(
@@ -124,7 +124,7 @@ class CreationManager
 
         // Create the Directory if it does not exists.
         if (!is_dir($dir)) {
-            mkdir($dir, 0777);
+            mkdir($dir, 0777, true);
         }
 
         $hashname_zip = $this->ut->generateGuid();

@@ -48,10 +48,10 @@ class LoadingManager
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc"),
-     *     "extractDir"        = @DI\Inject("%claroline.synchronisation.extract_directory%"),
-     *     "manifestName"      = @DI\Inject("%claroline.synchronisation.manifest%")
+     *     "om"           = @DI\Inject("claroline.persistence.object_manager"),
+     *     "ut"           = @DI\Inject("claroline.utilities.misc"),
+     *     "extractDir"   = @DI\Inject("%claroline.synchronisation.extract_directory%"),
+     *     "manifestName" = @DI\Inject("%claroline.synchronisation.manifest%")
      * })
      */
     public function __construct(
@@ -97,7 +97,7 @@ class LoadingManager
 
             //Call LoadXML
             $this->loadXML($this->path.$this->manifestName.'_'.$user->getUsername().'.xml');
-
+            // $this->delTree($this->path);
         } else {
             throw new \Exception('Impossible to load the zip file');
         }
@@ -107,7 +107,15 @@ class LoadingManager
             'synchronizationDate' => $this->synchronizationDate
         );
     }
-
+    
+    
+    // public static function delTree($dir) { 
+        // $files = array_diff(scandir($dir), array('.','..')); 
+        // foreach ($files as $file) { 
+            // (is_dir("$dir/$file")) ? delTree("$dir/$file") : unlink("$dir/$file"); 
+        // } 
+        // return rmdir($dir); 
+    // } 
     /**
      * This method will load and parse the manifest XML file
      */

@@ -48,6 +48,8 @@ class SynchronisationController extends Controller
     private $formFactory;
     private $userRepo;
     private $resourceNodeRepo;
+    private $syncUpDir;
+    private $syncDownDir;
 
      /**
      * @DI\InjectParams({
@@ -59,7 +61,9 @@ class SynchronisationController extends Controller
      *     "request"              = @DI\Inject("request"),
      *     "router"               = @DI\Inject("router"),
      *     "session"              = @DI\Inject("session"),
-     *     "formFactory"          = @DI\Inject("form.factory")
+     *     "formFactory"          = @DI\Inject("form.factory"),
+     *     "syncUpDir"            = @DI\Inject("%claroline.synchronisation.up_directory%"),
+     *     "syncDownDir"          = @DI\Inject("%claroline.synchronisation.down_directory%")
      * })
      */
     public function __construct(
@@ -71,7 +75,9 @@ class SynchronisationController extends Controller
         Request $request,
         UrlGeneratorInterface $router,
         SessionInterface $session,
-        FormFactory $formFactory
+        FormFactory $formFactory,
+        $syncUpDir,
+        $syncDownDir
     )
     {
         $this->om = $om;
@@ -85,6 +91,8 @@ class SynchronisationController extends Controller
         $this->formFactory = $formFactory;
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+        $this->syncUpDir = $syncUpDir;
+        $this->syncDownDir = $syncDownDir;
     }
 
     private function getUserFromID($user)
@@ -117,7 +125,7 @@ class SynchronisationController extends Controller
     *   If errors, returns HTTP error code
     *
     *   @EXT\Route(
-    *       "/transfer/uploadArchive",
+    *       "/uploadArchive",
     *       name="claro_sync_upload_zip",
     *   )
     *
@@ -137,7 +145,6 @@ class SynchronisationController extends Controller
             $content = $this->transferManager->processSyncRequest($authTab['informationsArray'], true);
             $status = $content['status'];
         }
-
         return new JsonResponse($content, $status);
     }
 
@@ -164,7 +171,6 @@ class SynchronisationController extends Controller
             $content = $this->transferManager->unlinkSynchronisationFile($authTab['informationsArray'], $user);
             $status = $content['status'];
         }
-
         return new JsonResponse($content, $status);
     }
 
@@ -173,7 +179,7 @@ class SynchronisationController extends Controller
     *   If error happened error code of HTTP request is used
     *
     *   @EXT\Route(
-    *       "/transfer/getzip",
+    *       "/getzip",
     *       name="claro_sync_get_zip",
     *   )
     *
@@ -190,7 +196,7 @@ class SynchronisationController extends Controller
         $informationsArray = $authTab['informationsArray'];
         $content = array();
         if ($status == 200) {
-            $fileName = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$informationsArray['hashname'].'.zip';
+            $fileName =$this->syncDownDir.$user->getId().'/sync_'.$informationsArray['hashname'].'.zip';
             $content = $this->transferManager->getMetadataArray($user, $fileName);
             $content['fragmentNumber']=$informationsArray['fragmentNumber'];
             $data = $this->transferManager->getFragment($informationsArray['fragmentNumber'], $fileName, $user);
@@ -200,7 +206,6 @@ class SynchronisationController extends Controller
                 $content['file'] = base64_encode($data);
             }
         }
-
         return new JsonResponse($content, $status);
     }
 
@@ -258,7 +263,7 @@ class SynchronisationController extends Controller
         $informationsArray = $authTab['informationsArray'];
         $content = array();
         if ($status == 200) {
-            $filename = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$informationsArray['hashname'];
+            $filename =$this->syncUpDir.$user->getId().'/'.$informationsArray['hashname'];
             $lastUp = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop($filename,  $authTab['user']);
             $content = array(
                 'hashname' => $informationsArray['hashname'],
@@ -293,7 +298,7 @@ class SynchronisationController extends Controller
         $informationsArray = $authTab['informationsArray'];
         $content = array();
         if ($status == 200) {
-            $filename = SyncConstant::SYNCHRO_DOWN_DIR.$user->getId().'/sync_'.$informationsArray['hashname'].".zip";
+            $filename = $this->syncDownDir.$user->getId().'/sync_'.$informationsArray['hashname'].".zip";
             $nFragments = $this->transferManager->getTotalFragments($filename);
             $content = array(
                 'hashname' => $informationsArray['hashname'],

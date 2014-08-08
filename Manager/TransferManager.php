@@ -26,7 +26,7 @@ use Claroline\OfflineBundle\Manager\Exception\ServeurException;
 use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
 use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
 use Claroline\CoreBundle\Manager\UserManager;
-use Claroline\OfflineBundle\Model\SyncConstant;
+// use Claroline\OfflineBundle\Model\SyncConstant;
 use Symfony\Component\Translation\TranslatorInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use \Buzz\Browser;
@@ -72,7 +72,7 @@ class TransferManager
      *     "userSyncManager"    = @DI\Inject("claroline.manager.user_sync_manager"),
      *     "roleManager"        = @DI\Inject("claroline.manager.role_manager"),
      *     "ut"                 = @DI\Inject("claroline.utilities.misc"),
-     *     "syncUpDir"          = @DI\Inject("%claroline.synchronisation.manifest%"),
+     *     "syncUpDir"          = @DI\Inject("%claroline.synchronisation.up_directory%"),
      *     "fragSize"           = @DI\Inject("%claroline.synchronisation.frag_size%"),
      *     "offlineConfig"      = @DI\Inject("%claroline.synchronisation.offline_config%")
      * })
@@ -140,15 +140,16 @@ class TransferManager
                 $metadatas['file'] = base64_encode($this->getFragment($fragmentNumber, $toTransfer, $user));
                 $metadatas['fragmentNumber'] = $fragmentNumber;
                 // Execute the post request sending informations online
-                $reponse = $browser->post($url.'/transfer/uploadArchive', array(), json_encode($metadatas));
+                echo "Je contacte cet URL : ".$url."<br/>";
+                $reponse = $browser->post($url.'/sync/uploadArchive', array(), json_encode($metadatas));
                 $responseContent = $reponse->getContent();
-                // echo "Content <br/>".$responseContent."<br/>";
+                echo "Content <br/>".$responseContent."<br/>";
                 $status = $reponse->getStatusCode();
                 $responseContent = (array) json_decode($responseContent);
                 $fragmentNumber ++;
             }
             // Control result of the requests
-            $this->analyseStatusCode($status);
+            // $this->analyseStatusCode($status);
 
             return $responseContent;
         } catch (ClientException $e) {
@@ -178,11 +179,11 @@ class TransferManager
             ini_set('max_execution_time', 0);
             while ($fragmentNumber < $totalFragments && $status == 200) {
                 $metadatas['fragmentNumber'] = $fragmentNumber;
-                $reponse = $browser->post($url.'/transfer/getzip', array(), json_encode($metadatas));
+                $reponse = $browser->post($url.'/sync/getzip', array(), json_encode($metadatas));
                 $content = $reponse->getContent();
-                // echo "Content <br/>".$content."<br/>";
+                echo "Content <br/>".$content."<br/>";
                 $status = $reponse->getStatusCode();
-                $this->analyseStatusCode($status);
+                // $this->analyseStatusCode($status);
                 $processContent = $this->processSyncRequest((array) json_decode($content), false);
                 $status = $processContent['status'];
                 $fragmentNumber++;
@@ -429,7 +430,7 @@ class TransferManager
         $dir = $this->syncUpDir.$user->getId();
         // If directory doesn't exists create it
         if (!is_dir($dir)) {
-            mkdir($dir, 0777);
+            mkdir($dir, 0777, true);
         }
         // Save the fragment received
         $fragmentName = $dir.'/'.$content['hashname'].'_'.$content['fragmentNumber'];

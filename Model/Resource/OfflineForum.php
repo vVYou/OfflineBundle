@@ -199,16 +199,16 @@ class OfflineForum extends OfflineResource
         $categories = $this->categoryRepo->findBy(array('forum' => $currentForum));
 		$subjects = $this->checkSubjectToSync($categories);
 		$messages = $this->checkMessageToSync($subjects);
-		
+
 		$elemToSync = $this->checkObsolete($categories, $dateSync, $elemToSync);
 		$elemToSync = $this->checkObsolete($subjects, $dateSync, $elemToSync);
 		$elemToSync = $this->checkObsolete($messages, $dateSync, $elemToSync);
-		
+
         // $elemToSync = $this->checkCategory($categories, $elemToSync, $dateSync);
         return $elemToSync;
 
     }
-	
+
 	private function checkSubjectToSync($categories)
 	{
 		$query = $this->subjectRepo->createQueryBuilder('sub')
@@ -228,18 +228,18 @@ class OfflineForum extends OfflineResource
 
         return $query->getResult();
 	}
-	
+
 	private function checkObsolete($content, $dateSync, $elemToSync)
 	{
-		foreach($content as $element){
+		foreach ($content as $element) {
 			if ($element->getModificationDate()->getTimestamp() > $dateSync) {
 				 $elemToSync[] = $element;
             }
 		}
-		
+
 		return $elemToSync;
 	}
-	
+
     /**
      * Check all categories of a list and see if they are new or updated.
      *
@@ -580,7 +580,7 @@ class OfflineForum extends OfflineResource
                 // Update of the Dates
                 $this->updateDate($message, $xmlMessage);
             } else {
-				if($dbModificationDate != $xmlModificationDate){
+				if ($dbModificationDate != $xmlModificationDate) {
 					$this->createMessageDoublon($xmlMessage, $message, $date);
 				}
 			}

@@ -224,13 +224,14 @@ class OfflineController extends Controller
         try {
             $infoArray = $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
 			// Show the result window
-			return $this->render(
+
+            return $this->render(
 				'ClarolineOfflineBundle:Offline:result.html.twig',
 				array(
 					'results' => $infoArray,
 					'msg' => ''
 				));
-			
+
         } catch (AuthenticationException $e) {
             $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
             // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);

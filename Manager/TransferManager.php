@@ -212,6 +212,7 @@ class TransferManager
             default:
                 //TODO Personalise error message with status
                 throw new SynchronisationFailsException("Transfer fails with status ".$status, $status);
+
                 return false;
         }
     }
@@ -443,7 +444,7 @@ class TransferManager
 			//If online, load and create archive.
             if ($createSync) {
                 //Create synchronisation archive (when online)
-				$user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
+                $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
 				$loadingResponse = $this->loadingManager->loadZip($zipName, $user);
                 $toSend = $this->creationManager->createSyncZip($user, $loadingResponse['synchronizationDate']);
                 $metaDataArray = $this->getMetadataArray($user, $toSend);

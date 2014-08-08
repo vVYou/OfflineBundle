@@ -1,7 +1,7 @@
 claro_sync:
     resource: "@ClarolineOfflineBundle/Controller/OfflineController.php"
     type: annotation
-    
+
 claro_sync_get_zip:
     resource: "@ClarolineOfflineBundle/Controller/SynchronisationController.php"
     type: annotation

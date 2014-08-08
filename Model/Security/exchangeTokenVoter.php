@@ -13,8 +13,6 @@ namespace Claroline\OfflineBundle\Model\Security;
 
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
-use Claroline\CoreBundle\Library\Security\PlatformRoles;
-use Claroline\OfflineBundle\Model\Security\UserExchangeToken;
 use JMS\DiExtraBundle\Annotation as DI;
 
 /**
@@ -34,11 +32,12 @@ class exchangeTokenVoter implements VoterInterface
 
     protected function isConnectedByToken(TokenInterface $token)
     {
-        // if($token->getCredentials() == $user->getExchangeToken()){
+        // if ($token->getCredentials() == $user->getExchangeToken()) {
             // return true;
         // }
 
         $vote = $token instanceof UserExchangeToken ? true: false;
+
         return $vote;
     }
 

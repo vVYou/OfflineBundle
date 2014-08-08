@@ -67,7 +67,7 @@ class OfflineController extends Controller
      * Get content by id
      *
      * @EXT\Route(
-     *     "/sync",
+     *     "/",
      *     name="claro_sync"
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
@@ -92,7 +92,7 @@ class OfflineController extends Controller
      * Get result
      *
      * @EXT\Route(
-     *     "/sync/result",
+     *     "/result",
      *     name="claro_sync_result"
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
@@ -140,7 +140,7 @@ class OfflineController extends Controller
     *   Options of synchronisation modifications
     *
     *   @EXT\Route(
-    *       "/sync/param",
+    *       "/param",
     *       name="claro_sync_param"
     *   )
     *
@@ -155,7 +155,7 @@ class OfflineController extends Controller
 
      /**
     *   @EXT\Route(
-    *       "/sync/testTrans",
+    *       "/testTrans",
     *       name="claro_test_trans"
     *   )
     *
@@ -178,7 +178,7 @@ class OfflineController extends Controller
     *   Create userSyncrhonized entity
     *
     *   @EXT\Route(
-    *       "/sync/load",
+    *       "/load",
     *       name="claro_sync_load"
     *   )
     *
@@ -203,7 +203,7 @@ class OfflineController extends Controller
     *   Create userSyncrhonized entity
     *
     *   @EXT\Route(
-    *       "/sync/exchange",
+    *       "/exchange",
     *       name="claro_sync_exchange"
     *   )
     *
@@ -223,7 +223,7 @@ class OfflineController extends Controller
         $msg = '';
         try {
             $infoArray = $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
-			//Show the result window
+			// Show the result window
 			return $this->render(
 				'ClarolineOfflineBundle:Offline:result.html.twig',
 				array(
@@ -267,7 +267,7 @@ class OfflineController extends Controller
     *   Seek and show all the modified courses and ressources
     *
     *   @EXT\Route(
-    *       "/sync/seek",
+    *       "//seek",
     *       name="claro_sync_seek"
     *   )
     *
@@ -296,7 +296,7 @@ class OfflineController extends Controller
     *  Transfer a file (sync archive) from a computer to another
     *
     *   @EXT\Route(
-    *       "/sync/transfer/{user}",
+    *       "//transfer/{user}",
     *       name="claro_sync_transfertest"
     *   )
     *
@@ -310,7 +310,7 @@ class OfflineController extends Controller
     {
         $transfer = true;
         if ($user == $authUser->getId()) {
-            $toTransfer = './synchronize_down/3/sync_0252D476-FD7D-4E39-9285-A53EDEFCAC90.zip';
+            $toTransfer = './hronize_down/3/_0252D476-FD7D-4E39-9285-A53EDEFCAC90.zip';
             $test = $this->get('claroline.manager.transfer_manager')->uploadArchive($toTransfer, $authUser, 0);
         } else {
             $transfer = false;
@@ -329,7 +329,7 @@ class OfflineController extends Controller
     *  Transfer a file (sync archive) from a computer to another
     *
     *   @EXT\Route(
-    *       "/sync/getsync/{user}",
+    *       "//getsync/{user}",
     *       name="claro_sync_gettest"
     *   )
     *
@@ -361,7 +361,7 @@ class OfflineController extends Controller
 
     /**
     *   @EXT\Route(
-    *       "/sync/loadWorkspaces",
+    *       "//loadWorkspaces",
     *       name="claro_sync_load_workspace"
     *   )
     *
@@ -384,7 +384,7 @@ class OfflineController extends Controller
 
     /**
     *   @EXT\Route(
-    *       "/sync/getuser",
+    *       "//getuser",
     *       name="claro_sync_getuser"
     *   )
     *
@@ -476,7 +476,7 @@ class OfflineController extends Controller
     *   Test Creation
     *
     *   @EXT\Route(
-    *       "/sync/seek_test",
+    *       "//seek_test",
     *       name="claro_sync_seek_test"
     *   )
     *
@@ -504,7 +504,7 @@ class OfflineController extends Controller
     *   Test Creation
     *
     *   @EXT\Route(
-    *       "/sync/load_test",
+    *       "//load_test",
     *       name="claro_sync_load_test"
     *   )
     *

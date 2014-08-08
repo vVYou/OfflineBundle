@@ -29,7 +29,7 @@ class exchangeTokenVoter implements VoterInterface
 {
     public function vote(TokenInterface $token, $object, array $attributes)
     {
-        return $this->isConnectedByToken($token) ? VoterInterface::ACCESS_GRANTED : VoterInterface::ACCESS_ABSTAIN;
+        // return $this->isConnectedByToken($token) ? VoterInterface::ACCESS_GRANTED : VoterInterface::ACCESS_ABSTAIN;
     }
 
     protected function isConnectedByToken(TokenInterface $token)

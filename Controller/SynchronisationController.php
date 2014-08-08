@@ -145,7 +145,7 @@ class SynchronisationController extends Controller
     *   This action handle the clean up of the directory after synchronization
     *
     *   @EXT\Route(
-    *       "/sync/unlink",
+    *       "/unlink",
     *       name="claro_sync_unlink",
     *   )
     *
@@ -208,7 +208,7 @@ class SynchronisationController extends Controller
     *   This action returns basics informations about a specific user
     *
     *   @EXT\Route(
-    *       "/sync/user",
+    *       "/user",
     *       name="claro_sync_user",
     *   )
     *
@@ -241,7 +241,7 @@ class SynchronisationController extends Controller
     *   If authentication fails, it returns an HTTP 401 error
     *
     *   @EXT\Route(
-    *       "/sync/lastUploaded",
+    *       "/lastUploaded",
     *       name="claro_sync_last_uploaded",
     *   )
     *
@@ -276,7 +276,7 @@ class SynchronisationController extends Controller
     *   If authentication fails, it return an HTTP 401 error
     *
     *   @EXT\Route(
-    *       "/sync/numberOfPacketsToDownload",
+    *       "/numberOfPacketsToDownload",
     *       name="claro_sync_number_of_packets_to_download",
     *   )
     *
@@ -308,7 +308,7 @@ class SynchronisationController extends Controller
     *   This action is used to retrieve the profil of the user
     *
     *   @EXT\Route(
-    *       "/sync/config",
+    *       "/config",
     *       name="claro_sync_config"
     *   )
     *

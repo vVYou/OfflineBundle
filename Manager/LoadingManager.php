@@ -77,6 +77,7 @@ class LoadingManager
     private $syncInfoArray;
     private $offline;
     private $evm;
+    private $fileDir;
 
     /**
      * Constructor.
@@ -96,7 +97,8 @@ class LoadingManager
      *     "dispatcher"      = @DI\Inject("claroline.event.event_dispatcher"),
      *     "security"           = @DI\Inject("security.context"),
      *     "tokenUpdater"       = @DI\Inject("claroline.security.token_updater"),
-     *     "evm"            = @DI\Inject("doctrine.orm.entity_manager")
+     *     "evm"            = @DI\Inject("doctrine.orm.entity_manager"),
+     *     "fileDir"        = @DI\Inject("%claroline.param.files_directory%")
      * })
      */
     public function __construct(
@@ -114,7 +116,8 @@ class LoadingManager
         StrictDispatcher $dispatcher,
         SecurityContextInterface $security,
         TokenUpdater $tokenUpdater,
-        EntityManager $evm
+        EntityManager $evm,
+        $fileDir
     )
     {
         $this->om = $om;
@@ -144,7 +147,7 @@ class LoadingManager
         $this->syncInfoArray = array();
         $this->offline = array();
         $this->evm = $evm;
-
+        $this->fileDir = $fileDir;
     }
 
     public function addOffline(OfflineElement  $offline)

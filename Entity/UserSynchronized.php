@@ -92,6 +92,7 @@ class UserSynchronized
         $this->lastSynchronization = new DateTime('@0');
         $this->sentTime = new DateTime('@0');
         $this->status = UserSynchronized::SUCCESS_SYNC;
+        $this->admin = $user->isAdmin();
     }
 
     /**
@@ -162,6 +163,11 @@ class UserSynchronized
     public function setStatus($status)
     {
         $this->status = $status;
+    }
+    
+    public function setAdmin($admin)
+    {
+        $this->admin = $admin;
     }
     
     public function isAdmin()

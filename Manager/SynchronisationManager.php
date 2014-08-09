@@ -210,7 +210,6 @@ class SynchronisationManager
         if(!$userSync->isAdmin()){
             $this->roleManager->dissociateUserRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN));
         }
-        $this->roleManager->dissociate
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
         $userSync->setLastSynchronization($userSync->getSentTime());
         $this->userSyncManager->updateUserSync($userSync);

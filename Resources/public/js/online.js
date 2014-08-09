@@ -9,19 +9,18 @@
 
 (function () {
     // var online = window.navigator.onLine;
-    var online = doesConnectionExist();
-    if(!online){
-        document.getElementById('buttonSynchronize').setAttribute('disabled', 'disabled');
-    }
+    // var online = doesConnectionExist();
+    // if(!online){
+        // document.getElementById('buttonSynchronize').setAttribute('disabled', 'disabled');
+    // }
 }());
 
 
 // Taken from http://www.kirupa.com/html5/check_if_internet_connection_exists_in_javascript.htm
 function doesConnectionExist() {
     var xhr = new XMLHttpRequest();
-    var file = "http://www.google.com";
-    // var randomNum = Math.round(Math.random() * 10000);
-    xhr.open('HEAD', file, false);
+    var url = "http://www.google.com";
+    xhr.open('GET', url, false);
      
     try {
         xhr.send();

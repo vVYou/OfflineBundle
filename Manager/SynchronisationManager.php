@@ -12,10 +12,10 @@
 namespace Claroline\OfflineBundle\Manager;
 
 use Claroline\CoreBundle\Entity\User;
-use Claroline\CoreBundle\Persistence\ObjectManager;
-// use Claroline\OfflineBundle\Model\SyncConstant;
-use Claroline\OfflineBundle\Entity\UserSynchronized;
+use Claroline\CoreBundle\Library\Security\PlatformRoles;
 use Claroline\CoreBundle\Manager\RoleManager;
+use Claroline\CoreBundle\Persistence\ObjectManager;
+use Claroline\OfflineBundle\Entity\UserSynchronized;
 use JMS\DiExtraBundle\Annotation as DI;
 use \DateTime;
 
@@ -208,7 +208,7 @@ class SynchronisationManager
         $this->roleManager->associateUserRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN), false, true);
         $loadArray = $this->loadingManager->loadZip($filename, $user);
         if(!$userSync->isAdmin()){
-            $this->roleManager->dissociateUserRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN));
+            $this->roleManager->dissociateRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN));
         }
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
         $userSync->setLastSynchronization($userSync->getSentTime());

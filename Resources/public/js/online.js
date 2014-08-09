@@ -10,11 +10,8 @@
 (function () {
     // var online = window.navigator.onLine;
     var online = doesConnectionExist();
-    alert(!online);
-    if(online){
+    if(!online){
         document.getElementById('buttonSynchronize').setAttribute('disabled', 'disabled');
-    }else{
-        alert("Je suis online");
     }
 }());
 
@@ -24,7 +21,6 @@ function doesConnectionExist() {
     var xhr = new XMLHttpRequest();
     var file = "http://www.google.com";
     // var randomNum = Math.round(Math.random() * 10000);
-    alert("Je test un truc");
     xhr.open('HEAD', file, false);
      
     try {

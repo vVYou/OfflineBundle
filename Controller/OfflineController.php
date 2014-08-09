@@ -96,7 +96,8 @@ class OfflineController extends Controller
      *
      * @EXT\Route(
      *     "/result",
-     *     name="claro_sync_result"
+     *     name="claro_sync_result",
+     *     options={"expose"=true}
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
      *

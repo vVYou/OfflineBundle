@@ -15,7 +15,7 @@ sync_server_fail : A problem has been encounter on the server side. Please retry
 sync_client_fail : An error occurs while trying to contact the distant server. Please retry later.
 sync_launch : Start synchronisation
 sync_param : Parameters
-sync_retrieve : Retrieve profil
+sync_retrieve : Retrieve profile
 sync_ok : Account successfully retrieved! Please connect and launch your first synchronisation in order to retrieve all your workspaces and content.
 sync_fail : The process fail! Please retry!
 sync_name : Username :

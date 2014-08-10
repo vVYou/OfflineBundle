@@ -18,6 +18,12 @@ class Credential
     protected $password;
 
     protected $url;
+    
+    private function urlWithoutLastSlash($url){
+        if(substr($url, -1) === '/'){
+            return substr($url, 0, strlen($url)-1);
+        }
+    }
 
     public function getName()
     {
@@ -46,6 +52,6 @@ class Credential
 
     public function setUrl($url)
     {
-        $this->url = $url;
+        $this->url = $this->urlWithoutLastSlash($url);
     }
 }

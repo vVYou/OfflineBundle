@@ -19,7 +19,7 @@ use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\OfflineBundle\Model\SyncConstant;
+// use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
@@ -34,16 +34,18 @@ class OfflineFile extends OfflineResource
 {
     private $ut;
     private $isUpdate;
+    private $fileDir;
 
     /**
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
+     *     "om"              = @DI\Inject("claroline.persistence.object_manager"),
+     *     "resourceManager" = @DI\Inject("claroline.manager.resource_manager"),
      *     "userManager"     = @DI\Inject("claroline.manager.user_manager"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc"),
-     *     "em"            = @DI\Inject("doctrine.orm.entity_manager")
+     *     "ut"              = @DI\Inject("claroline.utilities.misc"),
+     *     "em"              = @DI\Inject("doctrine.orm.entity_manager"),
+     *     "fileDir"         = @DI\Inject("%claroline.param.files_directory%")
      * })
      */
     public function __construct(
@@ -51,7 +53,8 @@ class OfflineFile extends OfflineResource
         ResourceManager $resourceManager,
         UserManager $userManager,
         ClaroUtilities $ut,
-        EntityManager $em
+        EntityManager $em,
+        $fileDir
     )
     {
         $this->om = $om;
@@ -62,6 +65,7 @@ class OfflineFile extends OfflineResource
         $this->ut = $ut;
         $this->em = $em;
         $this->isUpdate = false;
+        $this->fileDir = $fileDir.'/';
     }
 
     // Return the type of resource supported by this service
@@ -88,7 +92,7 @@ class OfflineFile extends OfflineResource
         $domRes->appendChild($hashname);
 
         // Add the file corresponding to the resource inside de 'data' folder of the archive.
-        $archive->addFile('..'.SyncConstant::ZIPFILEDIR.$myRes->getHashName(), 'data'.SyncConstant::ZIPFILEDIR.$myRes->getHashName());
+        $archive->addFile($this->fileDir.$myRes->getHashName(), 'data/files/'.$myRes->getHashName());
 
         return $domManifest;
     }
@@ -124,7 +128,7 @@ class OfflineFile extends OfflineResource
         $fileHashname = $resource->getAttribute('hashname');
         $newResource->setSize($resource->getAttribute('size'));
         $newResource->setHashName($fileHashname);
-        rename($path.'data'.SyncConstant::ZIPFILEDIR.$fileHashname, '..'.SyncConstant::ZIPFILEDIR.$fileHashname);
+        rename($path.'data/files/'.$fileHashname, $this->fileDir.$fileHashname);
 
         $newResource->setName($resource->getAttribute('name'));
         $newResource->setMimeType($resource->getAttribute('mimetype'));
@@ -213,8 +217,8 @@ class OfflineFile extends OfflineResource
         $oldFile->setHashName($newHashname);
         $this->om->endFlushSuite();
 
-        rename('..'.SyncConstant::ZIPFILEDIR.$oldHashname, '..'.SyncConstant::ZIPFILEDIR.$newHashname);
-        rename($path.'data'.SyncConstant::ZIPFILEDIR.$fileHashname, '..'.SyncConstant::ZIPFILEDIR.$fileHashname);
+        rename($this->fileDir.$oldHashname, $this->fileDir.$newHashname);
+        rename($path.'data/files/'.$fileHashname, $this->fileDir.$fileHashname);
 
         /*
         *   We add the tag '@offline' to the name of the resource

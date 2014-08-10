@@ -11,10 +11,8 @@
 
 namespace Claroline\OfflineBundle\Model\Security;
 
-use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\OfflineBundle\Model\Security\UserExchangeToken;
 use Symfony\Component\Security\Core\Encoder\EncoderFactoryInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 
@@ -44,7 +42,7 @@ class OfflineAuthenticator
         $this->sc = $sc;
         $this->encodeFactory = $encodeFactory;
     }
-    
+
     public function authenticateWithToken($username, $exchangeToken)
     {
         try {
@@ -52,14 +50,14 @@ class OfflineAuthenticator
         } catch (\Exception $e) {
             return false;
         }
-        
-        if($user->getExchangeToken()===$exchangeToken)
-        {
+
+        if ($user->getExchangeToken()===$exchangeToken) {
             $token = new UserExchangeToken($user, $exchangeToken);
             $this->sc->setToken($token);
 
             return true;
         }
+
         return false;
     }
 

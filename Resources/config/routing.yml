@@ -1,3 +1,7 @@
-claroffline_hello:
-    path: /hello/
-    defaults: { _controller: ClarolineOfflineBundle:Offline:hello }
+claro_sync:
+    resource: "@ClarolineOfflineBundle/Controller/OfflineController.php"
+    type: annotation
+
+claro_sync_upload_zip:
+    resource: "@ClarolineOfflineBundle/Controller/SynchronisationController.php"
+    type: annotation

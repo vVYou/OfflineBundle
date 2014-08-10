@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\Routing\Router;
 use Symfony\Component\Security\Core\SecurityContextInterface;
-use Claroline\OfflineBundle\Model\SyncConstant;
+// use Claroline\OfflineBundle\Model\SyncConstant;
 
 /**
  * @DI\Service("claroline.first_connection_handler")
@@ -29,24 +29,28 @@ class FirstConnectionListener
     private $securityContext;
     private $eventDispatcher;
     private $router;
+    private $plateformConf;
 
     /**
      * @DI\InjectParams({
-     *     "securityContext"        = @DI\Inject("security.context"),
-     *     "eventDispatcher"        = @DI\Inject("claroline.event.event_dispatcher"),
-     *     "router"                 = @DI\Inject("router")
+     *     "securityContext" = @DI\Inject("security.context"),
+     *     "eventDispatcher" = @DI\Inject("claroline.event.event_dispatcher"),
+     *     "router"          = @DI\Inject("router"),
+     *     "plateformConf"   = @DI\Inject("%claroline.synchronisation.offline_config%")
      * })
      *
      */
     public function __construct(
         SecurityContextInterface $securityContext,
         StrictDispatcher $eventDispatcher,
-        Router $router
+        Router $router,
+        $plateformConf
     )
     {
         $this->securityContext = $securityContext;
         $this->eventDispatcher = $eventDispatcher;
         $this->router = $router;
+        $this->plateformConf = $plateformConf;
     }
 
     /**
@@ -56,7 +60,6 @@ class FirstConnectionListener
      */
     public function onKernelRequest(GetResponseEvent $event)
     {
-
         $event = $this->isFlagOk($event);
     }
 
@@ -81,7 +84,7 @@ class FirstConnectionListener
         if ($event->isMasterRequest()) {
             if ($first_route !== $_route) {
                 if ($token && $token->getUser() == 'anon.') {
-                    if (!(file_exists(SyncConstant::PLAT_CONF))) {
+                    if (!(file_exists($this->plateformConf))) {
                         $uri = $this->router->generate($first_route);
                         $response = new RedirectResponse($uri);
                         $event->setResponse(new Response($response));

@@ -12,35 +12,18 @@
 namespace Claroline\OfflineBundle\Manager;
 
 use JMS\DiExtraBundle\Annotation as DI;
-use Claroline\CoreBundle\Manager\WorkspaceManager;
-use Claroline\CoreBundle\Manager\ResourceManager;
-use Claroline\CoreBundle\Manager\RoleManager;
-use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\ForumBundle\Manager\Manager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Resource\Directory;
-use Claroline\CoreBundle\Entity\Resource\Revision;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
-use Claroline\CoreBundle\Library\Security\Utilities;
-use Claroline\CoreBundle\Library\Security\TokenUpdater;
-use Claroline\CoreBundle\Event\StrictDispatcher;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\ForumBundle\Entity\Forum;
-use Claroline\ForumBundle\Entity\Category;
-use Claroline\ForumBundle\Entity\Subject;
-use Claroline\ForumBundle\Entity\Message;
-use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
-use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Symfony\Component\Security\Core\SecurityContextInterface;
-use Symfony\Component\Translation\TranslatorInterface;
-use Doctrine\ORM\EntityManager;
+use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 use \ZipArchive;
 use \DOMDocument;
-use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 
 /**
  * @DI\Service("claroline.manager.loading_manager")
@@ -49,102 +32,44 @@ use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 class LoadingManager
 {
     private $om;
-    private $pagerFactory;
-    private $translator;
-    private $userSynchronizedRepo;
     private $workspaceRepo;
     private $resourceNodeRepo;
     private $userRepo;
-    private $revisionRepo;
-    private $categoryRepo;
-    private $subjectRepo;
-    private $messageRepo;
-    private $forumRepo;
-    private $roleRepo;
-    private $resourceManager;
-    private $workspaceManager;
-    private $roleManager;
-    private $forumManager;
-    private $userManager;
-    private $templateDir;
     private $user;
     private $synchronizationDate;
     private $ut;
-    private $dispatcher;
     private $path;
-    private $security;
-    private $tokenUpdater;
     private $syncInfoArray;
     private $offline;
-    private $evm;
+    private $extractDir;
+    private $manifestName;
 
     /**
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "pagerFactory"   = @DI\Inject("claroline.pager.pager_factory"),
-     *     "translator"     = @DI\Inject("translator"),
-     *     "wsManager"      = @DI\Inject("claroline.manager.workspace_manager"),
-     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
-     *     "roleManager"    =   @DI\Inject("claroline.manager.role_manager"),
-     *     "forumManager"   = @DI\Inject("claroline.manager.forum_manager"),
-     *     "userManager"    = @DI\Inject("claroline.manager.user_manager"),
-     *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%"),
-     *     "ut"            = @DI\Inject("claroline.utilities.misc"),
-     *     "dispatcher"      = @DI\Inject("claroline.event.event_dispatcher"),
-     *     "security"           = @DI\Inject("security.context"),
-     *     "tokenUpdater"       = @DI\Inject("claroline.security.token_updater"),
-     *     "evm"            = @DI\Inject("doctrine.orm.entity_manager")
+     *     "om"           = @DI\Inject("claroline.persistence.object_manager"),
+     *     "ut"           = @DI\Inject("claroline.utilities.misc"),
+     *     "extractDir"   = @DI\Inject("%claroline.synchronisation.extract_directory%"),
+     *     "manifestName" = @DI\Inject("%claroline.synchronisation.manifest%")
      * })
      */
     public function __construct(
         ObjectManager $om,
-        PagerFactory $pagerFactory,
-        TranslatorInterface $translator,
-        WorkspaceManager $wsManager,
-        ResourceManager $resourceManager,
-        WorkspaceManager $workspaceManager,
-        RoleManager $roleManager,
-        Manager $forumManager,
-        UserManager $userManager,
-        $templateDir,
         ClaroUtilities $ut,
-        StrictDispatcher $dispatcher,
-        SecurityContextInterface $security,
-        TokenUpdater $tokenUpdater,
-        EntityManager $evm
+        $extractDir,
+        $manifestName
     )
     {
         $this->om = $om;
-        $this->pagerFactory = $pagerFactory;
-        $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->workspaceRepo = $om->getRepository('ClarolineCoreBundle:Workspace\Workspace');
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
-        $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
-        $this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
-        $this->subjectRepo = $om->getRepository('ClarolineForumBundle:Subject');
-        $this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
-        $this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
-        $this->roleRepo = $om->getRepository('ClarolineCoreBundle:Role');
-        $this->translator = $translator;
-        $this->wsManager = $wsManager;
-        $this->resourceManager = $resourceManager;
-        $this->workspaceManager = $workspaceManager;
-        $this->roleManager = $roleManager;
-        $this->forumManager = $forumManager;
-        $this->userManager = $userManager;
-        $this->templateDir = $templateDir;
         $this->ut = $ut;
-        $this->dispatcher = $dispatcher;
-        $this->security = $security;
-        $this->tokenUpdater = $tokenUpdater;
         $this->syncInfoArray = array();
         $this->offline = array();
-        $this->evm = $evm;
-
+        $this->extractDir = $extractDir;
+        $this->manifestName = $manifestName;
     }
 
     public function addOffline(OfflineElement  $offline)
@@ -166,13 +91,13 @@ class LoadingManager
         if ($archive->open($zipPath)) {
             //Extract the Hashname of the ZIP from the path (length of hashname = 32 char).
             $zip_hashname = substr($zipPath, strlen($zipPath)-40, 36);
-            $this->path = SyncConstant::DIRZIP.'/'.$zip_hashname.'/';
+            $this->path = $this->extractDir.$zip_hashname.'/';
             // echo 'J extrait dans ce path : '.$this->path.'<br/>';
             $tmpdirectory = $archive->extractTo($this->path);
 
             //Call LoadXML
-            $this->loadXML($this->path.SyncConstant::MANIFEST.'_'.$user->getUsername().'.xml');
-
+            $this->loadXML($this->path.$this->manifestName.'_'.$user->getUsername().'.xml');
+            $this->delTree($this->path);
         } else {
             throw new \Exception('Impossible to load the zip file');
         }
@@ -182,7 +107,15 @@ class LoadingManager
             'synchronizationDate' => $this->synchronizationDate
         );
     }
-
+    
+    public static function delTree($dir) { 
+        $files = array_diff(scandir($dir), array('.','..')); 
+        foreach ($files as $file) { 
+            (is_dir("$dir/$file")) ? delTree("$dir/$file") : unlink("$dir/$file"); 
+        } 
+        return rmdir($dir); 
+    } 
+    
     /**
      * This method will load and parse the manifest XML file
      */
@@ -191,7 +124,7 @@ class LoadingManager
         $xmlDocument = new DOMDocument();
         $xmlDocument->load($xmlFilePath);
 
-        if($this->importDescription($xmlDocument)){	
+        if ($this->importDescription($xmlDocument)) {
 			$this->importWorkspaces($xmlDocument);
 		}
     }
@@ -206,13 +139,13 @@ class LoadingManager
     {
         $descriptions = $xmlDocument->getElementsByTagName("description");
         foreach ($descriptions as $description) {
-            $manifestUser = $this->userRepo->findOneBy(array('username' => $description->getAttribute('username'), 'mail' => $description->getAttribute('user_mail')));	
-			if($manifestUser->getExchangeToken() == $this->user->getExchangeToken()){
+            $manifestUser = $this->userRepo->findOneBy(array('username' => $description->getAttribute('username'), 'mail' => $description->getAttribute('user_mail')));
+			if ($manifestUser->getExchangeToken() == $this->user->getExchangeToken()) {
 				$this->synchronizationDate = $description->getAttribute('synchronization_date');
 				return true;
 			}
         }
-		
+
 		return false;
     }
 

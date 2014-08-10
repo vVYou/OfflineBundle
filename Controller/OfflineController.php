@@ -11,25 +11,21 @@
 
 namespace Claroline\OfflineBundle\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use JMS\DiExtraBundle\Annotation as DI;
 use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\ResourceNode;
-use Claroline\OfflineBundle\Model\SyncConstant;
-use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\CoreBundle\Persistence\ObjectManager;
+use Claroline\OfflineBundle\Model\SyncInfo;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Dumper;
-use Claroline\OfflineBundle\Entity\Credential;
-use Claroline\OfflineBundle\Form\OfflineFormType;
-use Symfony\Component\Form\FormFactory;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -44,37 +40,37 @@ class OfflineController extends Controller
     private $yamlparser;
     private $yaml_parser;
     private $yaml_dump;
-	private $formFactory;
+    private $plateformConf;
 
     /**
     * @DI\InjectParams({
-    *      "router"             = @DI\Inject("router"),
-    *     "request"            = @DI\Inject("request"),
-         *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "formFactory"          = @DI\Inject("form.factory")
+    *   "router"        = @DI\Inject("router"),
+    *   "request"       = @DI\Inject("request"),
+    *   "om"            = @DI\Inject("claroline.persistence.object_manager"),
+    *   "plateformConf" = @DI\Inject("%claroline.synchronisation.offline_config%")
     * })
     */
     public function __construct(
         UrlGeneratorInterface $router,
         Request $request,
-		ObjectManager $om,
-        FormFactory $formFactory
+        ObjectManager $om,
+        $plateformConf
     )
     {
        $this->router = $router;
        $this->request = $request;
-		$this->om = $om;
+       $this->om = $om;
        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
        $this->yaml_parser = new Parser();
        $this->yaml_dump = new Dumper();
-        $this->formFactory = $formFactory;
+       $this->plateformConf = $plateformConf;
     }
 
     /**
      * Get content by id
      *
      * @EXT\Route(
-     *     "/sync",
+     *     "/",
      *     name="claro_sync"
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
@@ -99,8 +95,9 @@ class OfflineController extends Controller
      * Get result
      *
      * @EXT\Route(
-     *     "/sync/result",
-     *     name="claro_sync_result"
+     *     "/result",
+     *     name="claro_sync_result",
+     *     options={"expose"=true}
      * )
      * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
      *
@@ -147,7 +144,7 @@ class OfflineController extends Controller
     *   Options of synchronisation modifications
     *
     *   @EXT\Route(
-    *       "/sync/param",
+    *       "/param",
     *       name="claro_sync_param"
     *   )
     *
@@ -162,7 +159,7 @@ class OfflineController extends Controller
 
      /**
     *   @EXT\Route(
-    *       "/sync/testTrans",
+    *       "/testTrans",
     *       name="claro_test_trans"
     *   )
     *
@@ -185,7 +182,7 @@ class OfflineController extends Controller
     *   Create userSyncrhonized entity
     *
     *   @EXT\Route(
-    *       "/sync/load",
+    *       "/load",
     *       name="claro_sync_load"
     *   )
     *
@@ -210,7 +207,7 @@ class OfflineController extends Controller
     *   Create userSyncrhonized entity
     *
     *   @EXT\Route(
-    *       "/sync/exchange",
+    *       "/exchange",
     *       name="claro_sync_exchange"
     *   )
     *
@@ -230,29 +227,25 @@ class OfflineController extends Controller
         $msg = '';
         try {
             $infoArray = $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
-			//Show the result window
-			return $this->render(
+			// Show the result window
+
+            return $this->render(
 				'ClarolineOfflineBundle:Offline:result.html.twig',
 				array(
 					'results' => $infoArray,
 					'msg' => ''
 				));
-			
+
         } catch (AuthenticationException $e) {
             $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
-            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
         } catch (ProcessSyncException $e) {
             $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
         } catch (ServeurException $e) {
             $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
         } catch (PageNotFoundException $e) {
             $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
-            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
         } catch (ClientException $e) {
             $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
-            // $this->get('request')->getSession()->getFlashBag()->add('error', $msg);
         } catch (SynchronisationFailsException $e) {
             $msg = $this->get('translator')->trans('sync_fail', array(), 'offline');
         }
@@ -274,7 +267,7 @@ class OfflineController extends Controller
     *   Seek and show all the modified courses and ressources
     *
     *   @EXT\Route(
-    *       "/sync/seek",
+    *       "/seek",
     *       name="claro_sync_seek"
     *   )
     *
@@ -303,7 +296,7 @@ class OfflineController extends Controller
     *  Transfer a file (sync archive) from a computer to another
     *
     *   @EXT\Route(
-    *       "/sync/transfer/{user}",
+    *       "/transfer/{user}",
     *       name="claro_sync_transfertest"
     *   )
     *
@@ -317,7 +310,7 @@ class OfflineController extends Controller
     {
         $transfer = true;
         if ($user == $authUser->getId()) {
-            $toTransfer = './synchronize_down/3/sync_0252D476-FD7D-4E39-9285-A53EDEFCAC90.zip';
+            $toTransfer = './hronize_down/3/_0252D476-FD7D-4E39-9285-A53EDEFCAC90.zip';
             $test = $this->get('claroline.manager.transfer_manager')->uploadArchive($toTransfer, $authUser, 0);
         } else {
             $transfer = false;
@@ -336,7 +329,7 @@ class OfflineController extends Controller
     *  Transfer a file (sync archive) from a computer to another
     *
     *   @EXT\Route(
-    *       "/sync/getsync/{user}",
+    *       "/getsync/{user}",
     *       name="claro_sync_gettest"
     *   )
     *
@@ -368,30 +361,7 @@ class OfflineController extends Controller
 
     /**
     *   @EXT\Route(
-    *       "/sync/loadWorkspaces",
-    *       name="claro_sync_load_workspace"
-    *   )
-    *
-    * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-    * @EXT\Template("ClarolineOfflineBundle:Offline:load.html.twig")
-    *
-    * @param User $user
-    * @return Response
-    */
-    public function loadWorkspacesAction(User $user)
-    {
-        $zip = $this->get('claroline.manager.loading_manager')->loadPublicWorkspaceList(SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/all_workspaces.xml');
-
-        $username = $user->getFirstName() . ' ' . $user->getLastName();
-
-        return array(
-            'user' => $username
-         );
-    }
-
-    /**
-    *   @EXT\Route(
-    *       "/sync/getuser",
+    *       "/getuser",
     *       name="claro_sync_getuser"
     *   )
     *
@@ -429,7 +399,7 @@ class OfflineController extends Controller
      */
     public function editUrlAction(User $user)
     {
-        $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+        $value = $this->yaml_parser->parse(file_get_contents($this->plateformConf));
         $results = array();
         foreach ($value as $elem) {
             if ($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()) {
@@ -460,7 +430,7 @@ class OfflineController extends Controller
         $new_url = $request->request->get('_url');
         $new_yaml = array();
 
-        $value = $this->yaml_parser->parse(file_get_contents(SyncConstant::PLAT_CONF));
+        $value = $this->yaml_parser->parse(file_get_contents($this->plateformConf));
 
         foreach ($value as $elem) {
             if ($elem['username'] == $user->getUserName() && $elem['mail'] == $user->getMail()) {
@@ -469,7 +439,7 @@ class OfflineController extends Controller
             $new_yaml[] = $elem;
         }
         $yaml = $this->yaml_dump->dump($new_yaml);
-        file_put_contents(SyncConstant::PLAT_CONF, $yaml);
+        file_put_contents($this->plateformConf, $yaml);
 
         return $this->redirect($this->generateUrl('claro_desktop_open_tool', array('toolName' => "claroline_offline_tool")));
 
@@ -555,16 +525,16 @@ class OfflineController extends Controller
     *   Test Creation
     *
     *   @EXT\Route(
-    *       "/sync/seek_test",
+    *       "/seek_test",
     *       name="claro_sync_seek_test"
     *   )
     *
     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-     * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
-     * @param User $user
-     *
-     * @return Response
-     */
+    * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
+    * @param User $user
+    *
+    * @return Response
+    */
     public function seekTestAction(User $user)
     {
         $results = array();
@@ -583,16 +553,16 @@ class OfflineController extends Controller
     *   Test Creation
     *
     *   @EXT\Route(
-    *       "/sync/load_test",
+    *       "/load_test",
     *       name="claro_sync_load_test"
     *   )
     *
     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-     * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
-     * @param User $user
-     *
-     * @return Response
-     */
+    * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
+    * @param User $user
+    *
+    * @return Response
+    */
     public function loadTestAction(User $user)
     {
         $results = array();

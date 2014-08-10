@@ -36,18 +36,9 @@ class SyncConstant
     // Zip Constant
     const DIRZIP = './extractedZip';
     const MANIFEST = 'manifest';
-    const ZIPFILEDIR = '/files/';
 
     //Forum Content Type Constant
     const CATE = "Claroline\ForumBundle\Entity\Category";
     const SUB = "Claroline\ForumBundle\Entity\Subject";
     const MSG = "Claroline\ForumBundle\Entity\Message";
-
-    //Installation Constant
-    const COMP_PATH_WIN = "../../../offline_component/win";
-    const APP_CACHE = '/app/cache/';
-    const LOG = '/app/logs/';
-    // const SYNC_UP = '/web/synchronize_up/';
-    // const SYNC_DW = '/web/synchronize_down/';
-    const PLAT_FILES = '/files/';
 }

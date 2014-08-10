@@ -78,6 +78,13 @@ class UserSynchronized
      * @ORM\Column(name="status", type="integer")
      */
     protected $status;
+    
+    /**
+     * @var boolean
+     *
+     * @ORM\Column(name="admin", type="boolean")
+     */
+    protected $admin;
 
     public function __construct(User $user)
     {
@@ -85,6 +92,7 @@ class UserSynchronized
         $this->lastSynchronization = new DateTime('@0');
         $this->sentTime = new DateTime('@0');
         $this->status = UserSynchronized::SUCCESS_SYNC;
+        $this->admin = $user->isAdmin();
     }
 
     /**
@@ -155,5 +163,15 @@ class UserSynchronized
     public function setStatus($status)
     {
         $this->status = $status;
+    }
+    
+    public function setAdmin($admin)
+    {
+        $this->admin = $admin;
+    }
+    
+    public function isAdmin()
+    {
+        return $this->admin;
     }
 }

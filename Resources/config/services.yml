@@ -1,5 +1,12 @@
 parameters:
     claroline.manager.creation_manager.class: Claroline\OfflineBundle\Manager\CreationManager
+    claroline.synchronisation.up_directory: "%claroline.param.files_directory%/synchronize_up/"
+    claroline.synchronisation.down_directory: "%claroline.param.files_directory%/synchronize_down/"
+    claroline.synchronisation.extract_directory: "%claroline.param.files_directory%/extracted/"
+    claroline.synchronisation.manifest: "manifest"
+    claroline.synchronisation.frag_size: 524288
+    claroline.synchronisation.offline_config: "%kernel.root_dir%/config/sync_config.yml"
+
 
 services:
     claroline_offline.creation_manager:

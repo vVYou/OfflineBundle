@@ -15,19 +15,14 @@ use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\ResourceType;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
-use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
-use Claroline\OfflineBundle\Model\SyncConstant;
 use JMS\DiExtraBundle\Annotation as DI;
 //use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
-use \ZipArchive;
-use \DOMDocument;
 use \DateTime;
-use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 
 class TestDQLManager
 {
@@ -80,7 +75,7 @@ class TestDQLManager
 
         $userWS = $this->workspaceRepo->findByUser($user);
 		$this->firstMethod($userWS, $this->offline, $user, $date);
-		
+
     }
 
     public function firstMethod($userWS, $types, $user, $date)
@@ -107,7 +102,7 @@ class TestDQLManager
         $userWS = $this->workspaceRepo->findByUser($user);
 		$this->secondMethod($userWS, $this->offline, $user, $date);
 	}
-	
+
 	public function secondMethod()
 	{
         foreach ($userWS as $element) {
@@ -133,7 +128,7 @@ class TestDQLManager
         return $query->getResult();
 
     }
-	
+
 	private function second($workspace, $types, $date)
 	{
         $query = $this->resourceNodeRepo->createQueryBuilder('res')
@@ -146,7 +141,7 @@ class TestDQLManager
             ->setParameter('date', $date)
             ->getQuery();
 
-        return $query->getResult();	
+        return $query->getResult();
 	}
 
 }

@@ -12,8 +12,9 @@
 namespace Claroline\OfflineBundle\Manager;
 
 use Claroline\CoreBundle\Entity\User;
+use Claroline\CoreBundle\Library\Security\PlatformRoles;
+use Claroline\CoreBundle\Manager\RoleManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
-use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use JMS\DiExtraBundle\Annotation as DI;
 use \DateTime;
@@ -32,16 +33,22 @@ class SynchronisationManager
     private $transferManager;
     private $userSyncManager;
     private $loadingManager;
+    private $roleManager;
     private $userSynchronizedRepo;
+    private $syncUpDir;
+    private $syncDownDir;
 
     /**
      * Constructor.
      * @DI\InjectParams({
-     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "creationManager"    = @DI\Inject("claroline.manager.creation_manager"),
-     *     "loadingManager" = @DI\Inject("claroline.manager.loading_manager"),
-     *     "userSyncManager" = @DI\Inject("claroline.manager.user_sync_manager"),
-     *     "transferManager" = @DI\Inject("claroline.manager.transfer_manager")
+     *      "om"              = @DI\Inject("claroline.persistence.object_manager"),
+     *      "creationManager" = @DI\Inject("claroline.manager.creation_manager"),
+     *      "loadingManager"  = @DI\Inject("claroline.manager.loading_manager"),
+     *      "userSyncManager" = @DI\Inject("claroline.manager.user_sync_manager"),
+     *      "transferManager" = @DI\Inject("claroline.manager.transfer_manager"),
+     *      "roleManager"     = @DI\Inject("claroline.manager.role_manager"),
+     *      "syncUpDir"       = @DI\Inject("%claroline.synchronisation.up_directory%"),
+     *      "syncDownDir"     = @DI\Inject("%claroline.synchronisation.down_directory%")
      * })
      */
     public function __construct(
@@ -49,7 +56,10 @@ class SynchronisationManager
         CreationManager $creationManager,
         LoadingManager $loadingManager,
         UserSyncManager $userSyncManager,
-        TransferManager $transferManager
+        TransferManager $transferManager,
+        RoleManager $roleManager,
+        $syncUpDir,
+        $syncDownDir
     )
     {
         $this->om = $om;
@@ -57,7 +67,10 @@ class SynchronisationManager
         $this->transferManager = $transferManager;
         $this->userSyncManager = $userSyncManager;
         $this->loadingManager = $loadingManager;
+        $this->roleManager = $roleManager;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
+        $this->syncUpDir = $syncUpDir;
+        $this->syncDownDir = $syncDownDir;
     }
 
     /*
@@ -102,7 +115,7 @@ class SynchronisationManager
                 break;
             // Download finished
             case UserSynchronized::SUCCESS_DOWNLOAD :
-                $toLoad = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/sync_'.$userSync->getFilename().'.zip';
+                $toLoad = $this->syncUpDir.$user->getId().'/sync_'.$userSync->getFilename().'.zip';
                 // Load the online synchronisation archive on the plateform
                 $infoToDisplay = $this->step4Load($user, $userSync, $toLoad);
                 break;
@@ -143,10 +156,12 @@ class SynchronisationManager
             $userSync->setStatus(UserSynchronized::SUCCESS_UPLOAD);
             $this->userSyncManager->updateUserSync($userSync);
             //Go to step 3
-            return $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['totalFragments']);
+            $syncInfo = $this->step3Download($user, $userSync, $toDownload['hashname'], $toDownload['totalFragments']);
             // Clean the directory when done (online the offline)
-            $this->transferManager->deleteFile($user,substr($filename, strlen($filename)-40, 36), SyncConstant::SYNCHRO_UP_DIR);
+            // $this->transferManager->deleteFile($user,substr($filename, strlen($filename)-40, 36), $this->syncUpDir);
+            $this->transferManager->deleteFile($user,substr($filename, strlen($filename)-40, 36), 'UP');
             unlink($filename);
+            return $syncInfo;
         }
     }
 
@@ -154,29 +169,34 @@ class SynchronisationManager
     // Download the synchronisation archive of the online plateform
     private function step3Download(User $user, UserSynchronized $userSync, $filename, $totalFragments = null, $fragmentNumber = 0)
     {
-        if ($totalFragments == null) {
-            // echo "testons le nombre de frangments <br/>";
-            $totalFragments = $this->transferManager->getNumberOfFragmentsOnline($filename, $user);
-        }
-        // The file doesn't exist online
-        if ($totalFragments == -1) {
-            // echo "j'en ai -1 <br/>";
-            // Erase filename, set status and restart
-            $userSync->setFilename(null);
-            $userSync->setStatus(UserSynchronized::FAIL_UPLOAD);
-            $this->userSyncManager->updateUserSync($userSync);
-            $this->synchroniseUser($user, $userSync);
-        } else {
-            // $toLoad will be the downloaded from the online plateform
-            $toLoad = $this->transferManager->downloadArchive($filename, $totalFragments, $fragmentNumber, $user);
-            // Update userSync status
-            $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
-            $this->userSyncManager->updateUserSync($userSync);
-            // Go to step 4
-            return $this->step4Load($user, $userSync, $toLoad);
-            // Clean the files when done
-            $this->transferManager->deleteFile($user, $filename, SyncConstant::SYNCHRO_DOWN_DIR);
-            unlink($toLoad);
+        try{ 
+            if ($totalFragments == null) {
+                $totalFragments = $this->transferManager->getNumberOfFragmentsOnline($filename, $user);
+            }
+            // The file doesn't exist online
+            if ($totalFragments == -1) {
+                // Erase filename, set status and restart
+                $userSync->setFilename(null);
+                $userSync->setStatus(UserSynchronized::FAIL_UPLOAD);
+                $this->userSyncManager->updateUserSync($userSync);
+                $this->synchroniseUser($user, $userSync);
+            } else {
+                // $toLoad will be the downloaded from the online plateform
+                $toLoad = $this->transferManager->downloadArchive($filename, $totalFragments, $fragmentNumber, $user);
+                // Update userSync status
+                $userSync->setStatus(UserSynchronized::SUCCESS_DOWNLOAD);
+                $this->userSyncManager->updateUserSync($userSync);
+                // Go to step 4
+                $syncInfo = $this->step4Load($user, $userSync, $toLoad);
+                // Clean the files when done
+                // $this->transferManager->deleteFile($user, $filename, $this->syncDownDir);
+                $this->transferManager->deleteFile($user, $filename, 'DOWN');
+                unlink($toLoad);
+                return $syncInfo;
+            }
+        }catch(DownloadFailsException $e){
+            $this->userSyncManager->resetSync($user);
+            throw new SynchronisationFailsException("The synchronisation fails, can't download file from online server");
         }
     }
 
@@ -185,7 +205,11 @@ class SynchronisationManager
     private function step4Load(User $user, UserSynchronized $userSync, $filename)
     {
         // Load synchronisation archive ($filename) in offline database
+        $this->roleManager->associateUserRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN), false, true);
         $loadArray = $this->loadingManager->loadZip($filename, $user);
+        if(!$userSync->isAdmin()){
+            $this->roleManager->dissociateRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN));
+        }
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);
         $userSync->setLastSynchronization($userSync->getSentTime());
         $this->userSyncManager->updateUserSync($userSync);
@@ -200,7 +224,7 @@ class SynchronisationManager
         $stop = true;
         $index = -1;
         while ($stop) {
-            $file = SyncConstant::SYNCHRO_UP_DIR.$user->getId().'/'.$filename.'_'.($index + 1);
+            $file = $this->syncUpDir.$user->getId().'/'.$filename.'_'.($index + 1);
             if (! file_exists($file)) {
                 $stop=false;
             } else {

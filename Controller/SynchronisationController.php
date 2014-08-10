@@ -335,16 +335,8 @@ class SynchronisationController extends Controller
                             'first_sync' => true,
 							'msg' => ''
                         ));
-                } catch (AuthenticationException $e) {
-                    $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
-                } catch (ProcessSyncException $e) {
-                    $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                } catch (ServeurException $e) {
-                    $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                } catch (PageNotFoundException $e) {
-                    $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
-                } catch (ClientException $e) {
-                    $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
+                } catch (Exception $e) {
+                    $msg = $this->getMessage($e);
                 }
             } else {
                 $msg = $this->get('translator')->trans('sync_already', array(), 'offline');
@@ -356,4 +348,30 @@ class SynchronisationController extends Controller
            'msg' => $msg
         );
     }
+	
+	private function getMessage(Exception $e)
+	{
+		$msg = '';
+		switch($e) {
+			case AuthenticationException :
+                $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
+                break;
+			case ProcessSyncException :
+                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
+                break;
+			case ServeurException :
+                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
+                break;
+			case PageNotFoundException :
+                $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
+                break;
+			case ClientException :
+                $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
+                break;			
+		}
+		
+		return $msg;
+	
+	}
+	
 }

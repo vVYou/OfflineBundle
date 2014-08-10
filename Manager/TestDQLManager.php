@@ -37,10 +37,6 @@ class TestDQLManager
     private $userSynchronizedRepo;
     private $resourceNodeRepo;
     private $revisionRepo;
-    private $subjectRepo;
-    private $messageRepo;
-    private $forumRepo;
-    private $categoryRepo;
     private $resourceManager;
     private $workspaceRepo;
     private $roleRepo;
@@ -70,10 +66,6 @@ class TestDQLManager
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
-        $this->subjectRepo = $om->getRepository('ClarolineForumBundle:Subject');
-        $this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
-        $this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
-        $this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
         $this->workspaceRepo = $om->getRepository('ClarolineCoreBundle:Workspace\Workspace');
         $this->roleRepo = $om->getRepository('ClarolineCoreBundle:Role');
         $this->translator = $translator;
@@ -82,7 +74,7 @@ class TestDQLManager
         $this->offline = array('text', 'claroline_forum', 'directory', 'file');
     }
 	
-    public function firstDQL(User $user, $date)
+    public function firstDQL($user, $date)
     {
         ini_set('max_execution_time', 0);
 
@@ -101,13 +93,14 @@ class TestDQLManager
             if (count($ressourcesToSync) >= 1) {
 
                 foreach ($ressourcesToSync as $res) {
-					$node = $this->resourceNodeRepo->findOneBy(array('text' => $myRes));
+					$myRes = $this->resourceManager->getResourceFromNode($res);
+					$revision = $this->revisionRepo->findOneBy(array('text' => $myRes));
                 }
             }
         }
     }
 	
-	public function secondDQL(User $user, $date)
+	public function secondDQL($user, $date)
 	{
 		ini_set('max_execution_time', 0);
 
@@ -119,7 +112,7 @@ class TestDQLManager
 	{
         foreach ($userWS as $element) {
 			foreach($offline as $type){
-				$result = $this->second($workspace, $types, $date);
+				$result = $this->second($element, $type, $date);
 				$resultToSync = $this->XXX;
 			}
 		}

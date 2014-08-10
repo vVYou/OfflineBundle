@@ -27,6 +27,9 @@ use Claroline\CoreBundle\Persistence\ObjectManager;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Dumper;
+use Claroline\OfflineBundle\Entity\Credential;
+use Claroline\OfflineBundle\Form\OfflineFormType;
+use Symfony\Component\Form\FormFactory;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -41,26 +44,30 @@ class OfflineController extends Controller
     private $yamlparser;
     private $yaml_parser;
     private $yaml_dump;
+	private $formFactory;
 
     /**
     * @DI\InjectParams({
     *      "router"             = @DI\Inject("router"),
     *     "request"            = @DI\Inject("request"),
-         *     "om"             = @DI\Inject("claroline.persistence.object_manager")
+         *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
+     *     "formFactory"          = @DI\Inject("form.factory")
     * })
     */
     public function __construct(
         UrlGeneratorInterface $router,
         Request $request,
-                ObjectManager $om
+		ObjectManager $om,
+        FormFactory $formFactory
     )
     {
        $this->router = $router;
        $this->request = $request;
-               $this->om = $om;
+		$this->om = $om;
        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
        $this->yaml_parser = new Parser();
        $this->yaml_dump = new Dumper();
+        $this->formFactory = $formFactory;
     }
 
     /**
@@ -467,7 +474,79 @@ class OfflineController extends Controller
         return $this->redirect($this->generateUrl('claro_desktop_open_tool', array('toolName' => "claroline_offline_tool")));
 
     }
+	
+    /**
+     *  Add a new User to the sync_config file
+     *
+     * @Route(
+     *     "/add_user",
+     *     name="sync_add_user"
+     * )
+     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     *
+     * @EXT\Template("ClarolineOfflineBundle:Offline:new_user.html.twig")
+     *
+     * @return Response
+     */
+    public function addUserAction()
+    {
+        $cred = new Credential();
+        $form = $this->formFactory->create(new OfflineFormType(), $cred);
+        $msg = '';
 
+        $form->handleRequest($this->request);
+        if ($form->isValid()) {
+            // Check if the user exists on the distant database
+            $alr_user = $this->userRepo->findOneBy(array('username' => $cred->getName()));
+            if ($alr_user == NULL) {
+                try {
+                    $this->transferManager->getUserInfo($cred->getName(), $cred->getPassword(), $cred->getUrl());
+                    $this->authenticator->authenticate($cred->getName(), $cred->getPassword());
+
+                    return $this->render(
+                        'ClarolineOfflineBundle:Offline:connect_ok.html.twig',
+                        array(
+                            'first_sync' => true,
+							'msg' => ''
+                        ));
+                } catch (Exception $e) {
+                    $msg = $this->getMessage($e);
+                }
+            } else {
+                $msg = $this->get('translator')->trans('sync_already', array(), 'offline');
+            }
+        }
+
+        return array(
+           'form' => $form->createView(),
+           'msg' => $msg
+        );
+    }
+	
+	private function getMessage(Exception $e)
+	{
+		$msg = '';
+		switch($e) {
+			case AuthenticationException :
+                $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
+                break;
+			case ProcessSyncException :
+                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
+                break;
+			case ServeurException :
+                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
+                break;
+			case PageNotFoundException :
+                $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
+                break;
+			case ClientException :
+                $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
+                break;			
+		}
+		
+		return $msg;
+	
+	}
     /*
     *   METHODE DE TEST : Those methods are used for the creation and loading tests.
     */

@@ -1,0 +1,50 @@
+{% extends "ClarolineCoreBundle:Desktop:layout.html.twig" %}
+
+
+{% block breadcrumb %}
+    {{
+        macros.breadcrumbs([
+            {
+                'icon': 'icon-briefcase',
+                'name': 'desktop'|trans({}, 'platform'),
+                'href': path('claro_desktop_open')
+            },
+            {
+                'name': 'claroline_offline_tool'|trans({}, 'tools'),
+                'href': ''
+            },
+            {
+                'name': 'sync_new_user' | trans({}, 'offline'),
+                'href': ''
+            }
+        ])
+    }}
+{% endblock %}
+{% block section_content %}
+        {{ macros.flashBox() }}
+        {% if msg %}
+            <div class="alert alert-danger">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                {{ msg }}
+            </div>
+        {% endif %}
+        <div class='panel panel-default'>
+		<div class="panel-heading">
+			<h3 class="panel-title">{{ 'sync_new_user'|trans({}, 'offline') }}</h3>
+		</div>
+            {{form_start(form) }}
+                <div class="panel-body">
+                    <p>{{ 'sync_config'|trans({}, 'offline') }}</p>
+                    {{ form_widget(form) }}
+                </div>
+                <div class="panel-footer">
+                    <button type="submit" class="btn btn-primary">{{ 'sync_retrieve'|trans({}, 'offline') }}</button>
+					<a class="btn btn-default" href="{{ path('claro_desktop_open_tool', {toolName : "claroline_offline_tool"}) }}" role="button">{{ 'cancel' | trans({}, 'platform') }}</a>
+                </div>
+            {{form_end(form) }}
+        </div>
+    </div>
+{%block sync%}{%endblock%}
+
+
+{% endblock %}

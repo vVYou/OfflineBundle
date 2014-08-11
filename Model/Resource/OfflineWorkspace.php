@@ -164,7 +164,8 @@ class OfflineWorkspace extends OfflineElement
         $config->setWorkspaceDescription($workspace->getAttribute('description'));
         $config->setGuid($workspace->getAttribute('guid'));
         $myWs = $this->workspaceManager->create($config, $creator);
-        $this->roleManager->associateUserRole($user, $this->roleManager->getRoleByName($workspace->getAttribute('role')));
+        // $this->roleManager->associateUserRole($user, $this->roleManager->getRoleByName($workspace->getAttribute('role')));
+        $this->roleManager->associateRole($user, $this->roleManager->getRoleByName($workspace->getAttribute('role')));
 
         $nodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $myWs));
 

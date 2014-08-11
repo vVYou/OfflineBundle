@@ -23,6 +23,7 @@ class Credential
         if(substr($url, -1) === '/'){
             return substr($url, 0, strlen($url)-1);
         }
+		else return $url;
     }
 
     public function getName()

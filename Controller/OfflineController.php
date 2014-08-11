@@ -26,6 +26,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Dumper;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
+use \DateTime;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -87,55 +88,6 @@ class OfflineController extends Controller
         return array(
            'first_sync' => $first_sync,
 		   'msg' => ''
-        );
-
-    }
-
-    /**
-     * Get result
-     *
-     * @EXT\Route(
-     *     "/result",
-     *     name="claro_sync_result",
-     *     options={"expose"=true}
-     * )
-     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-     *
-     * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
-     * @param User $user
-     *
-     * @return Response
-     */
-    public function resultAction(User $user)
-    {
-        $results = array();
-        $result1 = new SyncInfo();
-        $result1->setWorkspace('Mon Workspace 123');
-        $result1->addToCreate('mon_premier_cours.pdf');
-        $result1->addToUpdate('une_maj.odt');
-        $result1->addToDoublon('un_doublon.calc');
-
-        $results[] = $result1;
-
-        $result2 = new SyncInfo();
-        $result2->setWorkspace('Mon Workspace 10000');
-        $result2->addToCreate('mon_premier_cours.pdf');
-        $result2->addToCreate('mon_deuxieme_cours.pdf');
-        $result2->addToDoublon('un_doublon.calc');
-        $result2->addToDoublon('un_autre_doublon.calc');
-
-        $results[] = $result2;
-
-        $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
-
-        $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
-        $user_inf = $user->getUserAsTab();
-        $user_inf[] = $user_ws_rn->getNodeHashName();
-        $returnContent = $user_inf;
-
-        return array(
-           'results' => $results,
-           'msg' => $msg
         );
 
     }
@@ -572,6 +524,84 @@ class OfflineController extends Controller
             'results' => $results['infoArray'],
             'msg' => ''
          );
+    }
+
+    /**
+     * Get result
+     *
+     * @EXT\Route(
+     *     "/result",
+     *     name="claro_sync_result",
+     *     options={"expose"=true}
+     * )
+     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     *
+     * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
+     * @param User $user
+     *
+     * @return Response
+     */
+    public function resultAction(User $user)
+    {
+        $results = array();
+        $result1 = new SyncInfo();
+        $result1->setWorkspace('Mon Workspace 123');
+        $result1->addToCreate('mon_premier_cours.pdf');
+        $result1->addToUpdate('une_maj.odt');
+        $result1->addToDoublon('un_doublon.calc');
+
+        $results[] = $result1;
+
+        $result2 = new SyncInfo();
+        $result2->setWorkspace('Mon Workspace 10000');
+        $result2->addToCreate('mon_premier_cours.pdf');
+        $result2->addToCreate('mon_deuxieme_cours.pdf');
+        $result2->addToDoublon('un_doublon.calc');
+        $result2->addToDoublon('un_autre_doublon.calc');
+
+        $results[] = $result2;
+
+        $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
+
+        $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
+        $user_inf = $user->getUserAsTab();
+        $user_inf[] = $user_ws_rn->getNodeHashName();
+        $returnContent = $user_inf;
+
+        return array(
+           'results' => $results,
+           'msg' => $msg
+        );
+
+    }
+	
+	/**
+     * Get result
+     *
+     * @EXT\Route(
+     *     "/test_dql",
+     *     name="claro_sync_dql",
+     *     options={"expose"=true}
+     * )
+     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
+     *
+     * @EXT\Template("ClarolineOfflineBundle:Offline:result.html.twig")
+     * @param User $user
+     *
+     * @return Response
+     */
+    public function testDQLAction(User $user)
+    {
+		$date = new DateTime('@0');
+		$results = $this->get("claroline.manager.test_dql_manager")->firstDQL($user, $date);
+		// $results = $this->get("claroline.manager.test_dql_manager")->hash_test($user);
+		// $results = $this->get("claroline.manager.test_dql_manager")->secondDQL($user, $date);
+
+        return array(
+           'results' => array(),
+           'msg' => ''
+        );
+
     }
 
 }

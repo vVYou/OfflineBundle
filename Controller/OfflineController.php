@@ -65,7 +65,7 @@ class OfflineController extends Controller
     *   "plateformConf"   = @DI\Inject("%claroline.synchronisation.offline_config%"),
     *   "creationManager" = @DI\Inject("claroline.manager.creation_manager"),
     *   "transferManager" = @DI\Inject("claroline.manager.transfer_manager"),
-    *   "userManager"     = @DI\Inject("")
+    *   "userManager"     = @DI\Inject("claroline.manager.user_manager")
     * })
     */
     public function __construct(

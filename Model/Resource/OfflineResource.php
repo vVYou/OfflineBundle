@@ -106,8 +106,16 @@ abstract class OfflineResource extends OfflineElement
             $domRes = $this->addCreatorInformations($domManifest, $domRes, $resToAdd->getCreator());
 
             return $domRes;
-
         }
-
+    }
+    
+    private function addResourceAndId($domManifest, ResourceNode $resToAdd, $resourcesSec)
+    {
+        $domRes = $domManifest->createElement('resource');
+        $resourcesSec->appendChild($domRes);
+        $hashname_node = $domManifest->createAttribute('hashname_node');
+        $hashname_node->value = $resToAdd->getNodeHashName();
+        $domRes->appendChild($hashname_node);
+        return $domRes;
     }
 }

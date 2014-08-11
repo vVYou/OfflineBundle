@@ -622,5 +622,5 @@ class OfflineForum extends OfflineResource
         $this->om->persist($forumContent);
         // $this->forumManager->logChangeSet($forumContent);
         $this->om->flush();
-    }
+    }     
 }

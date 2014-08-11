@@ -241,4 +241,5 @@ class OfflineFile extends OfflineResource
         $this->changeDate($node, $creationDate, $modificationDate);
 
     }
+    
 }

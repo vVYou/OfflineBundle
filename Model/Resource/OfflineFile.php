@@ -102,9 +102,9 @@ class OfflineFile extends OfflineResource
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
-				$this->userManager = $this->container->get('claroline.manager.user_manager');
+		$this->userManager = $this->container->get('claroline.manager.user_manager');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
-		 $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
 		 
         $newResource = new File();
         $creationDate = new DateTime();

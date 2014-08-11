@@ -512,7 +512,7 @@ class OfflineController extends Controller
             'msg' => ''
          );
     }
-
+    
     /**
      * Get result
      *

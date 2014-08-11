@@ -31,7 +31,8 @@ use Doctrine\ORM\Event\OnFlushEventArgs;
 
 /**
  * @DI\Service("claroline.edit_hashname_handler")
- * @DI\Tag("doctrine.event_listener, event: preUpdate")
+ * @DI\Tag("doctrine.event_listener", attributes={"event"="preUpdate"})
+ }
  */
 class EditChangeListener
 {
@@ -62,6 +63,9 @@ class EditChangeListener
         $this->offline[$offline->getType()] = $offline;
     }
 	
+    /*
+    *   @DI\Observe("preUpdate")
+    */
 	public function preUpdate(LifecycleEventArgs $eventArgs)
     {
 		// $args = $eventArgs->getEntity();

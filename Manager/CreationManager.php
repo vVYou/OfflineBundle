@@ -121,7 +121,6 @@ class CreationManager
         $this->writeManifestDescription($domManifest, $sectManifest, $user, $date);
 
         $dir = $this->syncDownDir.$user->getId();
-
         // Create the Directory if it does not exists.
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
@@ -157,12 +156,15 @@ class CreationManager
      */
     public function fillSyncZip($userWS, $domManifest, $sectManifest, $types, User $user, ZipArchive $archive, $date)
     {
+        $sectResources = $domManifest->createElement('resources');
+        $sectManifest->appendChild($sectResources);
+        
         foreach ($userWS as $element) {
             $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);
             $dateTimeStamp = new DateTime();
             $dateTimeStamp->setTimeStamp($date);
             $ressourcesToSync = $this->findResourceToSync($element, $types, $dateTimeStamp);// Remove all the resources not modified.
-
+            // $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceAndId($domManifest, $element, $sectResources);
             if (count($ressourcesToSync) >= 1) {
 
                 foreach ($ressourcesToSync as $res) {

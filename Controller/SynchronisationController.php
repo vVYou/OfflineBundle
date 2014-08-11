@@ -11,6 +11,7 @@
 
 namespace Claroline\OfflineBundle\Controller;
 
+use \Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Form\FormFactory;
 use Symfony\Component\HttpFoundation\Response;
@@ -359,7 +360,7 @@ class SynchronisationController extends Controller
         );
     }
 	
-	private function getMessage(Exception $e)
+	private function getMessage($e)
 	{
 		$msg = '';
         var_dump(get_class($e));

@@ -18,7 +18,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\Routing\Router;
-use Symfony\Component\Security\Core\SecurityContextInterface;
 use Claroline\CoreBunde\Entity\Text;
 use Claroline\CoreBundle\Entity\Revision;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
@@ -29,6 +28,7 @@ use Doctrine\ORM\Events as ORM;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
+use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 
 /**
  * @DI\Service("claroline.edit_hashname_handler")
@@ -36,7 +36,6 @@ use Doctrine\ORM\Event\OnFlushEventArgs;
  */
 class EditChangeListener
 {
-    private $securityContext;
     private $eventDispatcher;
     private $router;
 	private $offline;

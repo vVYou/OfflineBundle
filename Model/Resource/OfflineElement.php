@@ -67,7 +67,7 @@ abstract class OfflineElement
      */
     protected function getTimestampListener()
     {
-        $evm = $this->em->getEventManager();
+        $evm = $this->om->getEventManager();
 
         foreach ($evm->getListeners() as $listenersByEvent) {
             foreach ($listenersByEvent as $listener) {

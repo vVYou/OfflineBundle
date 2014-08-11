@@ -204,22 +204,25 @@ class TestDQLManager
 	*/
 	public function hash_test($user)
 	{
-        $userWS = $this->workspaceRepo->findByUser($user);
-		foreach($userWS as $workspace){
-			$results = $this->hash($workspace);
-			echo 'Mon taleau dql : '.count($results).'<br/>';
-			foreach($results as $result){
-						echo $result['hashName'].'<br/>';
-			}
+		ini_set('max_execution_time', 0);
+		$results = $this->hash($user);
+		echo 'Mon taleau dql : '.count($results).'<br/>';
+		foreach($results as $result){
+			echo $result['hashName'].'<br/>';
 		}
 	}
 	
-	private function hash($workspace)
+	private function hash($user)
 	{
-		$query = $this->em->createQuery('SELECT res.hashName FROM Claroline\CoreBundle\Entity\Resource\ResourceNode res WHERE res.workspace = :workspace');
-		$query->setParameter('workspace', $workspace);
+		$query = $this->em->createQuery('
+			SELECT res.hashName FROM Claroline\CoreBundle\Entity\Resource\ResourceNode res 
+			JOIN res.workspace w
+			JOIN w.roles r
+			JOIN r.users u
+			WHERE u.id = :user
+			');
+		$query->setParameter('user', $user);
 
         return $query->getResult();
 	}
-
 }

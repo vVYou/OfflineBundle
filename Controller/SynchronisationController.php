@@ -238,7 +238,7 @@ class SynchronisationController extends Controller
             // Get User informations and return them
             $user = $this->userRepo->loadUserByUsername($informationsArray['username']);
             $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
-            $user_inf = $user->getUserAsTab();
+            $user_inf = $userManager->getUserAsTab($user);
             $user_inf['ws_resnode'] = $user_ws_rn->getNodeHashName();
             $returnContent = $user_inf;
         }

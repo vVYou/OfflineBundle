@@ -16,6 +16,7 @@ use JMS\SecurityExtraBundle\Annotation as SEC;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\ResourceNode;
+use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -54,6 +55,7 @@ class OfflineController extends Controller
     private $plateformConf;
     private $creationManager;
     private $transferManager;
+    private $userManager;
 
     /**
     * @DI\InjectParams({
@@ -62,7 +64,8 @@ class OfflineController extends Controller
     *   "om"              = @DI\Inject("claroline.persistence.object_manager"),
     *   "plateformConf"   = @DI\Inject("%claroline.synchronisation.offline_config%"),
     *   "creationManager" = @DI\Inject("claroline.manager.creation_manager"),
-    *   "transferManager" = @DI\Inject("claroline.manager.transfer_manager")
+    *   "transferManager" = @DI\Inject("claroline.manager.transfer_manager"),
+    *   "userManager"     = @DI\Inject("")
     * })
     */
     public function __construct(
@@ -71,7 +74,8 @@ class OfflineController extends Controller
         ObjectManager $om,
         $plateformConf,
         CreationManager $creationManager,
-        TransferManager $transferManager
+        TransferManager $transferManager,
+        UserManager $userManager
     )
     {
        $this->router = $router;
@@ -83,6 +87,7 @@ class OfflineController extends Controller
        $this->plateformConf = $plateformConf;
        $this->creationManager = $creationManager;
        $this->transferManager = $transferManager;
+       $this->userManager = $userManager;
     }
 
     /**
@@ -546,7 +551,7 @@ class OfflineController extends Controller
         $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
 
         $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
-        $user_inf = $user->getUserAsTab();
+        $user_inf = $userManager->getUserAsTab($user);
         $user_inf[] = $user_ws_rn->getNodeHashName();
         $returnContent = $user_inf;
 

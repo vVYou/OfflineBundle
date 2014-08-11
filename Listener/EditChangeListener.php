@@ -66,14 +66,14 @@ class EditChangeListener
 	public function preUpdate(LifecycleEventArgs $eventArgs)
     {
 		$args = $eventArgs->getEntity();
-        // var_dump($this->offline);
-		// if($args instanceof ResourceNode && $this->offline[$args->getResourceType()->getName()]){
-			// $this->offline[$args->getResourceType()->getName()]->modifyUniqueId($args);	
+        var_dump($this->offline);
+		if($args instanceof ResourceNode && $this->offline[$args->getResourceType()->getName()]){
+			$this->offline[$args->getResourceType()->getName()]->modifyUniqueId($args);	
 			// $args->setText('AZED23DGLLEL');
 			file_put_contents('listeneres.txt', 'ARGSEUH');
 			// foreach($args->getRevision() as $elem){
 				// $eventArgs->setText('Bob');
 			// }
-		// }
+		}
     }
 }

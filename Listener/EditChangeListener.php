@@ -32,7 +32,6 @@ use Doctrine\ORM\Event\OnFlushEventArgs;
 /**
  * @DI\Service("claroline.edit_hashname_handler")
  * @DI\Tag("doctrine.event_listener", attributes={"event"="preUpdate"})
- }
  */
 class EditChangeListener
 {
@@ -43,17 +42,14 @@ class EditChangeListener
 
     /**
      * @DI\InjectParams({
-     *     "securityContext"        = @DI\Inject("security.context"),
-     *     "eventDispatcher"        = @DI\Inject("claroline.event.event_dispatcher")
+     *     "eventDispatcher" = @DI\Inject("claroline.event.event_dispatcher")
      * })
      *
      */
     public function __construct(
-        SecurityContextInterface $securityContext,
         StrictDispatcher $eventDispatcher
     )
     {
-        $this->securityContext = $securityContext;
         $this->eventDispatcher = $eventDispatcher;
         $this->offline = array();
     }

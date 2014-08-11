@@ -204,7 +204,6 @@ class TestDQLManager
 	*/
 	public function hash_test($user)
 	{
-		ini_set('max_execution_time', 0);
 		$results = $this->hash($user);
 		echo 'Mon taleau dql : '.count($results).'<br/>';
 		foreach($results as $result){

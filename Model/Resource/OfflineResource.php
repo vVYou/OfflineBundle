@@ -18,6 +18,7 @@ use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use \ZipArchive;
+use \DOMDocument;
 
 abstract class OfflineResource extends OfflineElement
 {
@@ -111,16 +112,6 @@ abstract class OfflineResource extends OfflineElement
 
             return $domRes;
         }
-    }
-    
-    protected function addResourceAndId($domManifest, ResourceNode $resToAdd, $resourcesSec)
-    {
-        $domRes = $domManifest->createElement('resource');
-        $resourcesSec->appendChild($domRes);
-        $hashname_node = $domManifest->createAttribute('hashname_node');
-        $hashname_node->value = $resToAdd->getNodeHashName();
-        $domRes->appendChild($hashname_node);
-        return $domRes;
     }
     
     protected function modifyUniqueId($resource)

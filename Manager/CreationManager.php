@@ -21,6 +21,7 @@ use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Model\Resource\OfflineElement;
+use Doctrine\ORM\EntityManager;
 use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\Translation\TranslatorInterface;
 use \ZipArchive;
@@ -49,6 +50,7 @@ class CreationManager
     private $offline;
     private $manifestName;
     private $syncDownDir;
+	private $em;
 
     /**
      * Constructor.
@@ -60,7 +62,8 @@ class CreationManager
      *     "resourceManager" = @DI\Inject("claroline.manager.resource_manager"),
      *     "ut"              = @DI\Inject("claroline.utilities.misc"),
      *     "manifestName"    = @DI\Inject("%claroline.synchronisation.manifest%"),
-     *     "syncDownDir"     = @DI\Inject("%claroline.synchronisation.down_directory%")
+     *     "syncDownDir"     = @DI\Inject("%claroline.synchronisation.down_directory%"),
+     *     "em"              = @DI\Inject("doctrine.orm.entity_manager")
      * })
      */
     public function __construct(
@@ -70,7 +73,8 @@ class CreationManager
         ResourceManager $resourceManager,
         ClaroUtilities $ut,
         $manifestName,
-        $syncDownDir
+        $syncDownDir,
+        EntityManager $em
     )
     {
         $this->om = $om;
@@ -90,6 +94,7 @@ class CreationManager
         $this->offline = array();
         $this->manifestName = $manifestName;
         $this->syncDownDir = $syncDownDir;
+		$this->em = $em;
     }
 
     public function addOffline(OfflineElement  $offline)
@@ -134,6 +139,7 @@ class CreationManager
 
         if ($archive->open($fileName, ZipArchive::CREATE) === true) {
             $this->fillSyncZip($userWS, $domManifest, $sectManifest, $types, $user, $archive, $date);
+            $this->addCompleteResourceList($domManifest, $sectManifest, $user, $types);
         } else {
             throw new \Exception('Impossible to open the zip file');
         }
@@ -171,14 +177,24 @@ class CreationManager
         }
     }
     
-    private function addCompleteResourceList($domManifest, $sectManifest)
+    private function addCompleteResourceList($domManifest, $sectManifest, $user, $types)
     {
         $sectResources = $domManifest->createElement('resources');
         $sectManifest->appendChild($sectResources);
-        // $allResUser = ;
-        // foreach($allResUser as $res){
-            // $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceAndId($domManifest, $res, $sectResources);
-        // }
+        $allResUser = $this->getUserRessources($user, $types);
+        foreach($allResUser as $res){
+            $this->addResourceAndId($domManifest, $res, $sectResources);
+        }
+    }
+    
+    public function addResourceAndId($domManifest, $res, $resourcesSec)
+    {
+        $domRes = $domManifest->createElement('res');
+        $resourcesSec->appendChild($domRes);
+        $hashname_node = $domManifest->createAttribute('hashname_node');
+        $hashname_node->value = $res->getNodeHashName();
+        $domRes->appendChild($hashname_node);
+        // return $domRes;
     }
 
     /**
@@ -202,6 +218,24 @@ class CreationManager
         return $query->getResult();
 
     }
+    
+    private function getUserRessources(User $user, $types)
+	{
+        
+		$query = $this->em->createQuery('
+			SELECT res FROM Claroline\CoreBundle\Entity\Resource\ResourceNode res 
+			JOIN res.workspace w
+            JOIN res.resourceType type
+			JOIN w.roles r
+			JOIN r.users u
+			WHERE u.id = :user
+            AND type.name IN (:types)
+			');
+		$query->setParameter('user', $user);
+        $query->setParameter('types', $types);
+
+        return $query->getResult();
+	}
 
     /************************************************************
     *   Here figure all methods used to manipulate the xml file. *

@@ -41,7 +41,6 @@ class OfflineForum extends OfflineResource
     private $messageRepo;
     private $forumRepo;
     private $categoryRepo;
-    private $ut;
 
     /**
      * Constructor.

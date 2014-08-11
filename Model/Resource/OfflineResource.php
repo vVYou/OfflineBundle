@@ -16,10 +16,14 @@ use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\User;
+use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use \ZipArchive;
 
 abstract class OfflineResource extends OfflineElement
 {
+    protected $ut;
+    protected $om;
+
     /**
      * Add informations required to check and recreated a resource if necessary.
      *
@@ -66,13 +70,13 @@ abstract class OfflineResource extends OfflineElement
 
     // Return the type of resource supported by the service
     abstract public function getType();
-
+    
     /**
      * Add informations required to check and recreated a node if necessary.
      *
      * @param \Claroline\CoreBundle\Entity\Resource\ResourceNode $resToAdd
      */
-    public function addNodeToManifest($domManifest, $offType, $domWorkspace, ResourceNode $resToAdd)
+    protected function addNodeToManifest($domManifest, $offType, $domWorkspace, ResourceNode $resToAdd)
     {
         $typeNode = $resToAdd->getResourceType()->getId();
         $creationTime = $resToAdd->getCreationDate()->getTimestamp();
@@ -109,7 +113,7 @@ abstract class OfflineResource extends OfflineElement
         }
     }
     
-    private function addResourceAndId($domManifest, ResourceNode $resToAdd, $resourcesSec)
+    protected function addResourceAndId($domManifest, ResourceNode $resToAdd, $resourcesSec)
     {
         $domRes = $domManifest->createElement('resource');
         $resourcesSec->appendChild($domRes);
@@ -117,5 +121,12 @@ abstract class OfflineResource extends OfflineElement
         $hashname_node->value = $resToAdd->getNodeHashName();
         $domRes->appendChild($hashname_node);
         return $domRes;
+    }
+    
+    protected function modifyUniqueId($resource)
+    {
+        // $resource->setNodeHashName($this->ut->generateGuid());
+        $resource->setNodeHashName('ITWORKS');
+        // $this->om->flush();
     }
 }

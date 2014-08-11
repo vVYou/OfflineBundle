@@ -21,6 +21,7 @@ use Symfony\Component\Routing\Router;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 use Claroline\CoreBunde\Entity\Text;
 use Claroline\CoreBundle\Entity\Revision;
+use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\OfflineBundle\Model\SyncConstant;
 use Doctrine\Common\EventSubscriber;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
@@ -64,11 +65,12 @@ class EditChangeListener
     */
 	public function preUpdate(LifecycleEventArgs $eventArgs)
     {
-		// $args = $eventArgs->getEntity();
-		// if($args instanceof Text){
-			// $this->offline[$args->getResourceType()->getName()]->createDoublon();	
+		$args = $eventArgs->getEntity();
+        // var_dump($this->offline);
+		// if($args instanceof ResourceNode && $this->offline[$args->getResourceType()->getName()]){
+			// $this->offline[$args->getResourceType()->getName()]->modifyUniqueId($args);	
 			// $args->setText('AZED23DGLLEL');
-			file_put_contents('listeneres.txt', 'aazertyj');
+			file_put_contents('listeneres.txt', 'ARGSEUH');
 			// foreach($args->getRevision() as $elem){
 				// $eventArgs->setText('Bob');
 			// }

@@ -30,6 +30,7 @@ use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
 use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
 use Claroline\OfflineBundle\Manager\Exception\ServeurException;
 use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
+use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
 use Claroline\OfflineBundle\Manager\TransferManager;
 use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\Security\OfflineAuthenticator;
@@ -361,7 +362,8 @@ class SynchronisationController extends Controller
 	private function getMessage(Exception $e)
 	{
 		$msg = '';
-		switch($e) {
+        var_dump(get_class($e));
+		switch(get_class($e)) {
 			case AuthenticationException :
                 $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
                 break;

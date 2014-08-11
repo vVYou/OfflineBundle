@@ -21,11 +21,20 @@ use Claroline\OfflineBundle\Model\SyncInfo;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Dumper;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
+use Claroline\OfflineBundle\Manager\CreationManager;
+use Claroline\OfflineBundle\Manager\TransferManager;
+use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
+use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
+use Claroline\OfflineBundle\Manager\Exception\ServeurException;
+use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
+use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
+use \Buzz\Exception\ClientException;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -41,20 +50,26 @@ class OfflineController extends Controller
     private $yaml_parser;
     private $yaml_dump;
     private $plateformConf;
+    private $creationManager;
+    private $transferManager;
 
     /**
     * @DI\InjectParams({
-    *   "router"        = @DI\Inject("router"),
-    *   "request"       = @DI\Inject("request"),
-    *   "om"            = @DI\Inject("claroline.persistence.object_manager"),
-    *   "plateformConf" = @DI\Inject("%claroline.synchronisation.offline_config%")
+    *   "router"          = @DI\Inject("router"),
+    *   "request"         = @DI\Inject("request"),
+    *   "om"              = @DI\Inject("claroline.persistence.object_manager"),
+    *   "plateformConf"   = @DI\Inject("%claroline.synchronisation.offline_config%"),
+    *   "creationManager" = @DI\Inject("claroline.manager.creation_manager"),
+    *   "transferManager" = @DI\Inject("claroline.manager.transfer_manager")
     * })
     */
     public function __construct(
         UrlGeneratorInterface $router,
         Request $request,
         ObjectManager $om,
-        $plateformConf
+        $plateformConf,
+        CreationManager $creationManager,
+        TransferManager $transferManager
     )
     {
        $this->router = $router;
@@ -64,6 +79,8 @@ class OfflineController extends Controller
        $this->yaml_parser = new Parser();
        $this->yaml_dump = new Dumper();
        $this->plateformConf = $plateformConf;
+       $this->creationManager = $creationManager;
+       $this->transferManager = $transferManager;
     }
 
     /**
@@ -208,14 +225,15 @@ class OfflineController extends Controller
     *
     *   @EXT\Route(
     *       "/exchange",
-    *       name="claro_sync_exchange"
+    *       name="claro_sync_exchange",
+    *       options = {"expose"=true}
+    *
     *   )
     *
     * @EXT\ParamConverter("authUser", options={"authenticatedUser" = true})
-    * @EXT\Template("ClarolineOfflineBundle:Offline:connect_ok.html.twig")
     *
     * @param User $authUser
-    * @return Response
+    * @return JsonResponse
     */
     public function syncAction(User $authUser)
     {  /**
@@ -228,13 +246,13 @@ class OfflineController extends Controller
         try {
             $infoArray = $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
 			// Show the result window
-
             return $this->render(
 				'ClarolineOfflineBundle:Offline:result.html.twig',
 				array(
 					'results' => $infoArray,
 					'msg' => ''
-				));
+                )
+            );
 
         } catch (AuthenticationException $e) {
             $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
@@ -247,7 +265,7 @@ class OfflineController extends Controller
         } catch (ClientException $e) {
             $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
         } catch (SynchronisationFailsException $e) {
-            $msg = $this->get('translator')->trans('sync_fail', array(), 'offline');
+            $msg = $this->get('translator')->trans('sync_fail', array('%message%' => $e->getMessage()), 'offline');
         }
         // $i = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop("24F0DCDC-3B64-4019-8D6A-80FBCEA68AF9", $authUser);
         // echo "last download : ".$i."<br/>";
@@ -255,11 +273,13 @@ class OfflineController extends Controller
         //Format the view
         $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
 
-        return array(
-            'first_sync' => false,
-            'msg' => $msg
+        return new JsonResponse(
+            array(
+                'first_sync' => false,
+                'msg' => $msg
+            ),
+            500
          );
-
     }
 
     /**
@@ -272,23 +292,20 @@ class OfflineController extends Controller
     *   )
     *
     * @EXT\ParamConverter("user", options={"authenticatedUser" = true})
-    * @EXT\Template("ClarolineOfflineBundle:Offline:courses.html.twig")
     *
     * @param User $user
-    * @return Response
+    * @return JsonResponse
     */
     public function seekAction(User $user)
     {
         $em = $this->getDoctrine()->getManager();
-        $userSyncTab = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
-        $test = $this->get('claroline.manager.creation_manager')->createSyncZip($user, ''.$userSyncTab[0]->getlastSynchronization()->getTimestamp());
-        $username = $user->getFirstName() . ' ' . $user->getLastName();
-        echo 'Congratulations '.$username.'! '."<br/>".'You are now synchronized!';
-        echo ''.$test;
-
-        return array(
-            'user' => $username,
-        );
+        $userSyncTab = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);        
+        $toUpload = $this->creationManager->createSyncZip($user, $userSyncTab[0]->getLastSynchronization()->getTimestamp());
+        $metadatas = $this->transferManager->getMetadataArray($user, $toUpload);
+        
+        return new JsonResponse(array(
+            'metadata' => $metadatas,
+            'toUpload' => $toUpload));
     }
 
     /**

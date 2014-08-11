@@ -16,13 +16,13 @@ use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Resource\Text;
 use Claroline\CoreBundle\Entity\Resource\Revision;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
-use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
+use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use \DateTime;
 use \ZipArchive;
 
@@ -33,7 +33,6 @@ use \ZipArchive;
 class OfflineText extends OfflineResource
 {
     private $revisionRepo;
-    private $ut;
     private $isUpdate;
 
     /**

@@ -1,69 +1,32 @@
-{% extends "ClarolineCoreBundle:Desktop:layout.html.twig" %}
-
-{% block title %}{{ parent() ~ ' - ' ~ 'sync_mode' | trans({}, 'offline') | striptags | raw }}{% endblock %}
-
-{% block breadcrumb %}
-    {{
-        macros.breadcrumbs([
-            {
-                'icon': 'icon-briefcase',
-                'name': 'desktop'|trans({}, 'platform'),
-                'href': path('claro_desktop_open')
-            },
-            {
-                'name': 'claroline_offline_tool'|trans({}, 'tools'),
-                'href': ''
-            }
-        ])
-    }}
-{% endblock %}
-
-{% block section_content %}
-    {{ macros.flashBox() }}
-        {% if msg %}
-            <div class="alert alert-danger">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                {{ msg }}
-            </div>
-        {% endif %}
-    <div class='panel panel-default'>
-        <div class="panel-heading">
-            <h3 class="panel-title">{{ 'sync_mode_result'|trans({}, 'offline') }}</h3>
-        </div>
-        <div class="panel-body">
-            <p>{{ 'sync_result'|trans({}, 'offline') }}</p>
-            {% for obj in results %}
+<div>
+    <p>{{ 'sync_result'|trans({}, 'offline') }}</p>
+    {% for obj in results %}
+        <ul>
+            <li>{{ 'sync_ws'|trans({}, 'offline') }} {{ obj.getWorkspace() }}</li>
+            <ul>
+                <li>{{ 'sync_ws_crea'|trans({}, 'offline') }}</li>
                 <ul>
-                    <li>{{ 'sync_ws'|trans({}, 'offline') }} {{ obj.getWorkspace() }}</li>
-                    <ul>
-                        <li>{{ 'sync_ws_crea'|trans({}, 'offline') }}</li>
-                        <ul>
-                        {% for elem in obj.getCreate() %}
-                            <li>{{ elem }}</li>
-                        {% endfor %}
-                        </ul>
-                    </ul>
-                    <ul>
-                        <li>{{ 'sync_ws_upd'|trans({}, 'offline') }}</li>
-                        <ul>
-                        {% for elem in obj.getUpdate() %}
-                            <li>{{ elem }}</li>
-                        {% endfor %}
-                        </ul>
-                        </ul>
-                    <ul>
-                        <li>{{ 'sync_ws_doub'|trans({}, 'offline') }}</li>
-                        <ul>
-                        {% for elem in obj.getDoublon() %}
-                            <li>{{ elem }}</li>
-                        {% endfor %}
-                        </ul>
-                    </ul>
+                {% for elem in obj.getCreate() %}
+                    <li>{{ elem }}</li>
+                {% endfor %}
                 </ul>
-            {% endfor %}
-        </div>
-    </div>
-{%block sync%}{%endblock%}
-
-
-{% endblock %}
+            </ul>
+            <ul>
+                <li>{{ 'sync_ws_upd'|trans({}, 'offline') }}</li>
+                <ul>
+                {% for elem in obj.getUpdate() %}
+                    <li>{{ elem }}</li>
+                {% endfor %}
+                </ul>
+                </ul>
+            <ul>
+                <li>{{ 'sync_ws_doub'|trans({}, 'offline') }}</li>
+                <ul>
+                {% for elem in obj.getDoublon() %}
+                    <li>{{ elem }}</li>
+                {% endfor %}
+                </ul>
+            </ul>
+        </ul>
+    {% endfor %}
+</div>

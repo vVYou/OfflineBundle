@@ -593,8 +593,8 @@ class OfflineController extends Controller
     public function testDQLAction(User $user)
     {
 		$date = new DateTime('@0');
-		$results = $this->get("claroline.manager.test_dql_manager")->firstDQL($user, $date);
-		// $results = $this->get("claroline.manager.test_dql_manager")->hash_test($user);
+		// $results = $this->get("claroline.manager.test_dql_manager")->firstDQL($user, $date);
+		$results = $this->get("claroline.manager.test_dql_manager")->hash_test($user);
 		// $results = $this->get("claroline.manager.test_dql_manager")->secondDQL($user, $date);
 
         return array(

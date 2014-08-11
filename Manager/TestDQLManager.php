@@ -204,8 +204,6 @@ class TestDQLManager
 	*/
 	public function hash_test($user)
 	{
-		ini_set('max_execution_time', 0);
-
         $userWS = $this->workspaceRepo->findByUser($user);
 		foreach($userWS as $workspace){
 			$results = $this->hash($workspace);

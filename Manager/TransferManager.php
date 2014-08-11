@@ -74,7 +74,7 @@ class TransferManager
      *     "roleManager"        = @DI\Inject("claroline.manager.role_manager"),
      *     "ut"                 = @DI\Inject("claroline.utilities.misc"),
      *     "syncUpDir"          = @DI\Inject("%claroline.synchronisation.up_directory%"),
-     *     "syncDownDir"          = @DI\Inject("%claroline.synchronisation.down_directory%"),
+     *     "syncDownDir"        = @DI\Inject("%claroline.synchronisation.down_directory%"),
      *     "fragSize"           = @DI\Inject("%claroline.synchronisation.frag_size%"),
      *     "offlineConfig"      = @DI\Inject("%claroline.synchronisation.offline_config%")
      * })
@@ -566,4 +566,32 @@ class TransferManager
 
         return NULL;
     }
+    
+    public function getMessage($e)
+	{
+		$msg = '';
+		switch(get_class($e)) {
+			case get_class(new AuthenticationException()):
+                $msg = $this->translator->trans('sync_config_fail', array(), 'offline');
+                break;
+			case get_class(new ProcessSyncException()) :
+                $msg = $this->translator->trans('sync_server_fail', array(), 'offline');
+                break;
+			case get_class(new ServeurException()) :
+                $msg = $this->translator->trans('sync_server_fail', array(), 'offline');
+                break;
+			case get_class(new PageNotFoundException()) :
+                $msg = $this->translator->trans('sync_unreach', array(), 'offline');
+                break;
+			case get_class(new ClientException()) :
+                $msg = $this->translator->trans('sync_client_fail', array(), 'offline');
+                break;
+            case get_class( new SynchronisationFailsException ()) :
+                $msg = $this->translator->trans('sync_fail', array('%message%' => $e->getMessage()), 'offline');
+                break;
+		}
+		
+		return $msg;
+	
+	}
 }

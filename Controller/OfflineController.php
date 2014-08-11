@@ -36,6 +36,7 @@ use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
 use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
 use \Buzz\Exception\ClientException;
 use \DateTime;
+use \Exception;
 
 /**
  * @DI\Tag("security.secure_service")
@@ -206,21 +207,9 @@ class OfflineController extends Controller
                 )
             );
 
-        } catch (AuthenticationException $e) {
-            $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
-        } catch (ProcessSyncException $e) {
-            $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-        } catch (ServeurException $e) {
-            $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-        } catch (PageNotFoundException $e) {
-            $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
-        } catch (ClientException $e) {
-            $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
-        } catch (SynchronisationFailsException $e) {
-            $msg = $this->get('translator')->trans('sync_fail', array('%message%' => $e->getMessage()), 'offline');
+        } catch (Exception $e) {
+            $msg = $this->transferManager->getMessage($e);
         }
-        // $i = $this->get('claroline.manager.synchronisation_manager')->getDownloadStop("24F0DCDC-3B64-4019-8D6A-80FBCEA68AF9", $authUser);
-        // echo "last download : ".$i."<br/>";
 
         //Format the view
         $username = $authUser->getFirstName() . ' ' . $authUser->getLastName();
@@ -449,7 +438,7 @@ class OfflineController extends Controller
 							'msg' => ''
                         ));
                 } catch (Exception $e) {
-                    $msg = $this->getMessage($e);
+                    $msg = $this->transfertManager->getMessage($e);
                 }
             } else {
                 $msg = $this->get('translator')->trans('sync_already', array(), 'offline');
@@ -462,30 +451,6 @@ class OfflineController extends Controller
         );
     }
 	
-	private function getMessage(Exception $e)
-	{
-		$msg = '';
-		switch($e) {
-			case AuthenticationException :
-                $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
-                break;
-			case ProcessSyncException :
-                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                break;
-			case ServeurException :
-                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                break;
-			case PageNotFoundException :
-                $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
-                break;
-			case ClientException :
-                $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
-                break;			
-		}
-		
-		return $msg;
-	
-	}
     /*
     *   METHODE DE TEST : Those methods are used for the creation and loading tests.
     */

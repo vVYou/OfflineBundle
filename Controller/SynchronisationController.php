@@ -347,7 +347,7 @@ class SynchronisationController extends Controller
 							'msg' => ''
                         ));
                 } catch (Exception $e) {
-                    $msg = $this->getMessage($e);
+                    $msg = $this->transferManager->getMessage($e);
                 }
             } else {
                 $msg = $this->get('translator')->trans('sync_already', array(), 'offline');
@@ -359,31 +359,4 @@ class SynchronisationController extends Controller
            'msg' => $msg
         );
     }
-	
-	private function getMessage($e)
-	{
-		$msg = '';
-        var_dump(get_class($e));
-		switch(get_class($e)) {
-			case AuthenticationException :
-                $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
-                break;
-			case ProcessSyncException :
-                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                break;
-			case ServeurException :
-                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                break;
-			case PageNotFoundException :
-                $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
-                break;
-			case ClientException :
-                $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
-                break;			
-		}
-		
-		return $msg;
-	
-	}
-	
 }

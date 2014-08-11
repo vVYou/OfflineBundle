@@ -17,7 +17,7 @@ sync_launch : Start synchronisation
 sync_param : Parameters
 sync_retrieve : Retrieve profile
 sync_ok : Account successfully retrieved! Please connect and launch your first synchronisation in order to retrieve all your workspaces and content.
-sync_fail : The process fail! Please retry!
+sync_fail : The process fail! Please retry! (%message%)
 sync_name : Username :
 sync_pwd : Password :
 sync_mode : Claroffline

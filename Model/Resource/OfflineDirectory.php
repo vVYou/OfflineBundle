@@ -21,6 +21,7 @@ use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use \DateTime;
 use \ZipArchive;
 
@@ -35,25 +36,14 @@ class OfflineDirectory extends OfflineResource
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"              = @DI\Inject("claroline.persistence.object_manager"),
-     *     "resourceManager" = @DI\Inject("claroline.manager.resource_manager"),
-     *     "userManager"     = @DI\Inject("claroline.manager.user_manager"),
-     *     "em"              = @DI\Inject("doctrine.orm.entity_manager")
+     *     "container"      = @DI\Inject("service_container")
      * })
      */
     public function __construct(
-        ObjectManager $om,
-        ResourceManager $resourceManager,
-        UserManager $userManager,
-        EntityManager $em
+        ContainerInterface   $container
     )
     {
-        $this->om = $om;
-        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
-        $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
-        $this->resourceManager = $resourceManager;
-        $this->userManager = $userManager;
-        $this->em = $em;
+        $this->container = $container;
     }
 
     // Return the type of resource supported by this service
@@ -87,6 +77,12 @@ class OfflineDirectory extends OfflineResource
      */
     public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+		$this->userManager = $this->container->get('claroline.manager.user_manager');
+		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+		 $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		 
         $newResource = new Directory();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -129,6 +125,9 @@ class OfflineDirectory extends OfflineResource
      */
     public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+		
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modificationDate = $resource->getAttribute('modification_date');
         $creationDate = $resource->getAttribute('creation_date');

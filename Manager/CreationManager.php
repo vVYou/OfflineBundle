@@ -154,17 +154,13 @@ class CreationManager
      * @param \Claroline\CoreBundle\Entity\User $user
      * @param \ZipArchive                       $archive
      */
-    public function fillSyncZip($userWS, $domManifest, $sectManifest, $types, User $user, ZipArchive $archive, $date)
+    private function fillSyncZip($userWS, $domManifest, $sectManifest, $types, User $user, ZipArchive $archive, $date)
     {
-        $sectResources = $domManifest->createElement('resources');
-        $sectManifest->appendChild($sectResources);
-        
         foreach ($userWS as $element) {
             $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);
             $dateTimeStamp = new DateTime();
             $dateTimeStamp->setTimeStamp($date);
             $ressourcesToSync = $this->findResourceToSync($element, $types, $dateTimeStamp);// Remove all the resources not modified.
-            // $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceAndId($domManifest, $element, $sectResources);
             if (count($ressourcesToSync) >= 1) {
 
                 foreach ($ressourcesToSync as $res) {
@@ -173,6 +169,16 @@ class CreationManager
                 }
             }
         }
+    }
+    
+    private function addCompleteResourceList($domManifest, $sectManifest)
+    {
+        $sectResources = $domManifest->createElement('resources');
+        $sectManifest->appendChild($sectResources);
+        // $allResUser = ;
+        // foreach($allResUser as $res){
+            // $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceAndId($domManifest, $res, $sectResources);
+        // }
     }
 
     /**

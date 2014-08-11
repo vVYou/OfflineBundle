@@ -23,6 +23,7 @@ use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use \DateTime;
 use \ZipArchive;
 
@@ -32,7 +33,6 @@ use \ZipArchive;
  */
 class OfflineFile extends OfflineResource
 {
-    private $ut;
     private $isUpdate;
     private $fileDir;
 
@@ -40,30 +40,19 @@ class OfflineFile extends OfflineResource
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"              = @DI\Inject("claroline.persistence.object_manager"),
-     *     "resourceManager" = @DI\Inject("claroline.manager.resource_manager"),
-     *     "userManager"     = @DI\Inject("claroline.manager.user_manager"),
-     *     "ut"              = @DI\Inject("claroline.utilities.misc"),
-     *     "em"              = @DI\Inject("doctrine.orm.entity_manager"),
+     *     "container"      = @DI\Inject("service_container"),
+     *     "ut"             = @DI\Inject("claroline.utilities.misc"),
      *     "fileDir"         = @DI\Inject("%claroline.param.files_directory%")
      * })
      */
     public function __construct(
-        ObjectManager $om,
-        ResourceManager $resourceManager,
-        UserManager $userManager,
-        ClaroUtilities $ut,
-        EntityManager $em,
+        ContainerInterface   $container,
+        ClaroUtilities       $ut,
         $fileDir
     )
     {
-        $this->om = $om;
-        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
-        $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
-        $this->resourceManager = $resourceManager;
-        $this->userManager = $userManager;
+        $this->container = $container;
         $this->ut = $ut;
-        $this->em = $em;
         $this->isUpdate = false;
         $this->fileDir = $fileDir.'/';
     }
@@ -82,6 +71,8 @@ class OfflineFile extends OfflineResource
      */
     public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
     {
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+		
         $domRes = parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
         $myRes = $this->resourceManager->getResourceFromNode($resToAdd);
         $size = $domManifest->createAttribute('size');
@@ -109,6 +100,12 @@ class OfflineFile extends OfflineResource
      */
     public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+				$this->userManager = $this->container->get('claroline.manager.user_manager');
+		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+		 $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		 
         $newResource = new File();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -157,6 +154,9 @@ class OfflineFile extends OfflineResource
      */
     public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+		
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modif_date = $resource->getAttribute('modification_date');
         $nodeModifDate = $node->getModificationDate()->getTimestamp();
@@ -188,6 +188,11 @@ class OfflineFile extends OfflineResource
      */
     public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
+		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+		
         $newResource = new File();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();

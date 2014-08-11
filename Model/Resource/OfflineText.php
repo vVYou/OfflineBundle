@@ -16,13 +16,13 @@ use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Resource\Text;
 use Claroline\CoreBundle\Entity\Resource\Revision;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
-use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
-use Doctrine\ORM\EntityManager;
+use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use \DateTime;
 use \ZipArchive;
 
@@ -33,36 +33,23 @@ use \ZipArchive;
 class OfflineText extends OfflineResource
 {
     private $revisionRepo;
-    private $ut;
     private $isUpdate;
 
     /**
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "userManager"    = @DI\Inject("claroline.manager.user_manager"),
-     *     "ut"             = @DI\Inject("claroline.utilities.misc"),
-     *     "em"             = @DI\Inject("doctrine.orm.entity_manager")
+     *     "container"      = @DI\Inject("service_container"),
+     *     "ut"             = @DI\Inject("claroline.utilities.misc")
      * })
      */
     public function __construct(
-        ObjectManager        $om,
-        ResourceManager      $resourceManager,
-        UserManager          $userManager,
-        ClaroUtilities       $ut,
-        EntityManager        $em
+        ContainerInterface   $container,
+        ClaroUtilities       $ut
     )
     {
-        $this->om = $om;
-        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
-        $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
-        $this->revisionRepo = $om->getRepository('ClarolineCoreBundle:Resource\Revision');
-        $this->resourceManager = $resourceManager;
-        $this->userManager = $userManager;
+        $this->container = $container;
         $this->ut = $ut;
-        $this->em = $em;
         $this->isUpdate = false;
     }
 
@@ -80,6 +67,10 @@ class OfflineText extends OfflineResource
      */
     public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+		$this->revisionRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\Revision');		
+		
         $domRes = parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
         $myRes = $this->resourceManager->getResourceFromNode($resToAdd);
         $revision = $this->revisionRepo->findOneBy(array('text' => $myRes));
@@ -106,6 +97,13 @@ class OfflineText extends OfflineResource
      */
     public function createResource($resource, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+				$this->userManager = $this->container->get('claroline.manager.user_manager');
+		 $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+		
+		
         $newResource = new Text();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -155,6 +153,9 @@ class OfflineText extends OfflineResource
      */
     public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+	
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modifDate = $resource->getAttribute('modification_date');
         $nodeModifDate = $node->getModificationDate()->getTimestamp();
@@ -186,6 +187,11 @@ class OfflineText extends OfflineResource
      */
     public function createDoublon($resource, Workspace $workspace, ResourceNode $node, $path)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
+		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+	
         $newResource = new Text();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();

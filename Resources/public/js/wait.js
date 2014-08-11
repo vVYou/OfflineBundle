@@ -8,14 +8,16 @@
  * file that was distributed with this source code.
  */
 
-(function () {
+$('#buttonSynchronize').on('click', function(event) {
     event.preventDefault();
-    $('#buttonSynchronize').on('click', function(event) {
-        alert("Je suis sur onclick");
-        $.ajax({
-           url: $(event.currentTarget).attr('href'),
-           success: function(data) {window.location = Routing.generate('claro_sync_result')}
-        });
-        alert("avec Ajax");
+    $.ajax({
+       url: $(event.currentTarget).attr('href'),
+       success: function(html) {
+            $('#offline-content').html(html);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            var html = '<div class="alert alert-danger" role="alert">   <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button> ' + jqXHR.responseJSON.msg + '</div>'
+            $('#offline-content').prepend(html);
+        }
     });
-}
+});

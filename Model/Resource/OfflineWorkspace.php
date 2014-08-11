@@ -20,6 +20,7 @@ use Claroline\CoreBundle\Manager\RoleManager;
 use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Library\Workspace\Configuration;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use Doctrine\ORM\EntityManager;
 use \DateTime;
@@ -39,35 +40,17 @@ class OfflineWorkspace extends OfflineElement
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"             = @DI\Inject("claroline.persistence.object_manager"),
-     *     "resourceManager"= @DI\Inject("claroline.manager.resource_manager"),
-     *     "userManager"    = @DI\Inject("claroline.manager.user_manager"),
-     *     "em"             = @DI\Inject("doctrine.orm.entity_manager"),
-     *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%"),
-     *     "workspaceManager"   = @DI\Inject("claroline.manager.workspace_manager"),
-     *     "roleManager"    =   @DI\Inject("claroline.manager.role_manager")
+	 *     "container"      = @DI\Inject("service_container"),
+     *     "templateDir"    = @DI\Inject("%claroline.param.templates_directory%")
      * })
      */
     public function __construct(
-        ObjectManager   $om,
-        ResourceManager $resourceManager,
-        UserManager     $userManager,
-        EntityManager   $em,
-        $templateDir,
-        WorkspaceManager $workspaceManager,
-        RoleManager $roleManager
+        ContainerInterface   $container,
+        $templateDir
     )
     {
-        $this->om = $om;
-        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
-        $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
-        $this->roleRepo = $om->getRepository('ClarolineCoreBundle:Role');
-        $this->resourceManager = $resourceManager;
-        $this->userManager = $userManager;
-        $this->em = $em;
+        $this->container = $container;
         $this->templateDir = $templateDir;
-        $this->workspaceManager = $workspaceManager;
-        $this->roleManager = $roleManager;
     }
 
     // Return the type of resource supported by this service
@@ -84,6 +67,10 @@ class OfflineWorkspace extends OfflineElement
      */
     public function addWorkspaceToManifest($domManifest, $sectManifest, Workspace $workspace, User $user)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+		$this->roleRepo = $this->om->getRepository('ClarolineCoreBundle:Role');
+		
         $myRole = $this->roleRepo->findByUserAndWorkspace($user, $workspace);
 
         // $myResNode = $this->userSynchronizedRepo->findResourceNodeByWorkspace($workspace);
@@ -144,6 +131,13 @@ class OfflineWorkspace extends OfflineElement
      */
     public function createWorkspace($workspace, User $user)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->userManager = $this->container->get('claroline.manager.user_manager');
+		$this->workspaceManager = $this->container->get('claroline.manager.workspace_manager');
+		$this->roleManager = $this->container->get('claroline.manager.role_manager');
+		$this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+	
         // Use the create method from WorkspaceManager.
         $creationDate = new DateTime();
         $modificationDate = new DateTime();

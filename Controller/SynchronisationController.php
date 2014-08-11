@@ -31,6 +31,7 @@ use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
 use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
 use Claroline\OfflineBundle\Manager\Exception\ServeurException;
 use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
+use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
 use Claroline\OfflineBundle\Manager\TransferManager;
 use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\Security\OfflineAuthenticator;
@@ -237,7 +238,7 @@ class SynchronisationController extends Controller
             // Get User informations and return them
             $user = $this->userRepo->loadUserByUsername($informationsArray['username']);
             $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $user->getPersonalWorkspace(), 'parent' => NULL));
-            $user_inf = $user->getUserAsTab();
+            $user_inf = $userManager->getUserAsTab($user);
             $user_inf['ws_resnode'] = $user_ws_rn->getNodeHashName();
             $returnContent = $user_inf;
         }
@@ -346,7 +347,7 @@ class SynchronisationController extends Controller
 							'msg' => ''
                         ));
                 } catch (Exception $e) {
-                    $msg = $this->getMessage($e);
+                    $msg = $this->transferManager->getMessage($e);
                 }
             } else {
                 $msg = $this->get('translator')->trans('sync_already', array(), 'offline');
@@ -358,30 +359,4 @@ class SynchronisationController extends Controller
            'msg' => $msg
         );
     }
-	
-	private function getMessage($e)
-	{
-		$msg = '';
-		switch($e) {
-			case AuthenticationException :
-                $msg = $this->get('translator')->trans('sync_config_fail', array(), 'offline');
-                break;
-			case ProcessSyncException :
-                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                break;
-			case ServeurException :
-                $msg = $this->get('translator')->trans('sync_server_fail', array(), 'offline');
-                break;
-			case PageNotFoundException :
-                $msg = $this->get('translator')->trans('sync_unreach', array(), 'offline');
-                break;
-			case ClientException :
-                $msg = $this->get('translator')->trans('sync_client_fail', array(), 'offline');
-                break;			
-		}
-		
-		return $msg;
-	
-	}
-	
 }

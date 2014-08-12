@@ -12,6 +12,7 @@
 namespace Claroline\OfflineBundle\Listener;
 
 use Claroline\CoreBundle\Event\StrictDispatcher;
+use Claroline\CoreBundle\Entity\Resource\AbstractResource;
 use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,10 +30,11 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Claroline\OfflineBundle\Model\Resource\OfflineElement;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * @DI\Service("claroline.edit_hashname_handler")
- * @DI\Tag("doctrine.event_listener", attributes={"event"="preUpdate"})
+ * @DI\Tag("doctrine.event_listener", attributes={"event"="onFlush"})
  */
 class EditChangeListener
 {
@@ -42,15 +44,18 @@ class EditChangeListener
 
     /**
      * @DI\InjectParams({
+     *     "container"      = @DI\Inject("service_container"),
      *     "eventDispatcher" = @DI\Inject("claroline.event.event_dispatcher")
      * })
      *
      */
     public function __construct(
+        ContainerInterface   $container,
         StrictDispatcher $eventDispatcher
     )
     {
-        $this->eventDispatcher = $eventDispatcher;
+		$this->container = $container;
+		$this->eventDispatcher = $eventDispatcher;
         $this->offline = array();
     }
 
@@ -59,20 +64,58 @@ class EditChangeListener
         $this->offline[$offline->getType()] = $offline;
     }
 	
-    /*
-    *   @DI\Observe("preUpdate")
-    */
 	public function preUpdate(LifecycleEventArgs $eventArgs)
     {
-		// $args = $eventArgs->getEntity();
-        // var_dump($this->offline);
-		// if($args instanceof ResourceNode && $this->offline[$args->getResourceType()->getName()]){
-			// $this->offline[$args->getResourceType()->getName()]->modifyUniqueId($args);	
-			// $args->setText('AZED23DGLLEL');
-			// file_put_contents('listeneres.txt', 'ARGSEUH');
-			// foreach($args->getRevision() as $elem){
-				// $eventArgs->setText('Bob');
+		// Test if args is an instance of AbstractResource
+		$om = $this->container->get('claroline.persistence.object_manager');
+		$args = $eventArgs->getEntity();
+		if($args instanceof AbstractResource){
+			$resNode = $args->getResourceNode();
+			$nodeType = $resNode->getResourceType()->getName();	
+			$env = $this->container->getParameter("kernel.environment");
+			$types = array_keys($this->offline);
+			
+			// if($env == 'offline'){
+				if(in_array($nodeType, $types)){
+					$this->offline[$nodeType]->modifyUniqueId($resNode, $om);	
+					file_put_contents('listeneres.txt', 'What is this ?');
+				}
 			// }
-		// }
+		}
     }
+	
+	/**
+     *   @DI\Observe("onFlush")
+	 *
+     */
+	public function onFlush(OnFlushEventArgs $eventArgs)
+	{
+		$em = $eventArgs->getEntityManager();
+        $uow = $em->getUnitOfWork();
+		$env = $this->container->getParameter("kernel.environment");
+		$types = array_keys($this->offline);
+
+        foreach ($uow->getScheduledEntityUpdates() AS $entity) {
+			if($entity instanceof AbstractResource){	
+				$resNode = $entity->getResourceNode();
+				$nodeType = $resNode->getResourceType()->getName();	
+				
+				// if($env == 'offline'){
+					if(in_array($nodeType, $types)){
+						$this->offline[$nodeType]->modifyUniqueId($resNode, $em, $uow);	
+					}
+				// }
+			}
+			if($entity instanceof ResourceNode){
+				$nodeType = $entity->getResourceType()->getName();	
+				
+				// if($env == 'offline'){
+					if(in_array($nodeType, $types)){
+						$this->offline[$nodeType]->modifyUniqueId($resNode, $em, $uow);	
+					}
+				// }
+			}
+        }
+
+	}
 }

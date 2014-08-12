@@ -13,6 +13,7 @@ namespace Claroline\OfflineBundle\Manager;
 
 use JMS\DiExtraBundle\Annotation as DI;
 use Claroline\ForumBundle\Manager\Manager;
+use Claroline\CoreBundle\Manager\RoleManager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Resource\Directory;
@@ -36,6 +37,8 @@ class LoadingManager
     private $workspaceRepo;
     private $resourceNodeRepo;
     private $userRepo;
+	private $roleRepo;
+	private $roleManager;
     private $user;
     private $synchronizationDate;
     private $ut;
@@ -50,16 +53,18 @@ class LoadingManager
      * Constructor.
      *
      * @DI\InjectParams({
-     *     "om"              = @DI\Inject("claroline.persistence.object_manager"),
-     *     "ut"              = @DI\Inject("claroline.utilities.misc"),
-     *     "extractDir"      = @DI\Inject("%claroline.synchronisation.extract_directory%"),
-     *     "manifestName"    = @DI\Inject("%claroline.synchronisation.manifest%"),
+     *     "om"           = @DI\Inject("claroline.persistence.object_manager"),
+     *     "ut"           = @DI\Inject("claroline.utilities.misc"),
+	 *	   "roleManager"  = @DI\Inject("claroline.manager.role_manager"),
+     *     "extractDir"   = @DI\Inject("%claroline.synchronisation.extract_directory%"),
+     *     "manifestName" = @DI\Inject("%claroline.synchronisation.manifest%"),
      *     "creationManager" = @DI\Inject("claroline.manager.creation_manager")
      * })
      */
     public function __construct(
         ObjectManager $om,
         ClaroUtilities $ut,
+		RoleManager $roleManager,
         $extractDir,
         $manifestName,
         CreationManager $creationManager
@@ -69,6 +74,7 @@ class LoadingManager
         $this->workspaceRepo = $om->getRepository('ClarolineCoreBundle:Workspace\Workspace');
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		$this->roleRepo = $om->getRepository('ClarolineCoreBundle:Role');
         $this->ut = $ut;
         $this->syncInfoArray = array();
         $this->offline = array();
@@ -142,14 +148,22 @@ class LoadingManager
         $shouldHaveResources = $this->creationManager->getUserRessources($this->user, $types);
         $hashNameShouldHave = array();
         foreach($shouldHaveResources as $res) {
-            array_push($hashNameShouldHave, $res->getNodeHashname());
+			$hashNameShouldHave[$res->getNodeHashname()] = $res;
+            // array_push($hashNameShouldHave, $res->getNodeHashname());
         }
-        $haveResources = $xmlDocument->getElementsByTagName("resources");
+        $haveResources = $xmlDocument->getElementsByTagName("resources-present");
         foreach ($haveResources as $ressources) {
             $ressource = $ressources->getElementsByTagName("res");
             foreach($ressource as $res){
-                $indexOf = array_keys($hashNameShouldHave, $res->getAttribute('hashname_node'));
-                unset($hashNameShouldHave[$indexOf[0]]);
+				
+				if(array_key_exists($res, $hashNameShouldHave)){
+					unset($hashNameShouldHave[$res]);
+				}
+			
+                // $indexOf = array_keys($hashNameShouldHave, $res->getAttribute('hashname_node'));
+                // if(isset($indexOf[0])){
+					// unset($hashNameShouldHave[$indexOf[0]]);
+				// }
             }
         }
         return $hashNameShouldHave;
@@ -194,10 +208,20 @@ class LoadingManager
             if ($workspace == NULL) {
                 $workspace = $this->offline['workspace']->createWorkspace($work, $this->user);
             }
+			
+			// Check if a role is already associated between the user and the workspace		
+			$this->roleManager->associateRole($user, $this->roleManager->getRoleByName($work->getAttribute('role')));
+			
             $info = $this->importWorkspace($work->childNodes, $workspace, $work);
             $this->syncInfoArray[] = $info;
 
         }
+		
+		$resourceToAdd = $xmlDocument->getElementsByTagName("workspace");
+		
+		foreach($resourceToAdd as $element){
+			// TODO
+		}
     }
 
     /**

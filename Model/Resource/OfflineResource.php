@@ -23,7 +23,6 @@ use \DOMDocument;
 abstract class OfflineResource extends OfflineElement
 {
     protected $ut;
-    protected $om;
 
     /**
      * Add informations required to check and recreated a resource if necessary.
@@ -114,10 +113,23 @@ abstract class OfflineResource extends OfflineElement
         }
     }
     
-    protected function modifyUniqueId($resource)
+    protected function addResourceAndId($domManifest, ResourceNode $resToAdd, $resourcesSec)
     {
-        // $resource->setNodeHashName($this->ut->generateGuid());
-        $resource->setNodeHashName('ITWORKS');
-        // $this->om->flush();
+        $domRes = $domManifest->createElement('resource');
+        $resourcesSec->appendChild($domRes);
+        $hashname_node = $domManifest->createAttribute('hashname_node');
+        $hashname_node->value = $resToAdd->getNodeHashName();
+        $domRes->appendChild($hashname_node);
+        return $domRes;
+    }
+    
+    public function modifyUniqueId($resource, $em, $uow)
+    {
+		$classMetadata = $em->getClassMetadata('Claroline\CoreBundle\Entity\Resource\ResourceNode');
+		// file_put_contents('modifyUniqueId.txt', 'What is this ?'. $classMetadata);
+        $resource->setNodeHashName($this->ut->generateGuid());
+        // $resource->setNodeHashName('AAAA-AAAA-AAAAAAA');
+        $em->persist($resource);
+		$uow->computeChangeSet($classMetadata, $resource);
     }
 }

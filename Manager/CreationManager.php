@@ -24,6 +24,7 @@ use Claroline\OfflineBundle\Model\Resource\OfflineElement;
 use Doctrine\ORM\EntityManager;
 use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\Translation\TranslatorInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use \ZipArchive;
 use \DOMDocument;
 use \DateTime;
@@ -57,6 +58,7 @@ class CreationManager
      * Constructor.
      *
      * @DI\InjectParams({
+	 *     "container"       = @DI\Inject("service_container"),
      *     "om"              = @DI\Inject("claroline.persistence.object_manager"),
      *     "pagerFactory"    = @DI\Inject("claroline.pager.pager_factory"),
      *     "translator"      = @DI\Inject("translator"),
@@ -68,6 +70,7 @@ class CreationManager
      * })
      */
     public function __construct(
+        ContainerInterface   $container,
         ObjectManager $om,
         PagerFactory $pagerFactory,
         TranslatorInterface $translator,
@@ -78,6 +81,7 @@ class CreationManager
         EntityManager $em
     )
     {
+		$this->container = $container;
         $this->om = $om;
         $this->pagerFactory = $pagerFactory;
         $this->userSynchronizedRepo = $om->getRepository('ClarolineOfflineBundle:UserSynchronized');
@@ -113,6 +117,7 @@ class CreationManager
     public function createSyncZip(User $user, $date, $missingRessources = null)
     {
         ini_set('max_execution_time', 0);
+		$env = $this->container->getParameter("kernel.environment");
         $this->user = $user;
         $archive = new ZipArchive();
         $domManifest = new DOMDocument('1.0', "UTF-8");
@@ -139,8 +144,10 @@ class CreationManager
 
         if ($archive->open($fileName, ZipArchive::CREATE) === true) {
             $this->fillSyncZip($userWS, $domManifest, $sectManifest, $archive, $date, $missingRessources);
-            //TODO Add offline env condition
-            $this->addCompleteResourceList($domManifest, $sectManifest);
+            // TODO Add offline env condition
+			// if($env == 'offline'){
+				$this->addCompleteResourceList($domManifest, $sectManifest);
+			// }
         } else {
             throw new \Exception('Impossible to open the zip file');
         }
@@ -170,11 +177,15 @@ class CreationManager
             if (count($ressourcesToSync) >= 1) {
                 foreach ($ressourcesToSync as $res) {
                     // Avoid double add of a missing ressource
-                    if($missingRessources != null && in_array($res->getNodeHashname(), $missingRessources)){
-                        $indexOf = array_keys($missingRessources, $res->getNodeHashname());
-                        unset($missingRessources[$indexOf[0]]);
+                    // if($missingRessources != null && in_array($res->getNodeHashname(), $missingRessources)){
+                        // $indexOf = array_keys($missingRessources, $res->getNodeHashname());
+                        // unset($missingRessources[$indexOf[0]]);
+                    // }     
+                    $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);					
+					if(isset($missingRessources) && array_key_exists($res->getNodeHashname(), $missingRessources)){
+                        // $indexOf = array_keys($missingRessources, $res->getNodeHashname());
+                        unset($missingRessources[$res->getNodeHashname()]);
                     }
-                    $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);
                 }
             }
         }

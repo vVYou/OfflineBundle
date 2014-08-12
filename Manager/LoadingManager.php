@@ -81,6 +81,7 @@ class LoadingManager
         $this->extractDir = $extractDir;
         $this->manifestName = $manifestName;
         $this->creationManager = $creationManager;
+		$this->roleManager = $roleManager;
     }
 
     public function addOffline(OfflineElement  $offline)
@@ -156,7 +157,7 @@ class LoadingManager
             $ressource = $ressources->getElementsByTagName("res");
             foreach($ressource as $res){
 				
-				if(array_key_exists($res, $hashNameShouldHave)){
+				if(array_key_exists($res->getAttribute('hashname_node'), $hashNameShouldHave)){
 					unset($hashNameShouldHave[$res]);
 				}
 			
@@ -210,7 +211,7 @@ class LoadingManager
             }
 			
 			// Check if a role is already associated between the user and the workspace		
-			$this->roleManager->associateRole($user, $this->roleManager->getRoleByName($work->getAttribute('role')));
+			$this->roleManager->associateRole($this->user, $this->roleManager->getRoleByName($work->getAttribute('role')));
 			
             $info = $this->importWorkspace($work->childNodes, $workspace, $work);
             $this->syncInfoArray[] = $info;

@@ -41,6 +41,7 @@ class EditChangeListener
     private $eventDispatcher;
     private $router;
 	private $offline;
+	private $securityContext;
 
     /**
      * @DI\InjectParams({
@@ -64,26 +65,6 @@ class EditChangeListener
         $this->offline[$offline->getType()] = $offline;
     }
 	
-	public function preUpdate(LifecycleEventArgs $eventArgs)
-    {
-		// Test if args is an instance of AbstractResource
-		$om = $this->container->get('claroline.persistence.object_manager');
-		$args = $eventArgs->getEntity();
-		if($args instanceof AbstractResource){
-			$resNode = $args->getResourceNode();
-			$nodeType = $resNode->getResourceType()->getName();	
-			$env = $this->container->getParameter("kernel.environment");
-			$types = array_keys($this->offline);
-			
-			// if($env == 'offline'){
-				if(in_array($nodeType, $types)){
-					$this->offline[$nodeType]->modifyUniqueId($resNode, $om);	
-					file_put_contents('listeneres.txt', 'What is this ?');
-				}
-			// }
-		}
-    }
-	
 	/**
      *   @DI\Observe("onFlush")
 	 *
@@ -93,27 +74,29 @@ class EditChangeListener
 		$em = $eventArgs->getEntityManager();
         $uow = $em->getUnitOfWork();
 		$env = $this->container->getParameter("kernel.environment");
+		$securityContext = $this->container->get("security.context");
 		$types = array_keys($this->offline);
+		$user = $this->securityContext->getToken()->getUser();
 
         foreach ($uow->getScheduledEntityUpdates() AS $entity) {
 			if($entity instanceof AbstractResource){	
 				$resNode = $entity->getResourceNode();
 				$nodeType = $resNode->getResourceType()->getName();	
 				
-				// if($env == 'offline'){
+				if($env == 'offline' && $user->getId != $resNode->getCreator()){
 					if(in_array($nodeType, $types)){
 						$this->offline[$nodeType]->modifyUniqueId($resNode, $em, $uow);	
 					}
-				// }
+				}
 			}
 			if($entity instanceof ResourceNode){
 				$nodeType = $entity->getResourceType()->getName();	
 				
-				// if($env == 'offline'){
+				if($env == 'offline' && $user->getId != $resNode->getCreator()){
 					if(in_array($nodeType, $types)){
-						$this->offline[$nodeType]->modifyUniqueId($resNode, $em, $uow);	
+						$this->offline[$nodeType]->modifyUniqueId($entity, $em, $uow);	
 					}
-				// }
+				}
 			}
         }
 

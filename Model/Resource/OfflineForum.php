@@ -95,9 +95,9 @@ class OfflineForum extends OfflineResource
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
-				$this->userManager = $this->container->get('claroline.manager.user_manager');
+		$this->userManager = $this->container->get('claroline.manager.user_manager');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');	
-		 $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
 		 
         $newResource = new Forum();
         $creationDate = new DateTime();
@@ -185,10 +185,10 @@ class OfflineForum extends OfflineResource
     private function checkNewContent(ResourceNode $nodeForum, $dateSync)
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
-		$this->subjectRepo = $om->getRepository('ClarolineForumBundle:Subject');
-		$this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
-		$this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
-		$this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
+		$this->subjectRepo = $this->om->getRepository('ClarolineForumBundle:Subject');
+		$this->messageRepo = $this->om->getRepository('ClarolineForumBundle:Message');
+		$this->forumRepo = $this->om->getRepository('ClarolineForumBundle:Forum');
+		$this->categoryRepo = $this->om->getRepository('ClarolineForumBundle:Category');
 		
         $elemToSync = array();
         $currentForum = $this->forumRepo->findOneBy(array('resourceNode' => $nodeForum));
@@ -428,10 +428,10 @@ class OfflineForum extends OfflineResource
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
 		$this->forumManager = $this->container->get('claroline.manager.forum_manager');
-		$this->subjectRepo = $om->getRepository('ClarolineForumBundle:Subject');
-		$this->messageRepo = $om->getRepository('ClarolineForumBundle:Message');
-		$this->forumRepo = $om->getRepository('ClarolineForumBundle:Forum');
-		$this->categoryRepo = $om->getRepository('ClarolineForumBundle:Category');
+		$this->subjectRepo = $this->om->getRepository('ClarolineForumBundle:Subject');
+		$this->messageRepo = $this->om->getRepository('ClarolineForumBundle:Message');
+		$this->forumRepo = $this->om->getRepository('ClarolineForumBundle:Forum');
+		$this->categoryRepo = $this->om->getRepository('ClarolineForumBundle:Category');
 		
         $contentType = $content->getAttribute('class');
         switch ($contentType) {

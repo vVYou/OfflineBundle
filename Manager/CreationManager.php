@@ -21,6 +21,7 @@ use Claroline\CoreBundle\Pager\PagerFactory;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
 use Claroline\OfflineBundle\Model\Resource\OfflineElement;
+use Doctrine\ORM\EntityManager;
 use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\Translation\TranslatorInterface;
 use \ZipArchive;
@@ -49,6 +50,8 @@ class CreationManager
     private $offline;
     private $manifestName;
     private $syncDownDir;
+	private $em;
+    private $user;
 
     /**
      * Constructor.
@@ -60,7 +63,8 @@ class CreationManager
      *     "resourceManager" = @DI\Inject("claroline.manager.resource_manager"),
      *     "ut"              = @DI\Inject("claroline.utilities.misc"),
      *     "manifestName"    = @DI\Inject("%claroline.synchronisation.manifest%"),
-     *     "syncDownDir"     = @DI\Inject("%claroline.synchronisation.down_directory%")
+     *     "syncDownDir"     = @DI\Inject("%claroline.synchronisation.down_directory%"),
+     *     "em"              = @DI\Inject("doctrine.orm.entity_manager")
      * })
      */
     public function __construct(
@@ -70,7 +74,8 @@ class CreationManager
         ResourceManager $resourceManager,
         ClaroUtilities $ut,
         $manifestName,
-        $syncDownDir
+        $syncDownDir,
+        EntityManager $em
     )
     {
         $this->om = $om;
@@ -90,6 +95,7 @@ class CreationManager
         $this->offline = array();
         $this->manifestName = $manifestName;
         $this->syncDownDir = $syncDownDir;
+		$this->em = $em;
     }
 
     public function addOffline(OfflineElement  $offline)
@@ -104,10 +110,10 @@ class CreationManager
      * @param \Claroline\CoreBundle\Entity\User $user
      *
      */
-    public function createSyncZip(User $user, $date)
+    public function createSyncZip(User $user, $date, $missingRessources = null)
     {
         ini_set('max_execution_time', 0);
-
+        $this->user = $user;
         $archive = new ZipArchive();
         $domManifest = new DOMDocument('1.0', "UTF-8");
         $domManifest->formatOutput = true;
@@ -118,7 +124,7 @@ class CreationManager
         $domManifest->appendChild($sectManifest);
 
         //Description section
-        $this->writeManifestDescription($domManifest, $sectManifest, $user, $date);
+        $this->writeManifestDescription($domManifest, $sectManifest, $date);
 
         $dir = $this->syncDownDir.$user->getId();
         // Create the Directory if it does not exists.
@@ -130,10 +136,11 @@ class CreationManager
         $fileName = $dir.'/sync_'.$hashname_zip.'.zip';
 
         $userWS = $this->workspaceRepo->findByUser($user);
-        $types = array_keys($this->offline);
 
         if ($archive->open($fileName, ZipArchive::CREATE) === true) {
-            $this->fillSyncZip($userWS, $domManifest, $sectManifest, $types, $user, $archive, $date);
+            $this->fillSyncZip($userWS, $domManifest, $sectManifest, $archive, $date, $missingRessources);
+            //TODO Add offline env condition
+            $this->addCompleteResourceList($domManifest, $sectManifest);
         } else {
             throw new \Exception('Impossible to open the zip file');
         }
@@ -151,22 +158,32 @@ class CreationManager
      * Add all the informations required to synchronized the resources in the Manifest and add
      * in the archive the file required for the synchronization
      *
-     * @param \Claroline\CoreBundle\Entity\User $user
      * @param \ZipArchive                       $archive
      */
-    private function fillSyncZip($userWS, $domManifest, $sectManifest, $types, User $user, ZipArchive $archive, $date)
+    private function fillSyncZip($userWS, $domManifest, $sectManifest, ZipArchive $archive, $date, $missingRessources)
     {
         foreach ($userWS as $element) {
-            $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $element, $user);
+            $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $element, $this->user);
             $dateTimeStamp = new DateTime();
             $dateTimeStamp->setTimeStamp($date);
-            $ressourcesToSync = $this->findResourceToSync($element, $types, $dateTimeStamp);// Remove all the resources not modified.
+            $ressourcesToSync = $this->findResourceToSync($element, array_keys($this->offline), $dateTimeStamp);// Remove all the resources not modified.
             if (count($ressourcesToSync) >= 1) {
-
                 foreach ($ressourcesToSync as $res) {
-
+                    // Avoid dubble add of a missing ressource
+                    if($missingRessources != null && in_array($res->getNodeHashname(), $missingRessources)){
+                        $indexOf = array_keys($missingRessources, $res->getNodeHashname());
+                        unset($missingRessources[$indexOf[0]]);
+                    }
                     $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);
                 }
+            }
+        }
+        //ajouter dans un workspace -- HACK
+        if($missingRessources != null){
+            $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $userWS[0], $this->user);
+            foreach($missingRessources as $resHash){
+                $res = $this->resourceNodeRepo->findOneBy(array('hashName' => $resHash));
+                $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);
             }
         }
     }
@@ -175,10 +192,20 @@ class CreationManager
     {
         $sectResources = $domManifest->createElement('resources');
         $sectManifest->appendChild($sectResources);
-        // $allResUser = ;
-        // foreach($allResUser as $res){
-            // $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceAndId($domManifest, $res, $sectResources);
-        // }
+        $allResUser = $this->getUserRessources($this->user, array_keys($this->offline));
+        foreach($allResUser as $res){
+            $this->addResourceAndId($domManifest, $res, $sectResources);
+        }
+    }
+    
+    public function addResourceAndId($domManifest, $res, $resourcesSec)
+    {
+        $domRes = $domManifest->createElement('res');
+        $resourcesSec->appendChild($domRes);
+        $hashname_node = $domManifest->createAttribute('hashname_node');
+        $hashname_node->value = $res->getNodeHashName();
+        $domRes->appendChild($hashname_node);
+        // return $domRes;
     }
 
     /**
@@ -202,6 +229,22 @@ class CreationManager
         return $query->getResult();
 
     }
+    
+    public function getUserRessources(User $user, $types)
+	{
+		$query = $this->em->createQuery('
+			SELECT res FROM Claroline\CoreBundle\Entity\Resource\ResourceNode res 
+			JOIN res.workspace w
+            JOIN res.resourceType type
+			JOIN w.roles r
+			JOIN r.users u
+			WHERE u.id = :user
+            AND type.name IN (:types)
+			');
+		$query->setParameter('user', $user);
+        $query->setParameter('types', $types);
+        return $query->getResult();
+	}
 
     /************************************************************
     *   Here figure all methods used to manipulate the xml file. *
@@ -209,10 +252,8 @@ class CreationManager
 
     /**
      * Create the description of the manifest.
-     *
-     * @param \Claroline\CoreBundle\Entity\User $user
      */
-    private function writeManifestDescription($domManifest, $sectManifest, User $user, $date)
+    private function writeManifestDescription($domManifest, $sectManifest, $date)
     {
         $sectDescription = $domManifest->createElement('description');
         $sectManifest->appendChild($sectDescription);
@@ -226,11 +267,11 @@ class CreationManager
         $sectDescription->appendChild($descReference);
 
         $descPseudo = $domManifest->createAttribute('username');
-        $descPseudo->value = $user->getUsername();
+        $descPseudo->value = $this->user->getUsername();
         $sectDescription->appendChild($descPseudo);
 
         $descMail = $domManifest->createAttribute('user_mail');
-        $descMail->value = $user->getMail();
+        $descMail->value = $this->user->getMail();
         $sectDescription->appendChild($descMail);
     }
 

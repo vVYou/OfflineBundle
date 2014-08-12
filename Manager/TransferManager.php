@@ -306,6 +306,7 @@ class TransferManager
         );
         try {
             $response = $browser->post($url.'/sync/user', array(), json_encode($contentArray));
+            // echo "Content <br/>".$response->getContent()."<br/>";
             $status = $this->analyseStatusCode($response->getStatusCode());
             $result = (array) json_decode($response->getContent());
             $this->retrieveProfil($username, $password, $result, $url);
@@ -483,7 +484,7 @@ class TransferManager
                 //Create synchronisation archive (when online)
                 $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
 				$loadingResponse = $this->loadingManager->loadZip($zipName, $user);
-                $toSend = $this->creationManager->createSyncZip($user, $loadingResponse['synchronizationDate']);
+                $toSend = $this->creationManager->createSyncZip($user, $loadingResponse['synchronizationDate'], $loadingResponse['missingResources']);
                 $metaDataArray = $this->getMetadataArray($user, $toSend);
                 $metaDataArray["status"] = 200;
 

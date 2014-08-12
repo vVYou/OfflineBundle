@@ -81,7 +81,7 @@ class OfflineDirectory extends OfflineResource
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
 		$this->userManager = $this->container->get('claroline.manager.user_manager');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
-		 $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
 		 
         $newResource = new Directory();
         $creationDate = new DateTime();

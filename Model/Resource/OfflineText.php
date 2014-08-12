@@ -99,8 +99,8 @@ class OfflineText extends OfflineResource
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
-				$this->userManager = $this->container->get('claroline.manager.user_manager');
-		 $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		$this->userManager = $this->container->get('claroline.manager.user_manager');
+		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
 		
 		

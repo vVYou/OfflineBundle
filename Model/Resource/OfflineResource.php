@@ -18,6 +18,7 @@ use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use \ZipArchive;
+use \DOMDocument;
 
 abstract class OfflineResource extends OfflineElement
 {
@@ -78,11 +79,11 @@ abstract class OfflineResource extends OfflineElement
      */
     protected function addNodeToManifest($domManifest, $offType, $domWorkspace, ResourceNode $resToAdd)
     {
-        $typeNode = $resToAdd->getResourceType()->getId();
+        $typeNode = $resToAdd->getResourceType()->getName();
         $creationTime = $resToAdd->getCreationDate()->getTimestamp();
         $modificationTime = $resToAdd->getModificationDate()->getTimestamp();
 
-        if (!($resToAdd->getParent() == NULL && $typeNode == SyncConstant::DIR)) {
+        if (!($resToAdd->getParent() == NULL && $typeNode == 'directory')) {
             $domRes = $domManifest->createElement('resource-'.$offType);
             $domWorkspace->appendChild($domRes);
 

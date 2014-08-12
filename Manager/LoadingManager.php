@@ -22,6 +22,7 @@ use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\ForumBundle\Entity\Forum;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\OfflineBundle\Model\Resource\OfflineElement;
+use Claroline\OfflineBundle\Manager\CreationManager;
 use \ZipArchive;
 use \DOMDocument;
 
@@ -45,6 +46,7 @@ class LoadingManager
     private $offline;
     private $extractDir;
     private $manifestName;
+    private $creationManager;
 
     /**
      * Constructor.
@@ -54,7 +56,8 @@ class LoadingManager
      *     "ut"           = @DI\Inject("claroline.utilities.misc"),
 	 *	   "roleManager"  = @DI\Inject("claroline.manager.role_manager"),
      *     "extractDir"   = @DI\Inject("%claroline.synchronisation.extract_directory%"),
-     *     "manifestName" = @DI\Inject("%claroline.synchronisation.manifest%")
+     *     "manifestName" = @DI\Inject("%claroline.synchronisation.manifest%"),
+     *     "creationManager" = @DI\Inject("claroline.manager.creation_manager")
      * })
      */
     public function __construct(
@@ -62,7 +65,8 @@ class LoadingManager
         ClaroUtilities $ut,
 		RoleManager $roleManager,
         $extractDir,
-        $manifestName
+        $manifestName,
+        CreationManager $creationManager
     )
     {
         $this->om = $om;
@@ -75,6 +79,7 @@ class LoadingManager
         $this->offline = array();
         $this->extractDir = $extractDir;
         $this->manifestName = $manifestName;
+        $this->creationManager = $creationManager;
     }
 
     public function addOffline(OfflineElement  $offline)
@@ -101,7 +106,7 @@ class LoadingManager
             $tmpdirectory = $archive->extractTo($this->path);
 
             //Call LoadXML
-            $this->loadXML($this->path.$this->manifestName.'_'.$user->getUsername().'.xml');
+            $missingResources = $this->loadXML($this->path.$this->manifestName.'_'.$user->getUsername().'.xml');
             $this->delTree($this->path);
         } else {
             throw new \Exception('Impossible to load the zip file');
@@ -109,7 +114,8 @@ class LoadingManager
 
         return array(
             'infoArray' => $this->syncInfoArray,
-            'synchronizationDate' => $this->synchronizationDate
+            'synchronizationDate' => $this->synchronizationDate,
+            'missingResources' => $missingResources
         );
     }
     
@@ -131,7 +137,27 @@ class LoadingManager
 
         if ($this->importDescription($xmlDocument)) {
 			$this->importWorkspaces($xmlDocument);
+            return $this->findMissingResource($xmlDocument);
 		}
+    }
+    
+    private function findMissingResource($xmlDocument)
+    {
+        $types = array_keys($this->offline);
+        $shouldHaveResources = $this->creationManager->getUserRessources($this->user, $types);
+        $hashNameShouldHave = array();
+        foreach($shouldHaveResources as $res) {
+            array_push($hashNameShouldHave, $res->getNodeHashname());
+        }
+        $haveResources = $xmlDocument->getElementsByTagName("resources");
+        foreach ($haveResources as $ressources) {
+            $ressource = $ressources->getElementsByTagName("res");
+            foreach($ressource as $res){
+                $indexOf = array_keys($hashNameShouldHave, $res->getAttribute('hashname_node'));
+                unset($hashNameShouldHave[$indexOf[0]]);
+            }
+        }
+        return $hashNameShouldHave;
     }
 
     /**

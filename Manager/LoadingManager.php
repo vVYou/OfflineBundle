@@ -158,7 +158,7 @@ class LoadingManager
             foreach($ressource as $res){
 				
 				if(array_key_exists($res->getAttribute('hashname_node'), $hashNameShouldHave)){
-					unset($hashNameShouldHave[$res]);
+					unset($hashNameShouldHave[$res->getAttribute('hashname_node')]);
 				}
 			
                 // $indexOf = array_keys($hashNameShouldHave, $res->getAttribute('hashname_node'));
@@ -210,7 +210,7 @@ class LoadingManager
                 $workspace = $this->offline['workspace']->createWorkspace($work, $this->user);
             }
 			
-			// Check if a role is already associated between the user and the workspace		
+			// Check if a role is already associated between the user and the workspace	
 			$this->roleManager->associateRole($this->user, $this->roleManager->getRoleByName($work->getAttribute('role')));
 			
             $info = $this->importWorkspace($work->childNodes, $workspace, $work);

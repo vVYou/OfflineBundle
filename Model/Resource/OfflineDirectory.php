@@ -106,7 +106,7 @@ class OfflineDirectory extends OfflineResource
         $wsInfo->addToCreate($resource->getAttribute('name'));
 
         $node = $newResource->getResourceNode();
-        $this->changeDate($node, $creationDate, $modificationDate);
+        $this->changeDate($node, $creationDate, $modificationDate, $this->resourceManager);
 
         return $wsInfo;
     }
@@ -140,7 +140,7 @@ class OfflineDirectory extends OfflineResource
             $creation->setTimeStamp($creationDate);
             $modif = new DateTime();
             $modif->setTimeStamp($modificationDate);
-            $this->changeDate($node, $creation, $modif);
+            $this->changeDate($node, $creation, $modif, $this->resourceManager);
         }
 
         return $wsInfo;

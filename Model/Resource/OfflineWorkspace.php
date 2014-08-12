@@ -135,8 +135,9 @@ class OfflineWorkspace extends OfflineElement
 		$this->userManager = $this->container->get('claroline.manager.user_manager');
 		$this->workspaceManager = $this->container->get('claroline.manager.workspace_manager');
 		$this->roleManager = $this->container->get('claroline.manager.role_manager');
-		$this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+        $this->resourceManager = $this->container->get('claroline.manager.resource_manager');
 	
         // Use the create method from WorkspaceManager.
         $creationDate = new DateTime();
@@ -160,7 +161,7 @@ class OfflineWorkspace extends OfflineElement
         $myWs = $this->workspaceManager->create($config, $creator);
         $nodeWorkspace = $this->resourceNodeRepo->findOneBy(array('workspace' => $myWs));
 
-        $this->changeDate($nodeWorkspace, $creationDate, $modificationDate);
+        $this->changeDate($nodeWorkspace, $creationDate, $modificationDate, $this->resourceManager);
 
         // Need to change the hashname of the node corresponding to the workspace.
         $this->om->startFlushSuite();

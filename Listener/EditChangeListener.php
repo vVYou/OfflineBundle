@@ -76,7 +76,7 @@ class EditChangeListener
 		$env = $this->container->getParameter("kernel.environment");
 		$securityContext = $this->container->get("security.context");
 		$types = array_keys($this->offline);
-		$user = $this->securityContext->getToken()->getUser();
+		$user = $securityContext->getToken()->getUser();
 
         foreach ($uow->getScheduledEntityUpdates() AS $entity) {
 			if($entity instanceof AbstractResource){	

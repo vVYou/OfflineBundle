@@ -135,7 +135,7 @@ class OfflineFile extends OfflineResource
             $wsInfo->addToCreate($resource->getAttribute('name'));
         }
         $node = $newResource->getResourceNode();
-        $this->changeDate($node, $creationDate, $modificationDate);
+        $this->changeDate($node, $creationDate, $modificationDate, $this->resourceManager);
 
         return $wsInfo;
     }
@@ -243,7 +243,7 @@ class OfflineFile extends OfflineResource
         $this->resourceManager->create($newResource, $type, $creator, $workspace, $parentNode, null, array(), $resource->getAttribute('hashname_node'));
 
         $node = $newResource->getResourceNode();
-        $this->changeDate($node, $creationDate, $modificationDate);
+        $this->changeDate($node, $creationDate, $modificationDate, $this->resourceManager);
 
     }
     

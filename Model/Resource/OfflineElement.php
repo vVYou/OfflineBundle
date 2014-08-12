@@ -47,7 +47,7 @@ abstract class OfflineElement
      *
      * @return \Claroline\CoreBundle\Entity\Resource\ResourceNode
      */
-    protected function changeDate(ResourceNode $node, $creationDate, $modificationDate)
+    protected function changeDate(ResourceNode $node, $creationDate, $modificationDate, $resourceManager)
     {
         $listener = $this->getTimestampListener();
         $listener->forceTime($creationDate);
@@ -56,7 +56,7 @@ abstract class OfflineElement
         $listener->forceTime($modificationDate);
         $node->setModificationDate($modificationDate);
         $this->om->persist($node);
-        $this->resourceManager->logChangeSet($node);
+        $resourceManager->logChangeSet($node);
         $this->om->flush();
 
         return $node;

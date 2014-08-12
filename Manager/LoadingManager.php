@@ -35,6 +35,8 @@ class LoadingManager
     private $workspaceRepo;
     private $resourceNodeRepo;
     private $userRepo;
+	private $roleRepo;
+	private $roleManager;
     private $user;
     private $synchronizationDate;
     private $ut;
@@ -50,6 +52,7 @@ class LoadingManager
      * @DI\InjectParams({
      *     "om"           = @DI\Inject("claroline.persistence.object_manager"),
      *     "ut"           = @DI\Inject("claroline.utilities.misc"),
+	 *	   "roleManager"  = @DI\Inject("claroline.manager.role_manager"),
      *     "extractDir"   = @DI\Inject("%claroline.synchronisation.extract_directory%"),
      *     "manifestName" = @DI\Inject("%claroline.synchronisation.manifest%")
      * })
@@ -57,6 +60,7 @@ class LoadingManager
     public function __construct(
         ObjectManager $om,
         ClaroUtilities $ut,
+		RoleManager $roleManager,
         $extractDir,
         $manifestName
     )
@@ -65,6 +69,7 @@ class LoadingManager
         $this->workspaceRepo = $om->getRepository('ClarolineCoreBundle:Workspace\Workspace');
         $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
+		$this->roleRepo = $om->getRepository('ClarolineCoreBundle:Role');
         $this->ut = $ut;
         $this->syncInfoArray = array();
         $this->offline = array();
@@ -168,10 +173,20 @@ class LoadingManager
             if ($workspace == NULL) {
                 $workspace = $this->offline['workspace']->createWorkspace($work, $this->user);
             }
+			
+			// Check if a role is already associated between the user and the workspace		
+			$this->roleManager->associateRole($user, $this->roleManager->getRoleByName($work->getAttribute('role')));
+			
             $info = $this->importWorkspace($work->childNodes, $workspace, $work);
             $this->syncInfoArray[] = $info;
 
         }
+		
+		$resourceToAdd = $xmlDocument->getElementsByTagName("workspace");
+		
+		foreach($resourceToAdd as $element){
+			// TODO
+		}
     }
 
     /**

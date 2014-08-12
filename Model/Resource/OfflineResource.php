@@ -123,10 +123,10 @@ abstract class OfflineResource extends OfflineElement
         return $domRes;
     }
     
-    protected function modifyUniqueId($resource)
+    public function modifyUniqueId($resource)
     {
         // $resource->setNodeHashName($this->ut->generateGuid());
-        $resource->setNodeHashName('ITWORKS');
-        // $this->om->flush();
+        $resource->setNodeHashName('AAAA-AAAA-AAAAAAA');
+        $this->om->flush();
     }
 }

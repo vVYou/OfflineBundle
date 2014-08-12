@@ -12,6 +12,7 @@
 namespace Claroline\OfflineBundle\Listener;
 
 use Claroline\CoreBundle\Event\StrictDispatcher;
+use Claroline\CoreBundle\Entity\Resource\AbstractResource;
 use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,6 +30,7 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Claroline\OfflineBundle\Model\Resource\OfflineElement;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * @DI\Service("claroline.edit_hashname_handler")
@@ -42,15 +44,18 @@ class EditChangeListener
 
     /**
      * @DI\InjectParams({
+     *     "container"      = @DI\Inject("service_container"),
      *     "eventDispatcher" = @DI\Inject("claroline.event.event_dispatcher")
      * })
      *
      */
     public function __construct(
+        ContainerInterface   $container,
         StrictDispatcher $eventDispatcher
     )
     {
-        $this->eventDispatcher = $eventDispatcher;
+		$this->container = $container;
+		$this->eventDispatcher = $eventDispatcher;
         $this->offline = array();
     }
 
@@ -59,19 +64,25 @@ class EditChangeListener
         $this->offline[$offline->getType()] = $offline;
     }
 	
-    /*
-    *   @DI\Observe("preUpdate")
-    */
+    /**
+     *   @DI\Observe("preUpdate")
+	 *
+     */
 	public function preUpdate(LifecycleEventArgs $eventArgs)
     {
+		// Test if args is an instance of AbstractResource
 		$args = $eventArgs->getEntity();
-        var_dump($this->offline);
-		if($args instanceof ResourceNode && $this->offline[$args->getResourceType()->getName()]){
-			$this->offline[$args->getResourceType()->getName()]->modifyUniqueId($args);	
-			// $args->setText('AZED23DGLLEL');
-			file_put_contents('listeneres.txt', 'ARGSEUH');
-			// foreach($args->getRevision() as $elem){
-				// $eventArgs->setText('Bob');
+		if($args instanceof AbstractResource){
+			$resNode = $args->getResourceNode();
+			$nodeType = $resNode->getResourceType()->getName();	
+			$env = $this->container->getParameter("kernel.environment");
+			$types = array_keys($this->offline);
+			
+			// if($env == 'offline'){
+				if(in_array($nodeType, $types)){
+					$this->offline[$nodeType]->modifyUniqueId($resNode);	
+					file_put_contents('listeneres.txt', 'What is this ?'.$env);
+				}
 			// }
 		}
     }

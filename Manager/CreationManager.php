@@ -169,7 +169,7 @@ class CreationManager
             $ressourcesToSync = $this->findResourceToSync($element, array_keys($this->offline), $dateTimeStamp);// Remove all the resources not modified.
             if (count($ressourcesToSync) >= 1) {
                 foreach ($ressourcesToSync as $res) {
-                    // Avoid dubble add of a missing ressource
+                    // Avoid double add of a missing ressource
                     if($missingRessources != null && in_array($res->getNodeHashname(), $missingRessources)){
                         $indexOf = array_keys($missingRessources, $res->getNodeHashname());
                         unset($missingRessources[$indexOf[0]]);
@@ -179,18 +179,19 @@ class CreationManager
             }
         }
         //ajouter dans un workspace -- HACK
-        if($missingRessources != null){
+        if(isset($missingRessources)){
             $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $userWS[0], $this->user);
             foreach($missingRessources as $resHash){
-                $res = $this->resourceNodeRepo->findOneBy(array('hashName' => $resHash));
-                $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);
+                // $res = $this->resourceNodeRepo->findOneBy(array('hashName' => $resHash));
+                // $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);
+                $domManifest = $this->offline[$resHash->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $resHash, $archive, $date);
             }
         }
     }
     
     private function addCompleteResourceList($domManifest, $sectManifest)
     {
-        $sectResources = $domManifest->createElement('resources');
+        $sectResources = $domManifest->createElement('resources-present');
         $sectManifest->appendChild($sectResources);
         $allResUser = $this->getUserRessources($this->user, array_keys($this->offline));
         foreach($allResUser as $res){

@@ -13,6 +13,7 @@ namespace Claroline\OfflineBundle\Manager;
 
 use JMS\DiExtraBundle\Annotation as DI;
 use Claroline\ForumBundle\Manager\Manager;
+use Claroline\CoreBundle\Manager\RoleManager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\File;
 use Claroline\CoreBundle\Entity\Resource\Directory;
@@ -147,14 +148,22 @@ class LoadingManager
         $shouldHaveResources = $this->creationManager->getUserRessources($this->user, $types);
         $hashNameShouldHave = array();
         foreach($shouldHaveResources as $res) {
-            array_push($hashNameShouldHave, $res->getNodeHashname());
+			$hashNameShouldHave[$res->getNodeHashname()] = $res;
+            // array_push($hashNameShouldHave, $res->getNodeHashname());
         }
-        $haveResources = $xmlDocument->getElementsByTagName("resources");
+        $haveResources = $xmlDocument->getElementsByTagName("resources-present");
         foreach ($haveResources as $ressources) {
             $ressource = $ressources->getElementsByTagName("res");
             foreach($ressource as $res){
-                $indexOf = array_keys($hashNameShouldHave, $res->getAttribute('hashname_node'));
-                unset($hashNameShouldHave[$indexOf[0]]);
+				
+				if(array_key_exists($res, $hashNameShouldHave)){
+					unset($hashNameShouldHave[$res]);
+				}
+			
+                // $indexOf = array_keys($hashNameShouldHave, $res->getAttribute('hashname_node'));
+                // if(isset($indexOf[0])){
+					// unset($hashNameShouldHave[$indexOf[0]]);
+				// }
             }
         }
         return $hashNameShouldHave;

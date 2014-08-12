@@ -489,7 +489,7 @@ class OfflineController extends Controller
 
     /**
     *
-    *   Test Creation
+    *   Test Loading
     *
     *   @EXT\Route(
     *       "/load_test",
@@ -563,7 +563,7 @@ class OfflineController extends Controller
     }
 	
 	/**
-     * Get result
+     * Test DQL
      *
      * @EXT\Route(
      *     "/test_dql",

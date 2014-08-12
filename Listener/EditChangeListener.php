@@ -34,7 +34,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * @DI\Service("claroline.edit_hashname_handler")
- * @DI\Tag("doctrine.event_listener", attributes={"event"="preUpdate"})
+ * @DI\Tag("doctrine.event_listener", attributes={"event"="onFlush"})
  */
 class EditChangeListener
 {
@@ -64,13 +64,10 @@ class EditChangeListener
         $this->offline[$offline->getType()] = $offline;
     }
 	
-    /**
-     *   @DI\Observe("preUpdate")
-	 *
-     */
 	public function preUpdate(LifecycleEventArgs $eventArgs)
     {
 		// Test if args is an instance of AbstractResource
+		$om = $this->container->get('claroline.persistence.object_manager');
 		$args = $eventArgs->getEntity();
 		if($args instanceof AbstractResource){
 			$resNode = $args->getResourceNode();
@@ -80,10 +77,45 @@ class EditChangeListener
 			
 			// if($env == 'offline'){
 				if(in_array($nodeType, $types)){
-					$this->offline[$nodeType]->modifyUniqueId($resNode);	
-					file_put_contents('listeneres.txt', 'What is this ?'.$env);
+					$this->offline[$nodeType]->modifyUniqueId($resNode, $om);	
+					file_put_contents('listeneres.txt', 'What is this ?');
 				}
 			// }
 		}
     }
+	
+	/**
+     *   @DI\Observe("onFlush")
+	 *
+     */
+	public function onFlush(OnFlushEventArgs $eventArgs)
+	{
+		$em = $eventArgs->getEntityManager();
+        $uow = $em->getUnitOfWork();
+		$env = $this->container->getParameter("kernel.environment");
+		$types = array_keys($this->offline);
+
+        foreach ($uow->getScheduledEntityUpdates() AS $entity) {
+			if($entity instanceof AbstractResource){	
+				$resNode = $entity->getResourceNode();
+				$nodeType = $resNode->getResourceType()->getName();	
+				
+				// if($env == 'offline'){
+					if(in_array($nodeType, $types)){
+						$this->offline[$nodeType]->modifyUniqueId($resNode, $em, $uow);	
+					}
+				// }
+			}
+			if($entity instanceof ResourceNode){
+				$nodeType = $entity->getResourceType()->getName();	
+				
+				// if($env == 'offline'){
+					if(in_array($nodeType, $types)){
+						$this->offline[$nodeType]->modifyUniqueId($resNode, $em, $uow);	
+					}
+				// }
+			}
+        }
+
+	}
 }

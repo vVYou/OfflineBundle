@@ -306,6 +306,7 @@ class TransferManager
         );
         try {
             $response = $browser->post($url.'/sync/user', array(), json_encode($contentArray));
+            // echo "Content <br/>".$response->getContent()."<br/>";
             $status = $this->analyseStatusCode($response->getStatusCode());
             $result = (array) json_decode($response->getContent());
             $this->retrieveProfil($username, $password, $result, $url);

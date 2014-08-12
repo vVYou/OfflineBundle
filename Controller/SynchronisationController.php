@@ -359,4 +359,5 @@ class SynchronisationController extends Controller
            'msg' => $msg
         );
     }
+    
 }

@@ -48,7 +48,7 @@ class ToolListener
             "ClarolineOfflineBundle:Offline:connect_ok.html.twig",
             array(
                 'first_sync' => false,
-				'msg' => ''
+                'msg' => ''
             )
         );
         $event->setContent($content);

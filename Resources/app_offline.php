@@ -4,10 +4,10 @@
     use Symfony\Component\Debug\Debug;
 
     $isInstalled = require_once('../app/config/is_installed.php');
-    if(!$isInstalled){
+    if (!$isInstalled) {
         $url = $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . '/../loading_install.php';
         header("Location: http://{$url}");
-    }else{
+    } else {
 
         // If you don't want to setup permissions the proper way, just uncomment the following PHP line
         // read http://symfony.com/doc/current/book/installation.html#configuration-and-setup for more information

@@ -18,11 +18,9 @@ use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\WorkspaceManager;
 use Claroline\CoreBundle\Manager\RoleManager;
 use Claroline\CoreBundle\Manager\UserManager;
-use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Library\Workspace\Configuration;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
-use Doctrine\ORM\EntityManager;
 use \DateTime;
 
 /**
@@ -70,7 +68,7 @@ class OfflineWorkspace extends OfflineElement
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
 		$this->roleRepo = $this->om->getRepository('ClarolineCoreBundle:Role');
-		
+
         $myRole = $this->roleRepo->findByUserAndWorkspace($user, $workspace);
 
         // $myResNode = $this->userSynchronizedRepo->findResourceNodeByWorkspace($workspace);
@@ -138,7 +136,7 @@ class OfflineWorkspace extends OfflineElement
 		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->resourceManager = $this->container->get('claroline.manager.resource_manager');
-	
+
         // Use the create method from WorkspaceManager.
         $creationDate = new DateTime();
         $modificationDate = new DateTime();

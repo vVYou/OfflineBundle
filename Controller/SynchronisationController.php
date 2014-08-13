@@ -27,15 +27,8 @@ use Claroline\CoreBundle\Manager\UserManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Entity\Credential;
 use Claroline\OfflineBundle\Form\OfflineFormType;
-use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
-use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
-use Claroline\OfflineBundle\Manager\Exception\ServeurException;
-use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
-use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
 use Claroline\OfflineBundle\Manager\TransferManager;
-use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\Security\OfflineAuthenticator;
-use \Buzz\Exception\ClientException;
 
 class SynchronisationController extends Controller
 {
@@ -147,6 +140,7 @@ class SynchronisationController extends Controller
             $content = $this->transferManager->processSyncRequest($authTab['informationsArray'], true);
             $status = $content['status'];
         }
+
         return new JsonResponse($content, $status);
     }
 
@@ -173,6 +167,7 @@ class SynchronisationController extends Controller
             $content = $this->transferManager->unlinkSynchronisationFile($authTab['informationsArray'], $user);
             $status = $content['status'];
         }
+
         return new JsonResponse($content, $status);
     }
 
@@ -199,7 +194,7 @@ class SynchronisationController extends Controller
         $content = array();
         if ($status == 200) {
             $fileName =$this->syncDownDir.$user->getId().'/sync_'.$informationsArray['hashname'].'.zip';
-            if(file_exists($fileName)){
+            if (file_exists($fileName)) {
                 $content = $this->transferManager->getMetadataArray($user, $fileName);
                 $content['fragmentNumber']=$informationsArray['fragmentNumber'];
                 $data = $this->transferManager->getFragment($informationsArray['fragmentNumber'], $fileName, $user);
@@ -208,10 +203,11 @@ class SynchronisationController extends Controller
                 } else {
                     $content['file'] = base64_encode($data);
                 }
-            }else{
+            } else {
                 $status = 480;
             }
         }
+
         return new JsonResponse($content, $status);
     }
 
@@ -359,5 +355,5 @@ class SynchronisationController extends Controller
            'msg' => $msg
         );
     }
-    
+
 }

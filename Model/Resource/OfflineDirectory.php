@@ -17,10 +17,8 @@ use Claroline\CoreBundle\Entity\Resource\Directory;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\UserManager;
-use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
-use Doctrine\ORM\EntityManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use \DateTime;
 use \ZipArchive;
@@ -82,7 +80,7 @@ class OfflineDirectory extends OfflineResource
 		$this->userManager = $this->container->get('claroline.manager.user_manager');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
 		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
-		 
+
         $newResource = new Directory();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -127,7 +125,7 @@ class OfflineDirectory extends OfflineResource
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
-		
+
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modificationDate = $resource->getAttribute('modification_date');
         $creationDate = $resource->getAttribute('creation_date');

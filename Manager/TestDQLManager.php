@@ -14,7 +14,6 @@ namespace Claroline\OfflineBundle\Manager;
 use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Resource\ResourceType;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
-use Claroline\CoreBundle\Entity\Resource\AbstractResource;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Pager\PagerFactory;
@@ -23,7 +22,6 @@ use Claroline\OfflineBundle\Entity\UserSynchronized;
 use JMS\DiExtraBundle\Annotation as DI;
 //use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
-use \DateTime;
 use Doctrine\ORM\EntityManager;
 
 /**
@@ -74,9 +72,9 @@ class TestDQLManager
         $this->offline = array('text');
 		$this->em = $em;
     }
-	
+
 	/*
-	*	Logique de la première requête : 
+	*	Logique de la première requête :
 	*	1 - Récuperer les espaces d'activités de l'utilisateurs
 	*	2 - Pour chaque workspace récuperer l'intégralité des ressources node à synchroniser et ayant un type supporté
 	*	3 - Pour chaque ressource node trouver la ressource correspondant
@@ -100,20 +98,20 @@ class TestDQLManager
 
             if (count($ressourcesToSync) >= 1) {
 				echo 'dql_1: '.count($ressourcesToSync).'<br/>';
-				foreach($ressourcesToSync as $resource){
+				foreach ($ressourcesToSync as $resource) {
 					$myRes = $this->resourceManager->getResourceFromNode($resource);
 					$revision = $this->revisionRepo->findOneBy(array('text' => $myRes));
-			
+
 				// $revision = $this->firstX($ressourcesToSync);
                 // foreach ($revision as $res) {
-					// $myRes = $this->resourceManager->getResourceFromNode($res);
-					// $revision = $this->revisionRepo->findOneBy(array('text' => $myRes));
-					// echo $res->getContent().'<br/>';
+                    // $myRes = $this->resourceManager->getResourceFromNode($res);
+                    // $revision = $this->revisionRepo->findOneBy(array('text' => $myRes));
+                    // echo $res->getContent().'<br/>';
                 }
             }
         }
     }
-	
+
     private function first($workspace, $types, $date)
     {
         $query = $this->resourceNodeRepo->createQueryBuilder('res')
@@ -129,7 +127,7 @@ class TestDQLManager
         return $query->getResult();
 
     }
-	
+
 	private function firstX($resouceNodeList)
 	{
 		$query = $this->om->getRepository('ClarolineCoreBundle:Resource\Text')->createQueryBuilder('res')
@@ -139,16 +137,16 @@ class TestDQLManager
 
         return $query->getResult();
 	}
-	
+
 	/*
-	*	Logique de la seconde requête : 
+	*	Logique de la seconde requête :
 	*	1 - Récuperer les espaces d'activités de l'utilisateurs
 	*	2 - Pour chaque workspace
 	*		2.1 - Pour chaque type supporté, trouver les ressources node ET les ressource de ce type et dans ce workspace
 	*	3 - Pour chaque ressource node trouver la ressource correspondant
 	*
 	*	Temps : x
-	*	Nombre de requêtes : x 
+	*	Nombre de requêtes : x
 	*
 	*	Impossible de faire une jointure avec les ressources vu qu'elles ne disposent pas de repository.
 	*/
@@ -163,14 +161,14 @@ class TestDQLManager
 	public function secondMethod($userWS, $offline, $date)
 	{
         foreach ($userWS as $element) {
-			foreach($offline as $type){
+			foreach ($offline as $type) {
 				$result = $this->second($element, $type, $date);
 				// $resultToSync = $this->XXX;
-				echo 'dql_2_1: '.count($result[0]).'<br/>';
+                echo 'dql_2_1: '.count($result[0]).'<br/>';
 				// echo 'dql_2_2: '.count($result[1]).'<br/>';
-				foreach($result[0] as $text){
+                foreach ($result[0] as $text) {
 					// echo $text->getContent().'<br/>';
-				}
+                }
 			}
 		}
 	}
@@ -191,12 +189,11 @@ class TestDQLManager
 
         return $query->getResult();
 	}
-	
-		
+
 	/*
 	*	Estimation symfony debug : Ok
 	* 	Requetes : 17
-	*	Temps (avec print): 37 ms - 15.6 ms - 52.6 ms - 33 ms - 34 ms 
+	*	Temps (avec print): 37 ms - 15.6 ms - 52.6 ms - 33 ms - 34 ms
 	*	Temps (sans print): +/- equivalent
 	*
 	*	New request with SELECT FOR : 17 request, +/- 30 ms (idem) mais plus élégant. On renvoit juste le hashname de chaque resourceNode, pas la resourceNode ET son hashname (un parcours de tableau en moins donc)
@@ -206,15 +203,15 @@ class TestDQLManager
 	{
 		$results = $this->hash($user);
 		echo 'Mon taleau dql : '.count($results).'<br/>';
-		foreach($results as $result){
+		foreach ($results as $result) {
 			echo $result['hashName'].'<br/>';
 		}
 	}
-	
+
 	private function hash($user)
 	{
 		$query = $this->em->createQuery('
-			SELECT res.hashName FROM Claroline\CoreBundle\Entity\Resource\ResourceNode res 
+			SELECT res.hashName FROM Claroline\CoreBundle\Entity\Resource\ResourceNode res
 			JOIN res.workspace w
 			JOIN w.roles r
 			JOIN r.users u

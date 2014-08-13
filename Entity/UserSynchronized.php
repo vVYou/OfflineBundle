@@ -78,7 +78,7 @@ class UserSynchronized
      * @ORM\Column(name="status", type="integer")
      */
     protected $status;
-    
+
     /**
      * @var boolean
      *
@@ -164,12 +164,12 @@ class UserSynchronized
     {
         $this->status = $status;
     }
-    
+
     public function setAdmin($admin)
     {
         $this->admin = $admin;
     }
-    
+
     public function isAdmin()
     {
         return $this->admin;

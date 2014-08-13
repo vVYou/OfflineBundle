@@ -34,12 +34,6 @@ use Symfony\Component\Form\FormFactory;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use Claroline\OfflineBundle\Manager\CreationManager;
 use Claroline\OfflineBundle\Manager\TransferManager;
-use Claroline\OfflineBundle\Manager\Exception\AuthenticationException;
-use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
-use Claroline\OfflineBundle\Manager\Exception\ServeurException;
-use Claroline\OfflineBundle\Manager\Exception\PageNotFoundException;
-use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
-use \Buzz\Exception\ClientException;
 use \DateTime;
 use \Exception;
 
@@ -218,6 +212,7 @@ class OfflineController extends Controller
         try {
             $infoArray = $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
 			// Show the result window
+
             return $this->render(
 				'ClarolineOfflineBundle:Offline:result.html.twig',
 				array(
@@ -259,10 +254,10 @@ class OfflineController extends Controller
     public function seekAction(User $user)
     {
         $em = $this->getDoctrine()->getManager();
-        $userSyncTab = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);        
+        $userSyncTab = $em->getRepository('ClarolineOfflineBundle:UserSynchronized')->findUserSynchronized($user);
         $toUpload = $this->creationManager->createSyncZip($user, $userSyncTab[0]->getLastSynchronization()->getTimestamp());
         $metadatas = $this->transferManager->getMetadataArray($user, $toUpload);
-        
+
         return new JsonResponse(array(
             'metadata' => $metadatas,
             'toUpload' => $toUpload));
@@ -421,7 +416,7 @@ class OfflineController extends Controller
         return $this->redirect($this->generateUrl('claro_desktop_open_tool', array('toolName' => "claroline_offline_tool")));
 
     }
-	
+
     /**
      *  Add a new User to the sync_config file
      *
@@ -469,7 +464,7 @@ class OfflineController extends Controller
            'msg' => $msg
         );
     }
-	
+
     /*
     *   METHODE DE TEST : Those methods are used for the creation and loading tests.
     */
@@ -526,7 +521,7 @@ class OfflineController extends Controller
             'msg' => ''
          );
     }
-    
+
     /**
      * Get result
      *
@@ -575,7 +570,7 @@ class OfflineController extends Controller
         );
 
     }
-	
+
 	/**
      * Test DQL
      *
@@ -595,7 +590,7 @@ class OfflineController extends Controller
     {
 		$date = new DateTime('@0');
 		// $results = $this->get("claroline.manager.test_dql_manager")->firstDQL($user, $date);
-		$results = $this->get("claroline.manager.test_dql_manager")->hash_test($user);
+        $results = $this->get("claroline.manager.test_dql_manager")->hash_test($user);
 		// $results = $this->get("claroline.manager.test_dql_manager")->secondDQL($user, $date);
 
         return array(
@@ -604,6 +599,5 @@ class OfflineController extends Controller
         );
 
     }
-
 
 }

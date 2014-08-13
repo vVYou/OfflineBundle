@@ -145,8 +145,8 @@ class CreationManager
         if ($archive->open($fileName, ZipArchive::CREATE) === true) {
             $this->fillSyncZip($userWS, $domManifest, $sectManifest, $archive, $date, $missingRessources);
             // TODO Add offline env condition
-			// if($env == 'offline'){
-				$this->addCompleteResourceList($domManifest, $sectManifest);
+            // if ($env == 'offline') {
+                $this->addCompleteResourceList($domManifest, $sectManifest);
 			// }
         } else {
             throw new \Exception('Impossible to open the zip file');
@@ -165,7 +165,7 @@ class CreationManager
      * Add all the informations required to synchronized the resources in the Manifest and add
      * in the archive the file required for the synchronization
      *
-     * @param \ZipArchive                       $archive
+     * @param \ZipArchive $archive
      */
     private function fillSyncZip($userWS, $domManifest, $sectManifest, ZipArchive $archive, $date, $missingRessources)
     {
@@ -177,12 +177,12 @@ class CreationManager
             if (count($ressourcesToSync) >= 1) {
                 foreach ($ressourcesToSync as $res) {
                     // Avoid double add of a missing ressource
-                    // if($missingRessources != null && in_array($res->getNodeHashname(), $missingRessources)){
+                    // if ($missingRessources != null && in_array($res->getNodeHashname(), $missingRessources)) {
                         // $indexOf = array_keys($missingRessources, $res->getNodeHashname());
                         // unset($missingRessources[$indexOf[0]]);
-                    // }     
-                    $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);					
-					if(isset($missingRessources) && array_key_exists($res->getNodeHashname(), $missingRessources)){
+                    // }
+                    $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);
+					if (isset($missingRessources) && array_key_exists($res->getNodeHashname(), $missingRessources)) {
                         // $indexOf = array_keys($missingRessources, $res->getNodeHashname());
                         unset($missingRessources[$res->getNodeHashname()]);
                     }
@@ -190,26 +190,26 @@ class CreationManager
             }
         }
         //ajouter dans un workspace -- HACK
-        if(isset($missingRessources)){
+        if (isset($missingRessources)) {
             $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $userWS[0], $this->user);
-            foreach($missingRessources as $resHash){
+            foreach ($missingRessources as $resHash) {
                 // $res = $this->resourceNodeRepo->findOneBy(array('hashName' => $resHash));
                 // $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);
                 $domManifest = $this->offline[$resHash->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $resHash, $archive, $date);
             }
         }
     }
-    
+
     private function addCompleteResourceList($domManifest, $sectManifest)
     {
         $sectResources = $domManifest->createElement('resources-present');
         $sectManifest->appendChild($sectResources);
         $allResUser = $this->getUserRessources($this->user, array_keys($this->offline));
-        foreach($allResUser as $res){
+        foreach ($allResUser as $res) {
             $this->addResourceAndId($domManifest, $res, $sectResources);
         }
     }
-    
+
     public function addResourceAndId($domManifest, $res, $resourcesSec)
     {
         $domRes = $domManifest->createElement('res');
@@ -241,11 +241,11 @@ class CreationManager
         return $query->getResult();
 
     }
-    
+
     public function getUserRessources(User $user, $types)
 	{
 		$query = $this->em->createQuery('
-			SELECT res FROM Claroline\CoreBundle\Entity\Resource\ResourceNode res 
+			SELECT res FROM Claroline\CoreBundle\Entity\Resource\ResourceNode res
 			JOIN res.workspace w
             JOIN res.resourceType type
 			JOIN w.roles r
@@ -255,6 +255,7 @@ class CreationManager
 			');
 		$query->setParameter('user', $user);
         $query->setParameter('types', $types);
+
         return $query->getResult();
 	}
 

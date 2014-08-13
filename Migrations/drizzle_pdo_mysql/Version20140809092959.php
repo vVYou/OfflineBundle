@@ -15,7 +15,7 @@ class Version20140809092959 extends AbstractMigration
     public function up(Schema $schema)
     {
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             ADD admin BOOLEAN NOT NULL
         ");
     }
@@ -23,7 +23,7 @@ class Version20140809092959 extends AbstractMigration
     public function down(Schema $schema)
     {
         $this->addSql("
-            ALTER TABLE claro_user_sync 
+            ALTER TABLE claro_user_sync
             DROP admin
         ");
     }

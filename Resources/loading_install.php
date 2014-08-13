@@ -29,16 +29,16 @@
     </div>
 </div>
 <script>
-    $.ajax("<?php 
+    $.ajax("<?php
         echo($_SERVER['SCRIPT_NAME'].'/../offline_install.php');?>")
     .done(function () {
-        window.location.href = "<?php 
+        window.location.href = "<?php
             echo($_SERVER['SCRIPT_NAME'].'/../app_offline.php');?>";
     })
-    .error(function (){
+    .error(function () {
         alert('error');
     })
-    
+
 </script>
 </body>
 </html>
@@ -46,4 +46,3 @@
     // $url = $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . '/../offline_install.php';
     // header("Location: http://{$url}");
 ?>
-    

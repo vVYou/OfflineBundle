@@ -18,12 +18,12 @@ class Credential
     protected $password;
 
     protected $url;
-    
-    private function urlWithoutLastSlash($url){
-        if(substr($url, -1) === '/'){
+
+    private function urlWithoutLastSlash($url)
+    {
+        if (substr($url, -1) === '/') {
             return substr($url, 0, strlen($url)-1);
-        }
-		else return $url;
+        } else return $url;
     }
 
     public function getName()

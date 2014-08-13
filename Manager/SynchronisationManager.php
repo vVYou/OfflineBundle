@@ -161,6 +161,7 @@ class SynchronisationManager
             // $this->transferManager->deleteFile($user,substr($filename, strlen($filename)-40, 36), $this->syncUpDir);
             $this->transferManager->deleteFile($user,substr($filename, strlen($filename)-40, 36), 'UP');
             unlink($filename);
+
             return $syncInfo;
         }
     }
@@ -169,7 +170,7 @@ class SynchronisationManager
     // Download the synchronisation archive of the online plateform
     private function step3Download(User $user, UserSynchronized $userSync, $filename, $totalFragments = null, $fragmentNumber = 0)
     {
-        try{ 
+        try {
             if ($totalFragments == null) {
                 $totalFragments = $this->transferManager->getNumberOfFragmentsOnline($filename, $user);
             }
@@ -192,9 +193,10 @@ class SynchronisationManager
                 // $this->transferManager->deleteFile($user, $filename, $this->syncDownDir);
                 $this->transferManager->deleteFile($user, $filename, 'DOWN');
                 unlink($toLoad);
+
                 return $syncInfo;
             }
-        }catch(DownloadFailsException $e){
+        } catch (DownloadFailsException $e) {
             $this->userSyncManager->resetSync($user);
             throw new SynchronisationFailsException("The synchronisation fails, can't download file from online server");
         }
@@ -207,7 +209,7 @@ class SynchronisationManager
         // Load synchronisation archive ($filename) in offline database
         $this->roleManager->associateUserRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN), false, true);
         $loadArray = $this->loadingManager->loadZip($filename, $user);
-        if(!$userSync->isAdmin()){
+        if (!$userSync->isAdmin()) {
             $this->roleManager->dissociateRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN));
         }
         $userSync->setStatus(UserSynchronized::SUCCESS_SYNC);

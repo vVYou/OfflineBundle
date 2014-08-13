@@ -18,11 +18,9 @@ use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\UserManager;
-use Claroline\CoreBundle\Persistence\ObjectManager;
 // use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
-use Doctrine\ORM\EntityManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use \DateTime;
 use \ZipArchive;
@@ -72,7 +70,7 @@ class OfflineFile extends OfflineResource
     public function addResourceToManifest($domManifest, $domWorkspace, ResourceNode $resToAdd, ZipArchive $archive, $date)
     {
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
-		
+
         $domRes = parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
         $myRes = $this->resourceManager->getResourceFromNode($resToAdd);
         $size = $domManifest->createAttribute('size');
@@ -105,7 +103,7 @@ class OfflineFile extends OfflineResource
 		$this->userManager = $this->container->get('claroline.manager.user_manager');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
 		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
-		 
+
         $newResource = new File();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -156,7 +154,7 @@ class OfflineFile extends OfflineResource
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
-		
+
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modif_date = $resource->getAttribute('modification_date');
         $nodeModifDate = $node->getModificationDate()->getTimestamp();
@@ -192,7 +190,7 @@ class OfflineFile extends OfflineResource
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
 		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
-		
+
         $newResource = new File();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -246,5 +244,5 @@ class OfflineFile extends OfflineResource
         $this->changeDate($node, $creationDate, $modificationDate, $this->resourceManager);
 
     }
-    
+
 }

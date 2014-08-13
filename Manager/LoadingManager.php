@@ -23,7 +23,6 @@ use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\ForumBundle\Entity\Forum;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use Claroline\OfflineBundle\Model\Resource\OfflineElement;
-use Claroline\OfflineBundle\Manager\CreationManager;
 use \ZipArchive;
 use \DOMDocument;
 
@@ -120,15 +119,17 @@ class LoadingManager
             'missingResources' => $missingResources
         );
     }
-    
-    public static function delTree($dir) { 
-        $files = array_diff(scandir($dir), array('.','..')); 
-        foreach ($files as $file) { 
-            (is_dir("$dir/$file")) ? self::delTree("$dir/$file") : unlink("$dir/$file"); 
-        } 
-        return rmdir($dir); 
-    } 
-    
+
+    public static function delTree($dir)
+    {
+        $files = array_diff(scandir($dir), array('.','..'));
+        foreach ($files as $file) {
+            (is_dir("$dir/$file")) ? self::delTree("$dir/$file") : unlink("$dir/$file");
+        }
+
+        return rmdir($dir);
+    }
+
     /**
      * This method will load and parse the manifest XML file
      */
@@ -139,34 +140,36 @@ class LoadingManager
 
         if ($this->importDescription($xmlDocument)) {
 			$this->importWorkspaces($xmlDocument);
+
             return $this->findMissingResource($xmlDocument);
 		}
     }
-    
+
     private function findMissingResource($xmlDocument)
     {
         $types = array_keys($this->offline);
         $shouldHaveResources = $this->creationManager->getUserRessources($this->user, $types);
         $hashNameShouldHave = array();
-        foreach($shouldHaveResources as $res) {
+        foreach ($shouldHaveResources as $res) {
 			$hashNameShouldHave[$res->getNodeHashname()] = $res;
             // array_push($hashNameShouldHave, $res->getNodeHashname());
         }
         $haveResources = $xmlDocument->getElementsByTagName("resources-present");
         foreach ($haveResources as $ressources) {
             $ressource = $ressources->getElementsByTagName("res");
-            foreach($ressource as $res){
-				
-				if(array_key_exists($res->getAttribute('hashname_node'), $hashNameShouldHave)){
+            foreach ($ressource as $res) {
+
+				if (array_key_exists($res->getAttribute('hashname_node'), $hashNameShouldHave)) {
 					unset($hashNameShouldHave[$res->getAttribute('hashname_node')]);
 				}
-			
+
                 // $indexOf = array_keys($hashNameShouldHave, $res->getAttribute('hashname_node'));
-                // if(isset($indexOf[0])){
-					// unset($hashNameShouldHave[$indexOf[0]]);
-				// }
+                // if (isset($indexOf[0])) {
+                    // unset($hashNameShouldHave[$indexOf[0]]);
+                // }
             }
         }
+
         return $hashNameShouldHave;
     }
 
@@ -209,20 +212,20 @@ class LoadingManager
             if ($workspace == NULL) {
                 $workspace = $this->offline['workspace']->createWorkspace($work, $this->user);
             }
-			
-			// Check if a role is already associated between the user and the workspace	
-			$this->roleManager->associateRole($this->user, $this->roleManager->getRoleByName($work->getAttribute('role')));
-			
+
+			// Check if a role is already associated between the user and the workspace
+            $this->roleManager->associateRole($this->user, $this->roleManager->getRoleByName($work->getAttribute('role')));
+
             $info = $this->importWorkspace($work->childNodes, $workspace, $work);
             $this->syncInfoArray[] = $info;
 
         }
-		
+
 		$resourceToAdd = $xmlDocument->getElementsByTagName("workspace");
-		
-		foreach($resourceToAdd as $element){
+
+		foreach ($resourceToAdd as $element) {
 			// TODO
-		}
+        }
     }
 
     /**

@@ -17,7 +17,6 @@ use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\UserManager;
-use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\ForumBundle\Entity\Forum;
 use Claroline\ForumBundle\Entity\Category;
 use Claroline\ForumBundle\Entity\Subject;
@@ -27,7 +26,6 @@ use Claroline\OfflineBundle\Model\SyncConstant;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Doctrine\ORM\EntityManager;
 use \DateTime;
 use \ZipArchive;
 
@@ -96,9 +94,9 @@ class OfflineForum extends OfflineResource
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
 		$this->userManager = $this->container->get('claroline.manager.user_manager');
-		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');	
+		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
 		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
-		 
+
         $newResource = new Forum();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -143,7 +141,7 @@ class OfflineForum extends OfflineResource
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
-		
+
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modificationDate = $resource->getAttribute('modification_date');
         $creationDate = $resource->getAttribute('creation_date');
@@ -189,7 +187,7 @@ class OfflineForum extends OfflineResource
 		$this->messageRepo = $this->om->getRepository('ClarolineForumBundle:Message');
 		$this->forumRepo = $this->om->getRepository('ClarolineForumBundle:Forum');
 		$this->categoryRepo = $this->om->getRepository('ClarolineForumBundle:Category');
-		
+
         $elemToSync = array();
         $currentForum = $this->forumRepo->findOneBy(array('resourceNode' => $nodeForum));
         $categories = $this->categoryRepo->findBy(array('forum' => $currentForum));
@@ -432,7 +430,7 @@ class OfflineForum extends OfflineResource
 		$this->messageRepo = $this->om->getRepository('ClarolineForumBundle:Message');
 		$this->forumRepo = $this->om->getRepository('ClarolineForumBundle:Forum');
 		$this->categoryRepo = $this->om->getRepository('ClarolineForumBundle:Category');
-		
+
         $contentType = $content->getAttribute('class');
         switch ($contentType) {
             case SyncConstant::CATE :
@@ -626,5 +624,5 @@ class OfflineForum extends OfflineResource
         $this->om->persist($forumContent);
         // $this->forumManager->logChangeSet($forumContent);
         $this->om->flush();
-    }     
+    }
 }

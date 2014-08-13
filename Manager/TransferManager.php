@@ -238,6 +238,7 @@ class TransferManager
             default:
                 //TODO Personalise error message with status
                 throw new SynchronisationFailsException("Transfer fails with status ".$status, $status);
+
                 return false;
         }
     }
@@ -361,7 +362,7 @@ class TransferManager
     public function unlinkSynchronisationFile($content, $user)
     {
         $dir = null;
-        switch ($content['dir']){
+        switch ($content['dir']) {
             case 'UP' :
                 echo "DELETE UP";
                 $dir = $this->syncUpDir;
@@ -373,10 +374,10 @@ class TransferManager
             default:
                 $dir = null;
         }
-        if ($dir != null){
+        if ($dir != null) {
             unlink($dir.$user->getId().'/sync_'.$content['hashname'].'.zip');
             $content['status'] = 200;
-        }else{
+        } else {
             $content['status'] = 424;
         }
 
@@ -576,7 +577,7 @@ class TransferManager
     public function getMessage($e)
     {
         $msg = '';
-        switch(get_class($e)) {
+        switch (get_class($e)) {
             case get_class(new AuthenticationException()):
                 $msg = $this->translator->trans('sync_config_fail', array(), 'offline');
                 break;

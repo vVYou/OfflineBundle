@@ -18,7 +18,6 @@ use Claroline\CoreBundle\Entity\Resource\Revision;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Manager\ResourceManager;
 use Claroline\CoreBundle\Manager\UserManager;
-use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncInfo;
 use JMS\DiExtraBundle\Annotation as DI;
 use Claroline\CoreBundle\Library\Utilities\ClaroUtilities;
@@ -69,8 +68,8 @@ class OfflineText extends OfflineResource
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
-		$this->revisionRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\Revision');		
-		
+		$this->revisionRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\Revision');
+
         $domRes = parent::addNodeToManifest($domManifest, $this->getType(), $domWorkspace, $resToAdd);
         $myRes = $this->resourceManager->getResourceFromNode($resToAdd);
         $revision = $this->revisionRepo->findOneBy(array('text' => $myRes));
@@ -102,8 +101,7 @@ class OfflineText extends OfflineResource
 		$this->userManager = $this->container->get('claroline.manager.user_manager');
 		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
-		
-		
+
         $newResource = new Text();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();
@@ -155,7 +153,7 @@ class OfflineText extends OfflineResource
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
-	
+
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
         $modifDate = $resource->getAttribute('modification_date');
         $nodeModifDate = $node->getModificationDate()->getTimestamp();
@@ -191,7 +189,7 @@ class OfflineText extends OfflineResource
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
 		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
 		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
-	
+
         $newResource = new Text();
         $creationDate = new DateTime();
         $modificationDate = new DateTime();

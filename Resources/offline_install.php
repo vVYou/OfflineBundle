@@ -5,4 +5,3 @@
     exec($command);
     file_put_contents( '..'.$ds.'app'.$ds.'config'.$ds.'is_installed.php' , '<?php  return true;');
 ?>
-    

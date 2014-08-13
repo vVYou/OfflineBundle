@@ -4,9 +4,8 @@
     use Symfony\Component\Debug\Debug;
 
     $isInstalled = require_once('../app/config/is_installed.php');
-    var_dump($isInstalled);
     if(!$isInstalled){
-        $url = $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . '/../offline_install.php';
+        $url = $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . '/../loading_install.php';
         header("Location: http://{$url}");
     }else{
 

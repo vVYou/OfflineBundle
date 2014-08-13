@@ -70,7 +70,6 @@ class EditChangeListener
      */
 	public function onFlush(OnFlushEventArgs $eventArgs = null)
 	{
-        if (!$eventArgs) return;
 		$em = $eventArgs->getEntityManager();
         $uow = $em->getUnitOfWork();
 		$env = $this->container->getParameter("kernel.environment");

@@ -27,7 +27,6 @@ use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
 use Claroline\OfflineBundle\Manager\Exception\ServeurException;
 use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
 use Claroline\CoreBundle\Manager\UserManager;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use \Buzz\Browser;
@@ -61,7 +60,6 @@ class TransferManager
     private $syncDownDir;
     private $fragSize;
     private $offlineConfig;
-    private $eventDispatcher;
     private $container;
 
     /**
@@ -81,7 +79,6 @@ class TransferManager
      *     "syncDownDir"        = @DI\Inject("%claroline.synchronisation.down_directory%"),
      *     "fragSize"           = @DI\Inject("%claroline.synchronisation.frag_size%"),
      *     "offlineConfig"      = @DI\Inject("%claroline.synchronisation.offline_config%"),
-     *     "eventDispatcher"    = @DI\Inject("event_dispatcher"),
      *     "container"          = @Di\Inject("service_container")
      * })
      */
@@ -95,7 +92,6 @@ class TransferManager
         UserSyncManager $userSyncManager,
         RoleManager $roleManager,
         ClaroUtilities $ut,
-        EventDispatcherInterface $eventDispatcher,
         ContainerInterface $container,
         $syncUpDir,
         $syncDownDir,
@@ -114,7 +110,6 @@ class TransferManager
         $this->loadingManager = $loadingManager;
         $this->userSyncManager = $userSyncManager;
         $this->roleManager = $roleManager;
-        $this->eventDispatcher = $eventDispatcher;
         $this->ut = $ut;
         $this->yaml_dump = new Dumper();
         $this->yaml_parser = new Parser();
@@ -309,8 +304,6 @@ class TransferManager
     // Retruns the informations of the user in order to retrieve his profile.
     public function getUserInfo($username, $password, $url, $firstTime = true)
     {
-        $listener = $this->container->get('claroline.edit_hashname_handler');
-        $this->eventDispatcher->removeListener('onFlush', $listener);
         $browser = $this->getBrowser();
         $contentArray = array(
             'username' => $username,

@@ -331,6 +331,7 @@ class TransferManager
 
         $this->userManager->createUser($new_user);
         if ($result['admin']) {
+            //change by associate Role
             $this->roleManager->associateUserRole($new_user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN), false, true);
         }
         $my_user = $this->userRepo->findOneBy(array('username' => $username));

@@ -16,14 +16,12 @@ class Updater000001
     public function preUpdate()
     {
         $ds = DIRECTORY_SEPARATOR;
-        $src = __DIR__ . $ds . '..' . $ds . '..' . $ds . 'Resources' . $ds . 'app_offline.php';
-        echo $src;
+        $src = __DIR__ .$ds.'..'.$ds.'..'.$ds.'Resources'.$ds;
         $kernDir = $this->container->getParameter('kernel.root_dir');
-        $dest = $kernDir . $ds . '..' . $ds . 'web' . $ds;
-        echo $dest;
-        copy($src, $dest . $ds . 'app_offline.php');
-        $src = __DIR__ . $ds . '..' . $ds . '..' . $ds . 'Resources' . $ds . 'offline_install.php';
-        copy($src, $dest . $ds . 'offline_install.php');
+        $dest = $kernDir.$ds.'..'.$ds.'web'.$ds;
+        copy($src.'app_offline.php', $dest.$ds.'app_offline.php');
+        copy($src.'offline_install.php', $dest.'offline_install.php');
+        copy($src.'loading_install.php', $dest.'loading_install.php');
     }
 
     public function setLogger($logger)

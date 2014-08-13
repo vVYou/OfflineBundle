@@ -66,39 +66,41 @@ class EditChangeListener
     }
 	
 	/**
-     *   @DI\Observe("onFlush")
-	 *
+     * @DI\Observe("onFlush")
      */
-	public function onFlush(OnFlushEventArgs $eventArgs)
+	public function onFlush(OnFlushEventArgs $eventArgs = null)
 	{
-		$em = $eventArgs->getEntityManager();
-        $uow = $em->getUnitOfWork();
-		$env = $this->container->getParameter("kernel.environment");
-		$securityContext = $this->container->get("security.context");
-		$types = array_keys($this->offline);
-		$user = $securityContext->getToken()->getUser();
-
-        foreach ($uow->getScheduledEntityUpdates() AS $entity) {
-			if($entity instanceof AbstractResource){	
-				$resNode = $entity->getResourceNode();
-				$nodeType = $resNode->getResourceType()->getName();	
-				
-				if($env == 'offline' && $user->getId != $resNode->getCreator()){
-					if(in_array($nodeType, $types)){
-						$this->offline[$nodeType]->modifyUniqueId($resNode, $em, $uow);	
-					}
-				}
-			}
-			if($entity instanceof ResourceNode){
-				$nodeType = $entity->getResourceType()->getName();	
-				
-				if($env == 'offline' && $user->getId != $resNode->getCreator()){
-					if(in_array($nodeType, $types)){
-						$this->offline[$nodeType]->modifyUniqueId($entity, $em, $uow);	
-					}
-				}
-			}
-        }
+        //~ if (!$eventArgs) return;
+		//~ $em = $eventArgs->getEntityManager();
+        //~ $uow = $em->getUnitOfWork();
+		//~ $env = $this->container->getParameter("kernel.environment");
+		//~ $securityContext = $this->container->get("security.context");
+		//~ $types = array_keys($this->offline);
+        //~ if (php_sapi_name() !== 'cli') {
+		//~ $user = $securityContext->getToken()->getUser();
+//~ 
+        //~ foreach ($uow->getScheduledEntityUpdates() AS $entity) {
+			//~ if($entity instanceof AbstractResource){	
+				//~ $resNode = $entity->getResourceNode();
+				//~ $nodeType = $resNode->getResourceType()->getName();	
+				//~ 
+				//~ if($env == 'offline' && $user->getId != $resNode->getCreator()){
+					//~ if(in_array($nodeType, $types)){
+						//~ $this->offline[$nodeType]->modifyUniqueId($resNode, $em, $uow);	
+					//~ }
+				//~ }
+			//~ }
+			//~ if($entity instanceof ResourceNode){
+				//~ $nodeType = $entity->getResourceType()->getName();	
+				//~ 
+				//~ if($env == 'offline' && $user->getId != $resNode->getCreator()){
+					//~ if(in_array($nodeType, $types)){
+						//~ $this->offline[$nodeType]->modifyUniqueId($entity, $em, $uow);	
+					//~ }
+				//~ }
+			//~ }
+            //~ }
+        //~ }
 
 	}
 }

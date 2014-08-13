@@ -73,6 +73,7 @@ class EditChangeListener
 		$em = $eventArgs->getEntityManager();
         $uow = $em->getUnitOfWork();
 		$env = $this->container->getParameter("kernel.environment");
+        $ut = $this->container->get('claroline.utilities.misc');
 		$securityContext = $this->container->get("security.context");
 		$types = array_keys($this->offline);
         $user = $securityContext->getToken()->getUser();
@@ -86,7 +87,7 @@ class EditChangeListener
                     
                     if ($env == 'offline' && $user->getId() !== $resNode->getCreator()->getId()) {
                         if (in_array($nodeType, $types)){
-                            $this->offline[$nodeType]->modifyUniqueId($resNode, $em, $uow);	
+                            $this->offline[$nodeType]->modifyUniqueId($resNode, $em, $uow, $ut);	
                         }
                     }
                 }
@@ -95,7 +96,7 @@ class EditChangeListener
                     $nodeType = $entity->getResourceType()->getName();	
                     if ($env == 'offline' && $user->getId() !== $entity->getCreator()->getId()) {
                         if(in_array($nodeType, $types)){
-                            $this->offline[$nodeType]->modifyUniqueId($entity, $em, $uow);	
+                            $this->offline[$nodeType]->modifyUniqueId($entity, $em, $uow, $ut);	
                         }
                     }
                 }

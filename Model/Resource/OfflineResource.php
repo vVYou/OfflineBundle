@@ -123,11 +123,11 @@ abstract class OfflineResource extends OfflineElement
         return $domRes;
     }
     
-    public function modifyUniqueId($resource, $em, $uow)
+    public function modifyUniqueId($resource, $em, $uow, $ut)
     {
 		$classMetadata = $em->getClassMetadata('Claroline\CoreBundle\Entity\Resource\ResourceNode');
 		// file_put_contents('modifyUniqueId.txt', 'What is this ?'. $classMetadata);
-        $resource->setNodeHashName($this->ut->generateGuid());
+        $resource->setNodeHashName($ut->generateGuid());
         // $resource->setNodeHashName('AAAA-AAAA-AAAAAAA');
         $em->persist($resource);
 		$uow->computeChangeSet($classMetadata, $resource);

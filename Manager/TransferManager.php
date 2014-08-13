@@ -151,7 +151,7 @@ class TransferManager
                 // Execute the post request sending informations online
                 $reponse = $browser->post($url.'/sync/uploadArchive', array(), json_encode($metadatas));
                 $responseContent = $reponse->getContent();
-                echo "Content <br/>".$responseContent."<br/>";
+                //echo "Content <br/>".$responseContent."<br/>";
                 $status = $reponse->getStatusCode();
                 $responseContent = (array) json_decode($responseContent);
                 $fragmentNumber ++;
@@ -189,7 +189,7 @@ class TransferManager
                 $metadatas['fragmentNumber'] = $fragmentNumber;
                 $reponse = $browser->post($url.'/sync/getzip', array(), json_encode($metadatas));
                 $content = $reponse->getContent();
-                echo "Content <br/>".$content."<br/>";
+                //echo "Content <br/>".$content."<br/>";
                 $status = $reponse->getStatusCode();
                 $this->analyseStatusCode($status);
                 $processContent = $this->processSyncRequest((array) json_decode($content), false);

@@ -17,8 +17,11 @@ use Claroline\CoreBundle\Entity\User;
 use Claroline\CoreBundle\Entity\Workspace\Workspace;
 use Claroline\CoreBundle\Entity\ResourceNode;
 use Claroline\CoreBundle\Manager\UserManager;
+use Claroline\CoreBundle\Library\Security\Authenticator;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Model\SyncInfo;
+use Claroline\OfflineBundle\Entity\Credential;
+use Claroline\OfflineBundle\Form\OfflineFormType;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,6 +30,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Yaml\Parser;
 use Symfony\Component\Yaml\Dumper;
+use Symfony\Component\Form\FormFactory;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
 use Claroline\OfflineBundle\Manager\CreationManager;
 use Claroline\OfflineBundle\Manager\TransferManager;
@@ -56,6 +60,9 @@ class OfflineController extends Controller
     private $creationManager;
     private $transferManager;
     private $userManager;
+    private $formFactory;
+    private $userRepo;
+    private $authenticator;
 
     /**
     * @DI\InjectParams({
@@ -65,7 +72,9 @@ class OfflineController extends Controller
     *   "plateformConf"   = @DI\Inject("%claroline.synchronisation.offline_config%"),
     *   "creationManager" = @DI\Inject("claroline.manager.creation_manager"),
     *   "transferManager" = @DI\Inject("claroline.manager.transfer_manager"),
-    *   "userManager"     = @DI\Inject("claroline.manager.user_manager")
+    *   "formFactory"     = @DI\Inject("form.factory"),
+    *   "userManager"     = @DI\Inject("claroline.manager.user_manager"),
+    *   "authenticator"   = @DI\Inject("claroline.authenticator")
     * })
     */
     public function __construct(
@@ -75,12 +84,16 @@ class OfflineController extends Controller
         $plateformConf,
         CreationManager $creationManager,
         TransferManager $transferManager,
-        UserManager $userManager
+        FormFactory $formFactory,
+        UserManager $userManager,
+        Authenticator $authenticator
     )
     {
+       $this->formFactory = $formFactory;
        $this->router = $router;
        $this->request = $request;
        $this->om = $om;
+       $this->userRepo = $om->getRepository('ClarolineCoreBundle:User');
        $this->resourceNodeRepo = $om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
        $this->yaml_parser = new Parser();
        $this->yaml_dump = new Dumper();
@@ -88,6 +101,7 @@ class OfflineController extends Controller
        $this->creationManager = $creationManager;
        $this->transferManager = $transferManager;
        $this->userManager = $userManager;
+       $this->authenticator = $authenticator;
     }
 
     /**

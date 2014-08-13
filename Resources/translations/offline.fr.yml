@@ -18,8 +18,8 @@ sync_param : Paramètres
 sync_retrieve : Récupérer le profil
 sync_ok : Votre compte a été récupéré avec succès! Nous vous invitons à vous connecter et lancer votre première synchronisation afin de récupérer l'ensemble de vos cours.
 sync_fail : Le processus a échoué. Veuillez réessayer. (%message%)
-sync_name : Nom d'utilisateur :
-sync_pwd : Mot de passe :
+sync_name : Nom d'utilisateur:
+sync_pwd : Mot de passe:
 sync_mode : Claroffline
 sync_mode_config : Claroffline - Configuration
 sync_mode_result : Claroffline - Résultats

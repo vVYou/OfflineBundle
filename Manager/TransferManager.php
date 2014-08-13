@@ -27,6 +27,7 @@ use Claroline\OfflineBundle\Manager\Exception\ProcessSyncException;
 use Claroline\OfflineBundle\Manager\Exception\ServeurException;
 use Claroline\OfflineBundle\Manager\Exception\SynchronisationFailsException;
 use Claroline\CoreBundle\Manager\UserManager;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use \Buzz\Browser;
@@ -34,6 +35,7 @@ use \Buzz\Client\Curl;
 use \Buzz\Exception\ClientException;
 use Symfony\Component\Yaml\Dumper;
 use Symfony\Component\Yaml\Parser;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * @DI\Service("claroline.manager.transfer_manager")
@@ -59,6 +61,8 @@ class TransferManager
     private $syncDownDir;
     private $fragSize;
     private $offlineConfig;
+    private $eventDispatcher;
+    private $container;
 
     /**
      * Constructor.
@@ -76,7 +80,9 @@ class TransferManager
      *     "syncUpDir"          = @DI\Inject("%claroline.synchronisation.up_directory%"),
      *     "syncDownDir"        = @DI\Inject("%claroline.synchronisation.down_directory%"),
      *     "fragSize"           = @DI\Inject("%claroline.synchronisation.frag_size%"),
-     *     "offlineConfig"      = @DI\Inject("%claroline.synchronisation.offline_config%")
+     *     "offlineConfig"      = @DI\Inject("%claroline.synchronisation.offline_config%"),
+     *     "eventDispatcher"    = @DI\Inject("event_dispatcher"),
+     *     "container"          = @Di\Inject("service_container")
      * })
      */
     public function __construct(
@@ -89,6 +95,8 @@ class TransferManager
         UserSyncManager $userSyncManager,
         RoleManager $roleManager,
         ClaroUtilities $ut,
+        EventDispatcherInterface $eventDispatcher,
+        ContainerInterface $container,
         $syncUpDir,
         $syncDownDir,
         $fragSize,
@@ -106,6 +114,7 @@ class TransferManager
         $this->loadingManager = $loadingManager;
         $this->userSyncManager = $userSyncManager;
         $this->roleManager = $roleManager;
+        $this->eventDispatcher = $eventDispatcher;
         $this->ut = $ut;
         $this->yaml_dump = new Dumper();
         $this->yaml_parser = new Parser();
@@ -113,6 +122,7 @@ class TransferManager
         $this->syncDownDir = $syncDownDir;
         $this->fragSize = $fragSize;
         $this->offlineConfig = $offlineConfig;
+        $this->container = $container;
     }
 
     /*
@@ -299,6 +309,8 @@ class TransferManager
     // Retruns the informations of the user in order to retrieve his profile.
     public function getUserInfo($username, $password, $url, $firstTime = true)
     {
+        $listener = $this->container->get('claroline.edit_hashname_handler');
+        $this->eventDispatcher->removeListener('onFlush', $listener);
         $browser = $this->getBrowser();
         $contentArray = array(
             'username' => $username,
@@ -329,7 +341,7 @@ class TransferManager
         $new_user->setMail($result['mail']);
         $new_user->setPlainPassword($password);
 
-        $this->userManager->createUser($new_user);
+        $this->userManager->createUser($new_user, $result['ws_perso']);
         if ($result['admin']) {
             //change by associate Role
             $this->roleManager->associateUserRole($new_user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN), false, true);
@@ -339,7 +351,6 @@ class TransferManager
         $user_ws_rn = $this->resourceNodeRepo->findOneBy(array('workspace' => $ws_perso, 'parent' => NULL));
         $this->om->startFlushSuite();
         $my_user->setExchangeToken($result['token']);
-        $ws_perso->setGuid($result['ws_perso']);
         $user_ws_rn->setNodeHashName($result['ws_resnode']);
         $this->om->endFlushSuite();
         $this->userSyncManager->createUserSynchronized($my_user);
@@ -359,11 +370,11 @@ class TransferManager
         $dir = null;
         switch ($content['dir']){
             case 'UP' :
-            echo "DELETE UP";
+                echo "DELETE UP";
                 $dir = $this->syncUpDir;
                 break;
             case 'DOWN':
-            echo "DELETE DOWN";
+                echo "DELETE DOWN";
                 $dir = $this->syncDownDir;
                 break;
             default:
@@ -480,11 +491,11 @@ class TransferManager
     {
         $zipName = $this->assembleParts($content);
         if ($zipName != null) {
-			//If online, load and create archive.
+            //If online, load and create archive.
             if ($createSync) {
                 //Create synchronisation archive (when online)
                 $user = $this->userRepo->findOneBy(array('exchangeToken' => $content['token']));
-				$loadingResponse = $this->loadingManager->loadZip($zipName, $user);
+                $loadingResponse = $this->loadingManager->loadZip($zipName, $user);
                 $toSend = $this->creationManager->createSyncZip($user, $loadingResponse['synchronizationDate'], $loadingResponse['missingResources']);
                 $metaDataArray = $this->getMetadataArray($user, $toSend);
                 $metaDataArray["status"] = 200;
@@ -568,32 +579,32 @@ class TransferManager
 
         return NULL;
     }
-    
+
     public function getMessage($e)
-	{
-		$msg = '';
-		switch(get_class($e)) {
-			case get_class(new AuthenticationException()):
+    {
+        $msg = '';
+        switch(get_class($e)) {
+            case get_class(new AuthenticationException()):
                 $msg = $this->translator->trans('sync_config_fail', array(), 'offline');
                 break;
-			case get_class(new ProcessSyncException()) :
+            case get_class(new ProcessSyncException()) :
                 $msg = $this->translator->trans('sync_server_fail', array(), 'offline');
                 break;
-			case get_class(new ServeurException()) :
+            case get_class(new ServeurException()) :
                 $msg = $this->translator->trans('sync_server_fail', array(), 'offline');
                 break;
-			case get_class(new PageNotFoundException()) :
+            case get_class(new PageNotFoundException()) :
                 $msg = $this->translator->trans('sync_unreach', array(), 'offline');
                 break;
-			case get_class(new ClientException()) :
+            case get_class(new ClientException()) :
                 $msg = $this->translator->trans('sync_client_fail', array(), 'offline');
                 break;
             case get_class( new SynchronisationFailsException ()) :
                 $msg = $this->translator->trans('sync_fail', array('%message%' => $e->getMessage()), 'offline');
                 break;
-		}
-		
-		return $msg;
-	
-	}
+        }
+
+        return $msg;
+
+    }
 }

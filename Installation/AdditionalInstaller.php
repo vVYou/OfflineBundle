@@ -18,11 +18,7 @@ class AdditionalInstaller extends BaseInstaller
 
     public function preUpdate($currentVersion, $targetVersion)
     {
-        $updater = new Updater000001();
+        $updater = new Updater\Updater000001($this->container);
         $updater->preUpdate();
-    }
-
-    public function postUpdate($currentVersion, $targetVersion)
-    {
     }
 }

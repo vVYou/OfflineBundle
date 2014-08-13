@@ -17,6 +17,7 @@ use Claroline\KernelBundle\Bundle\ConfigurationBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Claroline\OfflineBundle\DependencyInjection\Compiler\OfflineCompilerPass;
+use Claroline\OfflineBundle\Installation\AdditionalInstaller;
 
 /**
  * Bundle class.

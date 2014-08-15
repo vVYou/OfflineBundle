@@ -65,7 +65,11 @@ class EditChangeListener
         $ut = $this->container->get('claroline.utilities.misc');
 		$securityContext = $this->container->get("security.context");
 		$types = array_keys($this->offline);
-        $user = $securityContext->getToken()->getUser();
+        $user = null;
+        $token = $securityContext->getToken();
+        if($token !== null){
+            $user = $token->getUser();
+        }
 
         if ($user !== null && $user !== 'anon.') {
             foreach ($uow->getScheduledEntityUpdates() as $entity) {

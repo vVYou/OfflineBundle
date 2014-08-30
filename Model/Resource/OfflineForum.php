@@ -104,7 +104,6 @@ class OfflineForum extends OfflineResource
         $modificationDate->setTimestamp($resource->getAttribute('modification_date'));
 
         $type = $this->resourceManager->getResourceTypeByName($resource->getAttribute('type'));
-        // $creator = $this->userRepo->findOneBy(array('exchangeToken' => $resource->getAttribute('creator')));
         $creator = $this->getCreator($resource);
         $parentNode = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_parent')));
 
@@ -552,7 +551,6 @@ class OfflineForum extends OfflineResource
         $creationDate->setTimestamp($xmlMessage->getAttribute('creation_date'));
 
         $subject = $this->subjectRepo->findOneBy(array('hashName' => $xmlMessage->getAttribute('subject')));
-        // $creator = $this->userRepo->findOneBy(array('exchangeToken' => $message->getAttribute('creator_id')));
         $creator = $this->getCreator($xmlMessage);
         $content = $this->extractCData($xmlMessage);
         $msg = new Message();

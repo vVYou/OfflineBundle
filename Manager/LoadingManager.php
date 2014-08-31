@@ -248,7 +248,7 @@ class LoadingManager
             if ((strpos($res->nodeName,'resource') !== false) && $res->nodeName != "resource-directory") {
                 $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $res->getAttribute('hashname_node')));
                 if (count($node) >= 1) {
-                    $wsInfo = $this->offline[$res->getAttribute('type')]->updateResource($res, $node, $workspace, $this->user, $wsInfo, $this->path);
+                    $wsInfo = $this->offline[$res->getAttribute('type')]->updateResource($res, $node, $workspace, $this->user, $wsInfo, $this->path, $this->synchronizationDate);
                 } else {
                     $wsInfo = $this->offline[$res->getAttribute('type')]->createResource($res, $workspace, $this->user, $wsInfo, $this->path);
                 }

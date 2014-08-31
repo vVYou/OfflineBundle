@@ -53,7 +53,7 @@ abstract class OfflineResource extends OfflineElement
      * @return \Claroline\OfflineBundle\Model\SyncInfo
      *
      */
-    abstract public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path);
+    abstract public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path, $syncDate);
 
     /**
      * Create a copy of the resource in case of conflict (e.g. if a ressource has been modified both offline

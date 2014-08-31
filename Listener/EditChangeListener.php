@@ -16,6 +16,8 @@ use Claroline\CoreBundle\Entity\Resource\AbstractResource;
 use JMS\DiExtraBundle\Annotation as DI;
 use Symfony\Component\Routing\Router;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
+use Claroline\OfflineBundle\Model\DisableListenerI;
+use Claroline\OfflineBundle\Model\DisableListener;
 use Doctrine\ORM\Events as ORM;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Claroline\OfflineBundle\Model\Resource\OfflineElement;
@@ -64,7 +66,7 @@ class EditChangeListener
         $env = $this->container->getParameter("kernel.environment");
         $ut = $this->container->get('claroline.utilities.misc');
         $securityContext = $this->container->get("security.context");
-		$disableListener = $this->container->getParameter('claroline.synchronisation.disable_listener');
+	$disableListener = DisableListenerI::getInstance();
         $types = array_keys($this->offline);
         $user = null;
         $token = $securityContext->getToken();
@@ -72,7 +74,7 @@ class EditChangeListener
             $user = $token->getUser();
         }
 
-        if ($user !== null && $user !== 'anon.' && !$disableListener) {
+        if ($user !== null && $user !== 'anon.' && !$disableListener->isDisable()) {
             foreach ($uow->getScheduledEntityUpdates() as $entity) {
 
                 if ($entity instanceof AbstractResource) {

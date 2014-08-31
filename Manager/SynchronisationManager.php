@@ -16,6 +16,8 @@ use Claroline\CoreBundle\Library\Security\PlatformRoles;
 use Claroline\CoreBundle\Manager\RoleManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
+use Claroline\OfflineBundle\Model\DisableListenerI;
+use Claroline\OfflineBundle\Model\DisableListener;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use \DateTime;
@@ -213,11 +215,12 @@ class SynchronisationManager
     {
         // Load synchronisation archive ($filename) in offline database
 		// Disable Listener
-		$this->container->setParameter('claroline.synchronisation.disable_listener', false);
+	$disableListener = DisableListenerI::getInstance();
+$disableListener->setDisable(true);
         $this->roleManager->associateUserRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN), false, true);
         $loadArray = $this->loadingManager->loadZip($filename, $user);		
 		//Enable Listener
-		$this->container->setParameter('claroline.synchronisation.disable_listener', true);
+$disableListener->setDisable(false);
         if (!$userSync->isAdmin()) {
             $this->roleManager->dissociateRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN));
         }

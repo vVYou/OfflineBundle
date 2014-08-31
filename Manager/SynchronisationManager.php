@@ -16,6 +16,7 @@ use Claroline\CoreBundle\Library\Security\PlatformRoles;
 use Claroline\CoreBundle\Manager\RoleManager;
 use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\OfflineBundle\Entity\UserSynchronized;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use JMS\DiExtraBundle\Annotation as DI;
 use \DateTime;
 
@@ -28,7 +29,8 @@ use \DateTime;
 // For more documentation on the global process see our thesis "Chapter 5 : le processus global"
 class SynchronisationManager
 {
-    private $om;
+    private $container;
+	private $om;
     private $creationManager;
     private $transferManager;
     private $userSyncManager;
@@ -40,7 +42,8 @@ class SynchronisationManager
 
     /**
      * Constructor.
-     * @DI\InjectParams({
+     * @DI\InjectParams({     
+	 *     "container"      = @DI\Inject("service_container"),
      *      "om"              = @DI\Inject("claroline.persistence.object_manager"),
      *      "creationManager" = @DI\Inject("claroline.manager.creation_manager"),
      *      "loadingManager"  = @DI\Inject("claroline.manager.loading_manager"),
@@ -52,6 +55,7 @@ class SynchronisationManager
      * })
      */
     public function __construct(
+		ContainerInterface   $container,
         ObjectManager $om,
         CreationManager $creationManager,
         LoadingManager $loadingManager,
@@ -62,6 +66,7 @@ class SynchronisationManager
         $syncDownDir
     )
     {
+		$this->container = $container;
         $this->om = $om;
         $this->creationManager = $creationManager;
         $this->transferManager = $transferManager;
@@ -207,8 +212,12 @@ class SynchronisationManager
     private function step4Load(User $user, UserSynchronized $userSync, $filename)
     {
         // Load synchronisation archive ($filename) in offline database
+		// Disable Listener
+		$this->container->setParameter('claroline.synchronisation.disable_listener', false);
         $this->roleManager->associateUserRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN), false, true);
-        $loadArray = $this->loadingManager->loadZip($filename, $user);
+        $loadArray = $this->loadingManager->loadZip($filename, $user);		
+		//Enable Listener
+		$this->container->setParameter('claroline.synchronisation.disable_listener', true);
         if (!$userSync->isAdmin()) {
             $this->roleManager->dissociateRole($user, $this->roleManager->getRoleByName(PlatformRoles::ADMIN));
         }

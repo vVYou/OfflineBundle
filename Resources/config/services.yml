@@ -6,7 +6,7 @@ parameters:
     claroline.synchronisation.manifest: "manifest"
     claroline.synchronisation.frag_size: 524288
     claroline.synchronisation.offline_config: "%kernel.root_dir%/config/sync_config.yml"
-
+	claroline.synchronisation.disable_listener: true
 
 services:
     claroline_offline.creation_manager:

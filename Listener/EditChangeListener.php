@@ -64,6 +64,7 @@ class EditChangeListener
         $env = $this->container->getParameter("kernel.environment");
         $ut = $this->container->get('claroline.utilities.misc');
         $securityContext = $this->container->get("security.context");
+		$disableListener = $this->container->getParameter('claroline.synchronisation.disable_listener');
         $types = array_keys($this->offline);
         $user = null;
         $token = $securityContext->getToken();
@@ -71,7 +72,7 @@ class EditChangeListener
             $user = $token->getUser();
         }
 
-        if ($user !== null && $user !== 'anon.') {
+        if ($user !== null && $user !== 'anon.' && !$disableListener) {
             foreach ($uow->getScheduledEntityUpdates() as $entity) {
 
                 if ($entity instanceof AbstractResource) {

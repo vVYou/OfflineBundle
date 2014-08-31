@@ -121,7 +121,7 @@ class OfflineDirectory extends OfflineResource
      * @return \Claroline\OfflineBundle\Model\SyncInfo
      *
      */
-    public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
+    public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path, $syncDate)
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');

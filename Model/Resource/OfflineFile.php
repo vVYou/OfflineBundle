@@ -150,7 +150,7 @@ class OfflineFile extends OfflineResource
      * @return \Claroline\OfflineBundle\Model\SyncInfo
      *
      */
-    public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path)
+    public function updateResource($resource, ResourceNode $node, Workspace $workspace, User $user, SyncInfo $wsInfo, $path, $syncDate)
     {
 		$this->om = $this->container->get('claroline.persistence.object_manager');
 		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
@@ -159,10 +159,10 @@ class OfflineFile extends OfflineResource
         $modif_date = $resource->getAttribute('modification_date');
         $nodeModifDate = $node->getModificationDate()->getTimestamp();
 
-        if ($nodeModifDate <= $resource->getAttribute('synchronization_date')) {
+        if ($nodeModifDate <= $syncDate) {
             $this->resourceManager->delete($node);
             $this->isUpdate = true;
-            $this->createResource($resource, $workspace);
+            $this->createResource($resource, $workspace, $user, $wsInfo, $path);
             $wsInfo->addToUpdate($resource->getAttribute('name'));
             $this->isUpdate = false;
         } else {

@@ -144,10 +144,9 @@ class CreationManager
 
         if ($archive->open($fileName, ZipArchive::CREATE) === true) {
             $this->fillSyncZip($userWS, $domManifest, $sectManifest, $archive, $date, $missingRessources);
-            // TODO Add offline env condition
-            // if ($env == 'offline') {
+            if ($env == 'offline') {
                 $this->addCompleteResourceList($domManifest, $sectManifest);
-			// }
+			}
         } else {
             throw new \Exception('Impossible to open the zip file');
         }
@@ -157,7 +156,7 @@ class CreationManager
         $archivePath = $archive->filename;
         $archive->close();
         // Erase the manifest from the current folder.
-        // unlink($manifestName);
+        unlink($manifestName);
         return $archivePath;
     }
 
@@ -177,24 +176,16 @@ class CreationManager
             if (count($ressourcesToSync) >= 1) {
                 foreach ($ressourcesToSync as $res) {
                     // Avoid double add of a missing ressource
-                    // if ($missingRessources != null && in_array($res->getNodeHashname(), $missingRessources)) {
-                        // $indexOf = array_keys($missingRessources, $res->getNodeHashname());
-                        // unset($missingRessources[$indexOf[0]]);
-                    // }
                     $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);
 					if (isset($missingRessources) && array_key_exists($res->getNodeHashname(), $missingRessources)) {
-                        // $indexOf = array_keys($missingRessources, $res->getNodeHashname());
                         unset($missingRessources[$res->getNodeHashname()]);
                     }
                 }
             }
         }
-        //ajouter dans un workspace -- HACK
         if (isset($missingRessources)) {
             $domWorkspace = $this->offline['workspace']->addWorkspaceToManifest($domManifest, $sectManifest, $userWS[0], $this->user);
             foreach ($missingRessources as $resHash) {
-                // $res = $this->resourceNodeRepo->findOneBy(array('hashName' => $resHash));
-                // $domManifest = $this->offline[$res->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $res, $archive, $date);
                 $domManifest = $this->offline[$resHash->getResourceType()->getName()]->addResourceToManifest($domManifest, $domWorkspace, $resHash, $archive, $date);
             }
         }

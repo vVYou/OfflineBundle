@@ -103,7 +103,6 @@ class LoadingManager
             //Extract the Hashname of the ZIP from the path (length of hashname = 32 char).
             $zip_hashname = substr($zipPath, strlen($zipPath)-40, 36);
             $this->path = $this->extractDir.$zip_hashname.'/';
-            // echo 'J extrait dans ce path : '.$this->path.'<br/>';
             $tmpdirectory = $archive->extractTo($this->path);
 
             //Call LoadXML
@@ -152,7 +151,6 @@ class LoadingManager
         $hashNameShouldHave = array();
         foreach ($shouldHaveResources as $res) {
 			$hashNameShouldHave[$res->getNodeHashname()] = $res;
-            // array_push($hashNameShouldHave, $res->getNodeHashname());
         }
         $haveResources = $xmlDocument->getElementsByTagName("resources-present");
         foreach ($haveResources as $ressources) {
@@ -162,11 +160,6 @@ class LoadingManager
 				if (array_key_exists($res->getAttribute('hashname_node'), $hashNameShouldHave)) {
 					unset($hashNameShouldHave[$res->getAttribute('hashname_node')]);
 				}
-
-                // $indexOf = array_keys($hashNameShouldHave, $res->getAttribute('hashname_node'));
-                // if (isset($indexOf[0])) {
-                    // unset($hashNameShouldHave[$indexOf[0]]);
-                // }
             }
         }
 
@@ -223,9 +216,9 @@ class LoadingManager
 
 		$resourceToAdd = $xmlDocument->getElementsByTagName("workspace");
 
-		foreach ($resourceToAdd as $element) {
+		// foreach ($resourceToAdd as $element) {
 			// TODO
-        }
+        // }
     }
 
     /**
@@ -244,7 +237,7 @@ class LoadingManager
         foreach ($resourceDirectory as $resource) {
             $node = $this->resourceNodeRepo->findOneBy(array('hashName' => $resource->getAttribute('hashname_node')));
             if (count($node) >= 1) {
-                $wsInfo = $this->offline['directory']->updateResource($resource, $node, $workspace, $this->user, $wsInfo, $this->path);
+                $wsInfo = $this->offline['directory']->updateResource($resource, $node, $workspace, $this->user, $wsInfo, $this->path, $this->synchronizationDate);
             } else {
                 $wsInfo = $this->offline['directory']->createResource($resource, $workspace, $this->user, $wsInfo, $this->path);
             }

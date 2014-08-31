@@ -217,7 +217,7 @@ class LoadingManager
 		$resourceToAdd = $xmlDocument->getElementsByTagName("workspace");
 
 		// foreach ($resourceToAdd as $element) {
-			// TODO
+            // TODO
         // }
     }
 

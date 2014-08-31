@@ -157,6 +157,7 @@ class CreationManager
         $archive->close();
         // Erase the manifest from the current folder.
         unlink($manifestName);
+
         return $archivePath;
     }
 

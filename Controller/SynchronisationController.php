@@ -340,7 +340,7 @@ class SynchronisationController extends Controller
                         'ClarolineOfflineBundle:Offline:connect_ok.html.twig',
                         array(
                             'first_sync' => true,
-							'msg' => ''
+                            'msg' => ''
                         ));
                 } catch (Exception $e) {
                     $msg = $this->transferManager->getMessage($e);

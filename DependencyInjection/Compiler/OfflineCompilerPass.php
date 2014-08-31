@@ -40,9 +40,9 @@ class OfflineCompilerPass implements CompilerPassInterface
             $definition_load->addMethodCall('addOffline', array(new Reference($id)));
         }
 
-		$definition_listener = $container->getDefinition('claroline.edit_hashname_handler');
+        $definition_listener = $container->getDefinition('claroline.edit_hashname_handler');
 
-		foreach ($taggedServicess as $id => $attributes) {
+        foreach ($taggedServicess as $id => $attributes) {
             $definition_listener->addMethodCall('addOffline', array(new Reference($id)));
         }
     }

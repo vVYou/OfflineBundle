@@ -29,8 +29,8 @@ class EditChangeListener
 {
     private $eventDispatcher;
     private $router;
-	private $offline;
-	private $securityContext;
+    private $offline;
+    private $securityContext;
 
     /**
      * @DI\InjectParams({
@@ -44,8 +44,8 @@ class EditChangeListener
         StrictDispatcher $eventDispatcher
     )
     {
-		$this->container = $container;
-		$this->eventDispatcher = $eventDispatcher;
+        $this->container = $container;
+        $this->eventDispatcher = $eventDispatcher;
         $this->offline = array();
     }
 
@@ -54,20 +54,20 @@ class EditChangeListener
         $this->offline[$offline->getType()] = $offline;
     }
 
-	/**
+    /**
      * @DI\Observe("onFlush")
      */
-	public function onFlush(OnFlushEventArgs $eventArgs = null)
-	{
-		$em = $eventArgs->getEntityManager();
+    public function onFlush(OnFlushEventArgs $eventArgs = null)
+    {
+        $em = $eventArgs->getEntityManager();
         $uow = $em->getUnitOfWork();
-		$env = $this->container->getParameter("kernel.environment");
+        $env = $this->container->getParameter("kernel.environment");
         $ut = $this->container->get('claroline.utilities.misc');
-		$securityContext = $this->container->get("security.context");
-		$types = array_keys($this->offline);
+        $securityContext = $this->container->get("security.context");
+        $types = array_keys($this->offline);
         $user = null;
         $token = $securityContext->getToken();
-        if($token !== null){
+        if ($token !== null) {
             $user = $token->getUser();
         }
 
@@ -95,5 +95,5 @@ class EditChangeListener
                 }
             }
         }
-	}
+    }
 }

@@ -118,7 +118,7 @@ class OfflineController extends Controller
 
         return array(
            'first_sync' => $first_sync,
-		   'msg' => ''
+           'msg' => ''
         );
 
     }
@@ -211,13 +211,12 @@ class OfflineController extends Controller
         $msg = '';
         try {
             $infoArray = $this->get('claroline.manager.synchronisation_manager')->synchroniseUser($authUser, $userSync[0]);
-			// Show the result window
-
+            // Show the result window
             return $this->render(
-				'ClarolineOfflineBundle:Offline:result.html.twig',
-				array(
-					'results' => $infoArray,
-					'msg' => ''
+                'ClarolineOfflineBundle:Offline:result.html.twig',
+                array(
+                    'results' => $infoArray,
+                    'msg' => ''
                 )
             );
 
@@ -449,7 +448,7 @@ class OfflineController extends Controller
                         'ClarolineOfflineBundle:Offline:connect_ok.html.twig',
                         array(
                             'first_sync' => true,
-							'msg' => ''
+                            'msg' => ''
                         ));
                 } catch (Exception $e) {
                     $msg = $this->transfertManager->getMessage($e);
@@ -571,7 +570,7 @@ class OfflineController extends Controller
 
     }
 
-	/**
+    /**
      * Test DQL
      *
      * @EXT\Route(
@@ -588,11 +587,10 @@ class OfflineController extends Controller
      */
     public function testDQLAction(User $user)
     {
-		$date = new DateTime('@0');
-		// $results = $this->get("claroline.manager.test_dql_manager")->firstDQL($user, $date);
+        $date = new DateTime('@0');
+        // $results = $this->get("claroline.manager.test_dql_manager")->firstDQL($user, $date);
         $results = $this->get("claroline.manager.test_dql_manager")->hash_test($user);
-		// $results = $this->get("claroline.manager.test_dql_manager")->secondDQL($user, $date);
-
+        // $results = $this->get("claroline.manager.test_dql_manager")->secondDQL($user, $date);
         return array(
            'results' => array(),
            'msg' => ''

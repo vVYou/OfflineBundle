@@ -243,17 +243,17 @@ class OfflineFile extends OfflineResource
         $this->changeDate($node, $creationDate, $modificationDate, $this->resourceManager);
 
     }
-	
+
 	public function modifyUniqueId($resource, $em, $uow, $ut)
 	{
 		$classMetadata = $em->getClassMetadata('Claroline\CoreBundle\Entity\Resource\ResourceNode');
 		$newHashName = $this->ut->generateGuid();
-		$oldFile = $this->resourceManager->getResourceFromNode($resource);				
-		$resource->setNodeHashName($newHashName);	
+		$oldFile = $this->resourceManager->getResourceFromNode($resource);
+		$resource->setNodeHashName($newHashName);
         $oldHashname = $oldFile->getHashName();
-        $extensionName = substr($oldHashname, strlen($oldHashname)-4, 4);	
-        rename($this->fileDir.$oldHashname, $this->fileDir.$newHashname.$extensionName);		
-		
+        $extensionName = substr($oldHashname, strlen($oldHashname)-4, 4);
+        rename($this->fileDir.$oldHashname, $this->fileDir.$newHashname.$extensionName);
+
 		$em->persist($resource);
 		$uow->computeChangeSet($classMetadata, $resource);
 

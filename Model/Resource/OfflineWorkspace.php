@@ -65,9 +65,9 @@ class OfflineWorkspace extends OfflineElement
      */
     public function addWorkspaceToManifest($domManifest, $sectManifest, Workspace $workspace, User $user)
     {
-		$this->om = $this->container->get('claroline.persistence.object_manager');
-		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
-		$this->roleRepo = $this->om->getRepository('ClarolineCoreBundle:Role');
+        $this->om = $this->container->get('claroline.persistence.object_manager');
+        $this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+        $this->roleRepo = $this->om->getRepository('ClarolineCoreBundle:Role');
 
         $myRole = $this->roleRepo->findByUserAndWorkspace($user, $workspace);
 
@@ -129,12 +129,12 @@ class OfflineWorkspace extends OfflineElement
      */
     public function createWorkspace($workspace, User $user)
     {
-		$this->om = $this->container->get('claroline.persistence.object_manager');
-		$this->userManager = $this->container->get('claroline.manager.user_manager');
-		$this->workspaceManager = $this->container->get('claroline.manager.workspace_manager');
-		$this->roleManager = $this->container->get('claroline.manager.role_manager');
-		$this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
-		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
+        $this->om = $this->container->get('claroline.persistence.object_manager');
+        $this->userManager = $this->container->get('claroline.manager.user_manager');
+        $this->workspaceManager = $this->container->get('claroline.manager.workspace_manager');
+        $this->roleManager = $this->container->get('claroline.manager.role_manager');
+        $this->userRepo = $this->om->getRepository('ClarolineCoreBundle:User');
+        $this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $this->resourceManager = $this->container->get('claroline.manager.resource_manager');
 
         // Use the create method from WorkspaceManager.

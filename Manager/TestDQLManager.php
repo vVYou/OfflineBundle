@@ -39,7 +39,7 @@ class TestDQLManager
     private $workspaceRepo;
     private $roleRepo;
     private $offline;
-	private $em;
+    private $em;
 
     /**
      * Constructor.
@@ -70,10 +70,10 @@ class TestDQLManager
         $this->translator = $translator;
         $this->resourceManager = $resourceManager;
         $this->offline = array('text');
-		$this->em = $em;
+        $this->em = $em;
     }
 
-	/*
+    /*
 	*	Logique de la première requête :
 	*	1 - Récuperer les espaces d'activités de l'utilisateurs
 	*	2 - Pour chaque workspace récuperer l'intégralité des ressources node à synchroniser et ayant un type supporté
@@ -87,7 +87,7 @@ class TestDQLManager
         ini_set('max_execution_time', 0);
 
         $userWS = $this->workspaceRepo->findByUser($user);
-		$this->firstMethod($userWS, $this->offline, $date);
+        $this->firstMethod($userWS, $this->offline, $date);
 
     }
 
@@ -97,12 +97,12 @@ class TestDQLManager
             $ressourcesToSync = $this->first($element, $types, $date);
 
             if (count($ressourcesToSync) >= 1) {
-				echo 'dql_1: '.count($ressourcesToSync).'<br/>';
-				foreach ($ressourcesToSync as $resource) {
-					$myRes = $this->resourceManager->getResourceFromNode($resource);
-					$revision = $this->revisionRepo->findOneBy(array('text' => $myRes));
+                echo 'dql_1: '.count($ressourcesToSync).'<br/>';
+                foreach ($ressourcesToSync as $resource) {
+                    $myRes = $this->resourceManager->getResourceFromNode($resource);
+                    $revision = $this->revisionRepo->findOneBy(array('text' => $myRes));
 
-				// $revision = $this->firstX($ressourcesToSync);
+                // $revision = $this->firstX($ressourcesToSync);
                 // foreach ($revision as $res) {
                     // $myRes = $this->resourceManager->getResourceFromNode($res);
                     // $revision = $this->revisionRepo->findOneBy(array('text' => $myRes));
@@ -128,17 +128,17 @@ class TestDQLManager
 
     }
 
-	private function firstX($resouceNodeList)
-	{
-		$query = $this->om->getRepository('ClarolineCoreBundle:Resource\Text')->createQueryBuilder('res')
-			->where('res.resourceNode IN (:resouceNodeList)')
-			->setParameter('resouceNodeList', $resouceNodeList)
-			->getQuery();
+    private function firstX($resouceNodeList)
+    {
+        $query = $this->om->getRepository('ClarolineCoreBundle:Resource\Text')->createQueryBuilder('res')
+            ->where('res.resourceNode IN (:resouceNodeList)')
+            ->setParameter('resouceNodeList', $resouceNodeList)
+            ->getQuery();
 
         return $query->getResult();
-	}
+    }
 
-	/*
+    /*
 	*	Logique de la seconde requête :
 	*	1 - Récuperer les espaces d'activités de l'utilisateurs
 	*	2 - Pour chaque workspace
@@ -150,34 +150,34 @@ class TestDQLManager
 	*
 	*	Impossible de faire une jointure avec les ressources vu qu'elles ne disposent pas de repository.
 	*/
-	public function secondDQL($user, $date)
-	{
-		ini_set('max_execution_time', 0);
+    public function secondDQL($user, $date)
+    {
+        ini_set('max_execution_time', 0);
 
         $userWS = $this->workspaceRepo->findByUser($user);
-		$this->secondMethod($userWS, $this->offline, $date);
-	}
+        $this->secondMethod($userWS, $this->offline, $date);
+    }
 
-	public function secondMethod($userWS, $offline, $date)
-	{
+    public function secondMethod($userWS, $offline, $date)
+    {
         foreach ($userWS as $element) {
-			foreach ($offline as $type) {
-				$result = $this->second($element, $type, $date);
-				// $resultToSync = $this->XXX;
+            foreach ($offline as $type) {
+                $result = $this->second($element, $type, $date);
+                // $resultToSync = $this->XXX;
                 echo 'dql_2_1: '.count($result[0]).'<br/>';
-				// echo 'dql_2_2: '.count($result[1]).'<br/>';
+                // echo 'dql_2_2: '.count($result[1]).'<br/>';
                 foreach ($result[0] as $text) {
-					// echo $text->getContent().'<br/>';
+                    // echo $text->getContent().'<br/>';
                 }
-			}
-		}
-	}
+            }
+        }
+    }
 
-	private function second($workspace, $types, $date)
-	{
+    private function second($workspace, $types, $date)
+    {
         $query = $this->om->getRepository('ClarolineCoreBundle:Resource\Text')->createQueryBuilder('res')
-			->addSelect('res.resourceNode')
-			->join('res.resourceNode', 'res_node')
+            ->addSelect('res.resourceNode')
+            ->join('res.resourceNode', 'res_node')
             ->join('res_node.resourceType', 'type')
             ->where('res_node.workspace = :workspace')
             ->andWhere('res_node.modificationDate > :date')
@@ -188,9 +188,9 @@ class TestDQLManager
             ->getQuery();
 
         return $query->getResult();
-	}
+    }
 
-	/*
+    /*
 	*	Estimation symfony debug : Ok
 	* 	Requetes : 17
 	*	Temps (avec print): 37 ms - 15.6 ms - 52.6 ms - 33 ms - 34 ms
@@ -199,26 +199,26 @@ class TestDQLManager
 	*	New request with SELECT FOR : 17 request, +/- 30 ms (idem) mais plus élégant. On renvoit juste le hashname de chaque resourceNode, pas la resourceNode ET son hashname (un parcours de tableau en moins donc)
 	*	ATTENTION leq hashNames des resourceNode correspondant au WS sont aussi envoyés!
 	*/
-	public function hash_test($user)
-	{
-		$results = $this->hash($user);
-		echo 'Mon taleau dql : '.count($results).'<br/>';
-		foreach ($results as $result) {
-			echo $result['hashName'].'<br/>';
-		}
-	}
+    public function hash_test($user)
+    {
+        $results = $this->hash($user);
+        echo 'Mon taleau dql : '.count($results).'<br/>';
+        foreach ($results as $result) {
+            echo $result['hashName'].'<br/>';
+        }
+    }
 
-	private function hash($user)
-	{
-		$query = $this->em->createQuery('
+    private function hash($user)
+    {
+        $query = $this->em->createQuery('
 			SELECT res.hashName FROM Claroline\CoreBundle\Entity\Resource\ResourceNode res
 			JOIN res.workspace w
 			JOIN w.roles r
 			JOIN r.users u
 			WHERE u.id = :user
 			');
-		$query->setParameter('user', $user);
+        $query->setParameter('user', $user);
 
         return $query->getResult();
-	}
+    }
 }

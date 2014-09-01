@@ -234,75 +234,6 @@ class OfflineForum extends OfflineResource
 	}
 
     /**
-     * Check all categories of a list and see if they are new or updated.
-     *
-     *
-     * @return array()
-     */
-    // private function checkCategory($categories, $elemToSync, $dateSync)
-    // {
-        // foreach ($categories as $category) {
-            // if ($category->getModificationDate()->getTimestamp() > $dateSync) {
-                // echo 'ma date de modif '.$category->getModificationDate()->getTimestamp().' '.'ma date de sync'.$dateSync.'<br/>';
-                // $tot = new DateTime();
-                // echo 'ma date de modif '.$category->getModificationDate()->format('d/m/Y H:i:s').' '.'ma date de sync'.$tot->setTimeStamp($dateSync)->format('d/m/Y H:i:s').'<br/>';
-                 // $elemToSync[] = $category;
-            // }
-            // $subjects = $this->subjectRepo->findBy(array('category' => $category));
-            // $elemToSync = $this->checkSubject($subjects, $elemToSync, $dateSync);
-        // }
-
-        // return $elemToSync;
-
-    // }
-
-
-    /**
-     * Check all subjects of a list and see if they are new or updated.
-     *
-     *
-     * @return array()
-     */
-    // private function checkSubject($subjects, $elemToSync, $dateSync)
-    // {
-        // foreach ($subjects as $subject) {
-            // if ($subject->getModificationDate()->getTimestamp() > $dateSync) {
-            // echo 'ma date de modif '.$subject->getModificationDate()->getTimestamp().' '.'ma date de sync'.$dateSync.'<br/>';
-            // $tot = new DateTime();
-            // echo 'ma date de modif '.$subject->getModificationDate()->format('d/m/Y H:i:s').' '.'ma date de sync'.$tot->setTimeStamp($dateSync)->format('d/m/Y H:i:s').'<br/>';
-                 // $elemToSync[] = $subject;
-            // }
-
-            // $messages = $this->messageRepo->findBySubject($subject);
-            // $elemToSync = $this->checkMessage($messages, $elemToSync, $dateSync);
-        // }
-
-        // return $elemToSync;
-
-    // }
-
-
-    /**
-     *   Check all message of a list and see if they are new or updated.
-     *
-     *
-     * @return array()
-     */
-    // private function checkMessage($messages, $elemToSync, $dateSync)
-    // {
-        // foreach ($messages as $message) {
-            // if ($message->getModificationDate()->getTimestamp() > $dateSync) {
-            // echo 'ma date de modif '.$message->getModificationDate()->getTimestamp().' '.'ma date de sync'.$dateSync.'<br/>';
-            // $tot = new DateTime();
-            // echo 'ma date de modif '.$message->getModificationDate()->format('d/m/Y H:i:s').' '.'ma date de sync'.$tot->setTimeStamp($dateSync)->format('d/m/Y H:i:s').'<br/>';
-            // $elemToSync[] = $message;
-            // }
-        // }
-
-        // return $elemToSync;
-    // }
-
-    /**
      * Add the content of the forum in the Archive.
      */
     private function addForumToArchive($domManifest, $domWorkspace, $forumContent)
@@ -467,6 +398,10 @@ class OfflineForum extends OfflineResource
      */
     private function createCategory($xmlCategory)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->resourceManager = $this->container->get('claroline.manager.resource_manager');
+		$this->forumManager = $this->container->get('claroline.manager.forum_manager');
+		$this->resourceNodeRepo = $this->om->getRepository('ClarolineCoreBundle:Resource\ResourceNode');
         $nodeForum = $this->resourceNodeRepo->findOneBy(array('hashName' => $xmlCategory->getAttribute('forum_node')));
         $forum = $this->resourceManager->getResourceFromNode($nodeForum);
 
@@ -503,6 +438,9 @@ class OfflineForum extends OfflineResource
      */
     private function createSubject($xmlSubject)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->categoryRepo = $this->om->getRepository('ClarolineForumBundle:Category');
+		$this->forumManager = $this->container->get('claroline.manager.forum_manager');
         $category = $this->categoryRepo->findOneBy(array('hashName' => $xmlSubject->getAttribute('category')));
         // $creator = $this->userRepo->findOneBy(array('exchangeToken' => $subject->getAttribute('creator_id')));
         $creator = $this->getCreator($xmlSubject);
@@ -526,6 +464,7 @@ class OfflineForum extends OfflineResource
      */
     private function updateSubject($xmlSubject, Subject $subject)
     {
+		$this->forumManager = $this->container->get('claroline.manager.forum_manager');
         $xmlName = $xmlSubject->getAttribute('title');
         $dbName = $subject->getTitle();
         $xmlModificationDate = $xmlSubject->getAttribute('update_date');
@@ -547,6 +486,9 @@ class OfflineForum extends OfflineResource
      */
     private function createMessage($xmlMessage)
     {
+		$this->om = $this->container->get('claroline.persistence.object_manager');
+		$this->subjectRepo = $this->om->getRepository('ClarolineForumBundle:Subject');
+		$this->forumManager = $this->container->get('claroline.manager.forum_manager');
         $creationDate = new DateTime();
         $creationDate->setTimestamp($xmlMessage->getAttribute('creation_date'));
 
@@ -570,6 +512,7 @@ class OfflineForum extends OfflineResource
      */
     private function updateMessage($xmlMessage, Message $message, $date)
     {
+		$this->forumManager = $this->container->get('claroline.manager.forum_manager');
         $xmlContent = $this->extractCData($xmlMessage);
         $dbContent = $message->getContent();
         $xmlModificationDate = $xmlMessage->getAttribute('update_date');
